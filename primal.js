@@ -732,7 +732,9 @@
     vg.addColorStop(1, "rgba(0,0,0,0.45)");
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, W, H);
-    const ms = 2, msz = MAP * ms, ox = W - msz - 8, oy = 8;
+    const ms = 2, msz = MAP * ms;
+    // Top-right of the world view — keep clear of left-side DOM chrome (audio / REGIONS)
+    const ox = W - msz - 6, oy = 6;
     ctx.fillStyle = "rgba(2,12,6,0.85)";
     ctx.fillRect(ox - 3, oy - 3, msz + 6, msz + 6);
     ctx.strokeStyle = "#2d6b45";

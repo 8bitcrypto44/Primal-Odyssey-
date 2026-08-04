@@ -43,11 +43,19 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-look-btn{width:64px;height:64px;border-radius:14px;border:3px solid var(--line-hi);background:rgba(4,20,10,.8);color:var(--line-hi);font:700 22px "Courier New",monospace;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 0 12px rgba(61,155,95,.2)}
 .po-look-btn:active,.po-look-btn.is-held{background:rgba(61,155,95,.35);color:#fff;transform:scale(.96)}
 .po-stick-lab{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-shadow:0 1px 2px #000}
-html.po-touch-on .po-menu-dock{bottom:140px}
-/* Keep audio off the top-right minimap */
-html.po-touch-on .po-audio-bar{top:8px;bottom:auto;left:8px;right:auto;max-width:min(200px,48vw)}
-html.po-touch-on .po-hud{top:52px;left:8px;right:auto}
-html.po-touch-on .po-hint{bottom:140px;font-size:10px}
+
+/* Mobile: left column = REGIONS + audio + HUD; bottom = stick/look only; minimap stays canvas top-right */
+html.po-touch-on .po-menu-dock{
+  left:8px;top:8px;bottom:auto;z-index:10
+}
+html.po-touch-on .po-audio-bar{
+  top:52px;bottom:auto;left:8px;right:auto!important;max-width:min(170px,44vw);z-index:10
+}
+html.po-touch-on .po-hud{
+  top:100px;left:8px;right:auto;max-width:min(220px,50vw)
+}
+html.po-touch-on .po-hint{bottom:150px;font-size:10px}
+html.po-touch-on .po-touch{z-index:8}
 
 /* Landscape phone — Digistracts-style immersive play (full iframe / fullscreen) */
 html.po-land,html.po-land body{
@@ -65,19 +73,22 @@ html.po-land #po-canvas{
 }
 html.po-land .po-credit,html.po-land .po-frame{display:none}
 html.po-land.po-touch-on .po-touch{
-  padding:6px 10px;background:linear-gradient(180deg,transparent 0%,rgba(2,10,6,.4) 40%,rgba(2,10,6,.75) 100%)
+  padding:8px 12px 10px;background:linear-gradient(180deg,transparent 0%,rgba(2,10,6,.35) 45%,rgba(2,10,6,.78) 100%)
 }
-html.po-land.po-touch-on .po-stick{width:96px;height:96px}
-html.po-land.po-touch-on .po-knob{width:40px;height:40px}
-html.po-land.po-touch-on .po-look-btn{width:56px;height:56px;font-size:18px}
-html.po-land.po-touch-on .po-menu-dock{bottom:110px;left:8px}
+html.po-land.po-touch-on .po-stick{width:92px;height:92px}
+html.po-land.po-touch-on .po-knob{width:38px;height:38px}
+html.po-land.po-touch-on .po-look-btn{width:52px;height:52px;font-size:17px}
+html.po-land.po-touch-on .po-menu-dock{
+  top:6px;left:8px;bottom:auto;padding:7px 10px;font-size:10px;min-height:36px
+}
 html.po-land.po-touch-on .po-hint{display:none}
 html.po-land.po-touch-on .po-audio-bar{
-  top:auto;bottom:110px;left:8px;right:auto;padding:4px 6px;max-width:min(160px,42vw);z-index:9
+  top:44px;bottom:auto;left:8px;right:auto!important;padding:4px 6px;
+  max-width:min(150px,36vw);z-index:10
 }
-html.po-land.po-touch-on .po-vol{width:48px}
+html.po-land.po-touch-on .po-vol{width:44px}
 html.po-land .po-pos-chip{display:none}
-html.po-land.po-touch-on .po-hud{top:40px;left:8px;right:auto;max-width:42%}
+html.po-land.po-touch-on .po-hud{top:86px;left:8px;right:auto;max-width:38%}
 html.po-land.po-touch-on .po-fs-btn{top:6px}
 html.po-fs .po-fs-btn{opacity:.85}
 /* Dossier open in landscape — keep immersive shell; hide play chrome under overlay */
