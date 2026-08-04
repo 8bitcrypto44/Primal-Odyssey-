@@ -18,7 +18,7 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-hud button.chip,.po-audio-bar .chip,.po-menu-dock{cursor:pointer;font-family:inherit}
 .po-hud button.chip:hover,.po-audio-bar .chip:hover,.po-menu-dock:hover{background:#0d2818;border-color:var(--line-hi);color:#fff}
 .po-menu-dock{position:absolute;left:8px;bottom:8px;z-index:6}
-.po-audio-bar{position:absolute;right:8px;bottom:8px;z-index:25;display:flex;align-items:center;gap:6px;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:6px 8px;max-width:calc(100% - 110px)}
+.po-audio-bar{position:absolute;right:8px;bottom:8px;z-index:6;display:flex;align-items:center;gap:6px;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:6px 8px;max-width:calc(100% - 110px)}
 .po-vol-lab{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap}
 .po-vol{width:72px;max-width:28vw;accent-color:var(--line-hi);cursor:pointer}
 .po-mute[aria-pressed="true"]{border-color:#8a3a3a;color:#ffb4b4;background:#1a0a0a}
