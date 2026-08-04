@@ -13,16 +13,16 @@ This repo is built for **GitHub Pages** (no paste size limit). After Pages is on
 `https://8bitcrypto44.github.io/Primal-Odyssey-/`
 
 ### GoDaddy iframe
-Paste this block. The green outline is **padding** (not CSS `border`) so GoDaddy can’t clip one side:
+Paste this block. Green outline uses **padding** (not CSS `border`). Host is **16:9** so the game is not stretched:
 
 ```html
 <div style="box-sizing:border-box;width:100%;max-width:100%;margin:0;padding:3px;background:#2d6b45;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.35)">
-  <div style="box-sizing:border-box;position:relative;display:block;width:100%;aspect-ratio:4/5;max-height:720px;margin:0;padding:0;overflow:hidden;background:#030605;line-height:0;border:0;border-radius:9px">
+  <div style="box-sizing:border-box;position:relative;display:block;width:100%;aspect-ratio:16/9;max-height:720px;margin:0;padding:0;overflow:hidden;background:#030605;line-height:0;border:0;border-radius:9px">
     <iframe
-      src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=5"
+      src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=9"
       title="Primal Odyssey"
       width="100%"
-      height="720"
+      height="405"
       style="box-sizing:border-box;position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;border:0;outline:0;display:block;margin:0;padding:0;background:#030605"
       allow="autoplay; fullscreen"
       allowfullscreen

@@ -84,13 +84,13 @@ pages = (
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover\">\n"
     "<meta name=\"description\" content=\"Primal Odyssey — explore biomes, meet apex animals, open field dossiers.\">\n"
     "<title>Primal Odyssey</title>\n"
-    "<link rel=\"stylesheet\" href=\"primal.css?v=8\">\n"
+    "<link rel=\"stylesheet\" href=\"primal.css?v=9\">\n"
     "<style>html,body{margin:0;height:100%;min-height:100%;background:#030605;}</style>\n"
     "</head>\n<body>\n"
     + body.strip() + "\n"
-    "<script src=\"primal_data.js?v=8\"></script>\n"
-    "<script src=\"primal_sprites.js?v=8\"></script>\n"
-    "<script src=\"primal.js?v=8\"></script>\n"
+    "<script src=\"primal_data.js?v=9\"></script>\n"
+    "<script src=\"primal_sprites.js?v=9\"></script>\n"
+    "<script src=\"primal.js?v=9\"></script>\n"
     "</body>\n</html>\n"
 )
 (root / "index.html").write_bytes(pages.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))

@@ -866,9 +866,17 @@
 
   function canvasPos(clientX, clientY) {
     const rect = canvas.getBoundingClientRect();
+    const rw = rect.width || 1;
+    const rh = rect.height || 1;
+    // object-fit:contain letterboxes the 480x270 buffer inside the element box
+    const scale = Math.min(rw / W, rh / H);
+    const dw = W * scale;
+    const dh = H * scale;
+    const ox = (rw - dw) * 0.5;
+    const oy = (rh - dh) * 0.5;
     return {
-      sx: (clientX - rect.left) * (W / rect.width),
-      sy: (clientY - rect.top) * (H / rect.height)
+      sx: (clientX - rect.left - ox) * (W / dw),
+      sy: (clientY - rect.top - oy) * (H / dh)
     };
   }
 

@@ -76,7 +76,7 @@ html.po-embed .po-shell{
 }
 html.po-embed #po-canvas{
   position:absolute;inset:0;width:100%!important;height:100%!important;max-height:none;min-height:0;
-  object-fit:fill;display:block;background:#050a06
+  object-fit:contain;object-position:center center;display:block;background:#050a06
 }
 html.po-embed .po-credit{display:none}
 html.po-embed .po-overlay{
