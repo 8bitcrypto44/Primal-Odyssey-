@@ -64,6 +64,7 @@
     regionChip: document.getElementById("po-region-chip"),
     posChip: document.getElementById("po-pos-chip"),
     menuBtn: document.getElementById("po-menu-btn"),
+    fsBtn: document.getElementById("po-fs-btn"),
     mute: document.getElementById("po-mute"),
     vol: document.getElementById("po-vol"),
     touch: document.getElementById("po-touch"),
@@ -839,16 +840,51 @@
     } catch (e) {}
   }
 
+  function isNativeFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  function askParentFullscreen(exit) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: exit ? "po-fs-exit" : "po-fs" }, "*");
+      }
+    } catch (e) {}
+  }
+
   function tryLandscapeFullscreen() {
+    // Browsers block this without a user gesture; Digistracts calls it from touch.
     if (mode !== "explore" || !wantsTouchUI() || !isLandscape()) return;
+    if (isNativeFullscreen()) return;
+    askParentFullscreen(false);
     const el = document.documentElement;
-    if (document.fullscreenElement || document.webkitFullscreenElement) return;
     const req = el.requestFullscreen || el.webkitRequestFullscreen;
     if (!req) return;
     try {
       const p = req.call(el);
       if (p && p.catch) p.catch(function () {});
     } catch (e) {}
+  }
+
+  function exitFullscreenAll() {
+    askParentFullscreen(true);
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit && isNativeFullscreen()) {
+      try {
+        const p = exit.call(document);
+        if (p && p.catch) p.catch(function () {});
+      } catch (e) {}
+    }
+  }
+
+  function syncFsBtn() {
+    if (!ui.fsBtn) return;
+    const show = mode === "explore" && wantsTouchUI() && isLandscape();
+    const fs = isNativeFullscreen();
+    ui.fsBtn.hidden = !show;
+    ui.fsBtn.setAttribute("aria-pressed", fs ? "true" : "false");
+    ui.fsBtn.textContent = fs ? "EXIT FULL SCREEN" : "FULL SCREEN";
+    document.documentElement.classList.toggle("po-fs", fs);
   }
 
   function syncTouchUI() {
@@ -860,11 +896,12 @@
     if (ui.touch) ui.touch.hidden = !on;
     if (ui.hint && mode === "explore" && on) {
       ui.hint.textContent = land
-        ? "Stick move · LOOK turn · Tap animals"
-        : "Stick to move · LOOK to turn · Tap animal · REGIONS · Rotate for full screen";
+        ? "Tap FULL SCREEN to hide the browser bar · Stick move · LOOK turn"
+        : "Stick to move · LOOK to turn · Tap animal · Rotate phone · Tap FULL SCREEN";
     } else if (ui.hint && mode === "explore") {
       ui.hint.textContent = "Drag to look · Tap animal for dossier · REGIONS menu";
     }
+    syncFsBtn();
     notifyParentChrome();
   }
 
@@ -1055,6 +1092,21 @@
   });
 
   ui.menuBtn.addEventListener("click", showTitle);
+  if (ui.fsBtn) {
+    ui.fsBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (isNativeFullscreen()) exitFullscreenAll();
+      else tryLandscapeFullscreen();
+      setTimeout(syncFsBtn, 200);
+    });
+  }
+  function onFsChange() {
+    syncFsBtn();
+    syncTouchUI();
+  }
+  document.addEventListener("fullscreenchange", onFsChange);
+  document.addEventListener("webkitfullscreenchange", onFsChange);
   ui.dClose.addEventListener("click", closeDossier);
   if (ui.mute) ui.mute.addEventListener("click", function () { setMuted(!muted); });
   if (ui.vol) ui.vol.addEventListener("input", function () { setVolume(+ui.vol.value); });

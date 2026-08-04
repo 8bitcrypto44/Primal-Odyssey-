@@ -25,17 +25,36 @@
 .po-gd-play iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#030605}
 .po-gd.is-open .po-gd-cover{display:none}
 .po-gd.is-open .po-gd-play{display:block}
-/* Landscape phone while playing — fill the device (Digistracts-style) */
+.po-gd-fs{
+  display:none;position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:20;
+  border:2px solid #5dce7a;border-radius:10px;padding:10px 14px;min-height:44px;
+  font:700 12px "Courier New",Courier,monospace;letter-spacing:1px;cursor:pointer;
+  color:#fff;background:rgba(4,20,10,.92);box-shadow:0 0 18px rgba(93,206,122,.35);
+  -webkit-tap-highlight-color:transparent;white-space:nowrap
+}
+.po-gd.is-open.is-land .po-gd-fs{display:block}
+.po-gd.is-fs .po-gd-fs{opacity:.85;font-size:11px;padding:8px 12px;min-height:36px;border-color:#7fa88c;color:#9ec9ad;box-shadow:none}
 .po-gd.is-open.is-land{
-  position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;margin:0;
+  position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;height:100dvh;margin:0;
   background:#030605
 }
 .po-gd.is-open.is-land .po-gd-card{
-  height:100%;border:0;border-radius:0;padding:6px;box-shadow:none;
+  height:100%;border:0;border-radius:0;padding:0;box-shadow:none;
   display:flex;flex-direction:column;background:#030605
 }
 .po-gd.is-open.is-land .po-gd-top{display:none}
 .po-gd.is-open.is-land .po-gd-stage{
+  flex:1;min-height:0;aspect-ratio:auto;height:auto;border:0;border-radius:0
+}
+.po-gd:fullscreen,.po-gd:-webkit-full-screen{
+  width:100%;height:100%;max-width:none;background:#030605
+}
+.po-gd:fullscreen .po-gd-card,.po-gd:-webkit-full-screen .po-gd-card{
+  height:100%;border:0;border-radius:0;padding:0;box-shadow:none;
+  display:flex;flex-direction:column
+}
+.po-gd:fullscreen .po-gd-top,.po-gd:-webkit-full-screen .po-gd-top{display:none}
+.po-gd:fullscreen .po-gd-stage,.po-gd:-webkit-full-screen .po-gd-stage{
   flex:1;min-height:0;aspect-ratio:auto;height:auto;border:0;border-radius:0
 }
 @media (max-width:700px){
@@ -65,12 +84,13 @@
         </div>
       </div>
       <div class="po-gd-play" id="po-gd-play">
+        <button type="button" class="po-gd-fs" id="po-gd-fs" aria-pressed="false">FULL SCREEN</button>
         <iframe
           id="po-gd-frame"
           title="Primal Odyssey"
           width="100%"
           height="450"
-          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=19"
+          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=20"
           allow="autoplay; fullscreen"
           allowfullscreen
           scrolling="no"
@@ -85,6 +105,7 @@
   var root=document.getElementById("po-gd");
   var btn=document.getElementById("po-gd-enter");
   var frame=document.getElementById("po-gd-frame");
+  var fsBtn=document.getElementById("po-gd-fs");
   if(!root||!btn||!frame)return;
   var playing=false;
   function phone(){
@@ -94,8 +115,37 @@
     if(window.matchMedia&&window.matchMedia("(orientation: landscape)").matches)return true;
     return window.innerWidth>window.innerHeight;
   }
+  function isFs(){
+    return !!(document.fullscreenElement||document.webkitFullscreenElement);
+  }
+  function syncFsBtn(){
+    if(!fsBtn)return;
+    var on=isFs();
+    root.classList.toggle("is-fs",on);
+    fsBtn.setAttribute("aria-pressed",on?"true":"false");
+    fsBtn.textContent=on?"EXIT FULL SCREEN":"FULL SCREEN";
+  }
   function syncLand(){
     root.classList.toggle("is-land", root.classList.contains("is-open") && playing && phone() && land());
+    syncFsBtn();
+  }
+  function enterFs(){
+    if(isFs())return;
+    var req=root.requestFullscreen||root.webkitRequestFullscreen;
+    if(!req)return;
+    try{
+      var p=req.call(root);
+      if(p&&p.catch)p.catch(function(){});
+    }catch(e){}
+  }
+  function exitFs(){
+    var exit=document.exitFullscreen||document.webkitExitFullscreen;
+    if(exit&&isFs()){
+      try{
+        var p=exit.call(document);
+        if(p&&p.catch)p.catch(function(){});
+      }catch(e){}
+    }
   }
   btn.addEventListener("click",function(){
     var src=frame.getAttribute("data-src");
@@ -104,14 +154,35 @@
     playing=true;
     btn.setAttribute("aria-expanded","true");
     syncLand();
+    if(phone()&&land())enterFs();
     try{frame.focus();}catch(e){}
   });
+  if(fsBtn){
+    fsBtn.addEventListener("click",function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      if(isFs())exitFs();
+      else enterFs();
+      setTimeout(syncFsBtn,200);
+    });
+  }
+  root.addEventListener("touchstart",function(){
+    if(!root.classList.contains("is-land")||isFs())return;
+    enterFs();
+  },{passive:true});
   window.addEventListener("message",function(e){
-    if(!e.data||e.data.type!=="po-chrome")return;
-    playing=!!e.data.explore;
-    if(!playing)root.classList.remove("is-land");
-    else syncLand();
+    if(!e.data)return;
+    if(e.data.type==="po-chrome"){
+      playing=!!e.data.explore;
+      if(!playing){root.classList.remove("is-land");exitFs();}
+      else syncLand();
+    }
+    if(e.data.type==="po-fs")enterFs();
+    if(e.data.type==="po-fs-exit")exitFs();
   });
+  function onFsChange(){syncFsBtn();syncLand();}
+  document.addEventListener("fullscreenchange",onFsChange);
+  document.addEventListener("webkitfullscreenchange",onFsChange);
   window.addEventListener("resize",syncLand);
   window.addEventListener("orientationchange",function(){setTimeout(syncLand,120);});
 })();

@@ -18,6 +18,15 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-hud button.chip,.po-audio-bar .chip,.po-menu-dock{cursor:pointer;font-family:inherit}
 .po-hud button.chip:hover,.po-audio-bar .chip:hover,.po-menu-dock:hover{background:#0d2818;border-color:var(--line-hi);color:#fff}
 .po-menu-dock{position:absolute;left:8px;bottom:8px;z-index:6}
+.po-fs-btn{
+  display:none;position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:12;
+  pointer-events:auto;background:rgba(4,20,10,.92);border:2px solid var(--line-hi);color:#fff;
+  font-size:11px;padding:10px 14px;border-radius:10px;font-weight:700;letter-spacing:1px;
+  box-shadow:0 0 18px rgba(93,206,122,.35);cursor:pointer;font-family:inherit;
+  -webkit-tap-highlight-color:transparent;min-height:44px;white-space:nowrap
+}
+.po-fs-btn:not([hidden]){display:block}
+.po-fs-btn[aria-pressed="true"]{border-color:#7fa88c;color:var(--muted);box-shadow:none;font-size:10px;padding:8px 12px;min-height:36px}
 .po-audio-bar{position:absolute;right:8px;bottom:8px;z-index:6;display:flex;align-items:center;gap:6px;background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:6px 8px;max-width:calc(100% - 110px)}
 .po-vol-lab{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap}
 .po-vol{width:72px;max-width:28vw;accent-color:var(--line-hi);cursor:pointer}
@@ -65,6 +74,8 @@ html.po-land.po-touch-on .po-hint{display:none}
 html.po-land.po-touch-on .po-audio-bar{top:6px;padding:4px 6px}
 html.po-land.po-touch-on .po-vol{width:56px}
 html.po-land .po-pos-chip{display:none}
+html.po-land.po-touch-on .po-fs-btn{top:6px}
+html.po-fs .po-fs-btn{opacity:.85}
 .po-overlay{position:absolute;inset:0;z-index:20;display:none;align-items:flex-start;justify-content:center;padding:8px 10px 14px;background:linear-gradient(180deg,rgba(2,10,6,.9),rgba(3,12,8,.96));overflow:auto;-webkit-overflow-scrolling:touch}
 .po-overlay.show{display:flex}
 .po-menu{width:min(960px,100%);margin:0 auto}
