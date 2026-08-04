@@ -127,6 +127,7 @@
   let mode = "title";
   let lookDrag = null;
   let lookMoved = 0;
+  let suppressClickUntil = 0;
   let propCache = {};
   let miniBase = null;
 
@@ -861,7 +862,13 @@
   }
 
   function tryOpenAt(clientX, clientY) {
-    if (lookMoved > 8) { lookMoved = 0; return; }
+    // After a look-drag, browsers still fire a delayed click; do not open dossiers from it.
+    if (performance.now() < suppressClickUntil) return;
+    if (lookMoved > 8) {
+      suppressClickUntil = performance.now() + 450;
+      lookMoved = 0;
+      return;
+    }
     const p = canvasPos(clientX, clientY);
     const hit = animalAtScreen(p.sx, p.sy);
     if (hit) openDossier(hit);
