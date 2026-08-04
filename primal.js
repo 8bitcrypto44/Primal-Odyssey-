@@ -633,13 +633,17 @@
       const drawStartY = floorY - spriteH;
       const drawStartX = (-spriteW / 2 + spriteScreenX) | 0;
       const drawEndX = drawStartX + spriteW;
-      const texW = img.width, texH = img.height;
+      if (drawEndX < 0 || drawStartX >= W || drawStartY >= H || drawStartY + spriteH < 0) continue;
       const flip = sp.kind === "animal" && sp.face < 0;
-      for (let stripe = Math.max(0, drawStartX); stripe < Math.min(W, drawEndX); stripe++) {
-        let texX = ((stripe - drawStartX) * texW / spriteW) | 0;
-        if (flip) texX = texW - 1 - texX;
-        if (texX < 0 || texX >= texW) continue;
-        ctx.drawImage(img, texX, 0, 1, texH, stripe, drawStartY, 1, spriteH);
+      // One blit per sprite (stripe loop was thousands of drawImage calls on Mountains)
+      if (flip) {
+        ctx.save();
+        ctx.translate(drawStartX + spriteW, drawStartY);
+        ctx.scale(-1, 1);
+        ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, spriteW, spriteH);
+        ctx.restore();
+      } else {
+        ctx.drawImage(img, 0, 0, img.width, img.height, drawStartX, drawStartY, spriteW, spriteH);
       }
 
       if (sp.kind === "animal") {
