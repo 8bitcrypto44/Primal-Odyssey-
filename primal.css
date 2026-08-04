@@ -19,7 +19,7 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-hud button.chip:hover,.po-audio-bar .chip:hover,.po-menu-dock:hover{background:#0d2818;border-color:var(--line-hi);color:#fff}
 .po-menu-dock{position:absolute;left:8px;bottom:8px;z-index:6}
 .po-fs-btn{
-  display:none;position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:12;
+  display:none;position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:30;
   pointer-events:auto;background:rgba(4,20,10,.92);border:2px solid var(--line-hi);color:#fff;
   font-size:11px;padding:10px 14px;border-radius:10px;font-weight:700;letter-spacing:1px;
   box-shadow:0 0 18px rgba(93,206,122,.35);cursor:pointer;font-family:inherit;
@@ -44,8 +44,9 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-look-btn:active,.po-look-btn.is-held{background:rgba(61,155,95,.35);color:#fff;transform:scale(.96)}
 .po-stick-lab{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);text-shadow:0 1px 2px #000}
 html.po-touch-on .po-menu-dock{bottom:140px}
-html.po-touch-on .po-audio-bar{top:8px;bottom:auto;right:8px;max-width:min(220px,46vw)}
-html.po-touch-on .po-hud{top:52px;right:8px}
+/* Keep audio off the top-right minimap */
+html.po-touch-on .po-audio-bar{top:8px;bottom:auto;left:8px;right:auto;max-width:min(200px,48vw)}
+html.po-touch-on .po-hud{top:52px;left:8px;right:auto}
 html.po-touch-on .po-hint{bottom:140px;font-size:10px}
 
 /* Landscape phone — Digistracts-style immersive play (full iframe / fullscreen) */
@@ -71,11 +72,19 @@ html.po-land.po-touch-on .po-knob{width:40px;height:40px}
 html.po-land.po-touch-on .po-look-btn{width:56px;height:56px;font-size:18px}
 html.po-land.po-touch-on .po-menu-dock{bottom:110px;left:8px}
 html.po-land.po-touch-on .po-hint{display:none}
-html.po-land.po-touch-on .po-audio-bar{top:6px;padding:4px 6px}
-html.po-land.po-touch-on .po-vol{width:56px}
+html.po-land.po-touch-on .po-audio-bar{
+  top:auto;bottom:110px;left:8px;right:auto;padding:4px 6px;max-width:min(160px,42vw);z-index:9
+}
+html.po-land.po-touch-on .po-vol{width:48px}
 html.po-land .po-pos-chip{display:none}
+html.po-land.po-touch-on .po-hud{top:40px;left:8px;right:auto;max-width:42%}
 html.po-land.po-touch-on .po-fs-btn{top:6px}
 html.po-fs .po-fs-btn{opacity:.85}
+/* Dossier open in landscape — keep immersive shell; hide play chrome under overlay */
+html.po-land.po-touch-on:has(#po-dossier.show) .po-touch,
+html.po-land.po-touch-on:has(#po-dossier.show) .po-audio-bar,
+html.po-land.po-touch-on:has(#po-dossier.show) .po-menu-dock,
+html.po-land.po-touch-on:has(#po-dossier.show) .po-hud{visibility:hidden;pointer-events:none}
 .po-overlay{position:absolute;inset:0;z-index:20;display:none;align-items:flex-start;justify-content:center;padding:8px 10px 14px;background:linear-gradient(180deg,rgba(2,10,6,.9),rgba(3,12,8,.96));overflow:auto;-webkit-overflow-scrolling:touch}
 .po-overlay.show{display:flex}
 .po-menu{width:min(960px,100%);margin:0 auto}

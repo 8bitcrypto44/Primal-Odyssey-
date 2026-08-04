@@ -828,13 +828,18 @@
     return window.innerWidth > window.innerHeight || (wantsTouchUI() && vh <= 520 && window.innerWidth >= window.innerHeight);
   }
 
+  function inGameMode() {
+    return mode === "explore" || mode === "dossier";
+  }
+
   function notifyParentChrome() {
     try {
       if (window.parent && window.parent !== window) {
         window.parent.postMessage({
           type: "po-chrome",
           explore: mode === "explore",
-          land: mode === "explore" && wantsTouchUI() && isLandscape()
+          inGame: inGameMode(),
+          land: inGameMode() && wantsTouchUI() && isLandscape()
         }, "*");
       }
     } catch (e) {}
@@ -879,7 +884,7 @@
 
   function syncFsBtn() {
     if (!ui.fsBtn) return;
-    const show = mode === "explore" && wantsTouchUI() && isLandscape();
+    const show = inGameMode() && wantsTouchUI() && isLandscape();
     const fs = isNativeFullscreen();
     ui.fsBtn.hidden = !show;
     ui.fsBtn.setAttribute("aria-pressed", fs ? "true" : "false");
@@ -889,12 +894,12 @@
 
   function syncTouchUI() {
     const touch = wantsTouchUI();
-    const on = mode === "explore" && touch;
-    const land = on && isLandscape();
-    document.documentElement.classList.toggle("po-touch-on", on);
+    const exploring = mode === "explore" && touch;
+    const land = inGameMode() && touch && isLandscape();
+    document.documentElement.classList.toggle("po-touch-on", exploring);
     document.documentElement.classList.toggle("po-land", land);
-    if (ui.touch) ui.touch.hidden = !on;
-    if (ui.hint && mode === "explore" && on) {
+    if (ui.touch) ui.touch.hidden = !exploring;
+    if (ui.hint && mode === "explore" && exploring) {
       ui.hint.textContent = land
         ? "Tap FULL SCREEN to hide the browser bar · Stick move · LOOK turn"
         : "Stick to move · LOOK to turn · Tap animal · Rotate phone · Tap FULL SCREEN";

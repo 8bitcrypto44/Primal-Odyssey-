@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "20"
+ASSET_VER = "21"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -283,9 +283,10 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   window.addEventListener("message",function(e){{
     if(!e.data)return;
     if(e.data.type==="po-chrome"){{
-      playing=!!e.data.explore;
-      if(!playing){{root.classList.remove("is-land");exitFs();}}
-      else syncLand();
+      /* Stay fullscreen until EXIT FULL SCREEN — dossiers are still in-game */
+      if(typeof e.data.inGame==="boolean")playing=!!e.data.inGame;
+      else playing=!!e.data.explore;
+      syncLand();
     }}
     if(e.data.type==="po-fs")enterFs();
     if(e.data.type==="po-fs-exit")exitFs();

@@ -90,7 +90,7 @@
           title="Primal Odyssey"
           width="100%"
           height="450"
-          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=20"
+          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=21"
           allow="autoplay; fullscreen"
           allowfullscreen
           scrolling="no"
@@ -173,9 +173,10 @@
   window.addEventListener("message",function(e){
     if(!e.data)return;
     if(e.data.type==="po-chrome"){
-      playing=!!e.data.explore;
-      if(!playing){root.classList.remove("is-land");exitFs();}
-      else syncLand();
+      /* Stay fullscreen until EXIT FULL SCREEN — dossiers are still in-game */
+      if(typeof e.data.inGame==="boolean")playing=!!e.data.inGame;
+      else playing=!!e.data.explore;
+      syncLand();
     }
     if(e.data.type==="po-fs")enterFs();
     if(e.data.type==="po-fs-exit")exitFs();
