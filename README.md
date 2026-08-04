@@ -14,15 +14,13 @@ https://8bitcrypto44.github.io/Primal-Odyssey-/
 
 Asset URLs are cache-busted (`?v=N` on CSS/JS). Bump `ASSET_VER` in `build_game.py` when publishing.
 
-## Digistracts / GoDaddy — iframe only
+## Digistracts / GoDaddy — cover then expand
 
-Digistracts HTML paste limit is ~**51KB**. The full game is ~200KB+ and **will not fit**.
+Paste `godaddy_iframe_snippet.html` (same as `primal_odyssey_godaddy_block.html`).
 
-**Paste only** `godaddy_iframe_snippet.html` (same content as `primal_odyssey_godaddy_block.html`).
-
-Mobile uses a **tall ~560px panel** (same idea as Binary Matrix). Desktop stays **16:9**. Game canvas keeps correct proportions (`object-fit: contain`).
-
-After `python build_game.py`, copy the generated snippet — it includes the current `?v=` cache-bust.
+- **Cover** matches other games (`max-width: 920px`) with a 3-region image mosaic + **ENTER EXPEDITION**
+- Clicking Enter expands a tall play panel and loads the GitHub Pages iframe (only then)
+- Desktop play area is 16:9; mobile expands to ~560px tall
 ## Rebuild after edits
 ```
 python build_game.py
