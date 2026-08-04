@@ -901,6 +901,14 @@
     }
     lookDrag = null;
   });
+  window.addEventListener("touchcancel", function () {
+    if (lookMoved > 8) suppressClickUntil = performance.now() + 450;
+    lookDrag = null;
+  });
+  window.addEventListener("pointercancel", function () {
+    if (lookMoved > 8) suppressClickUntil = performance.now() + 450;
+    lookDrag = null;
+  });
 
   canvas.addEventListener("mousemove", function (e) {
     if (mode !== "explore" || lookDrag) return;
