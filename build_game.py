@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "14"
+ASSET_VER = "15"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -107,34 +107,37 @@ pages = (
 (root / "index.html").write_bytes(pages.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))
 
 # --- Digistracts/GoDaddy: SMALL iframe only (fits ~51KB paste limit) ---
+# Mobile: tall panel like Binary Matrix (min-height ~560). Desktop: 16:9.
+# No vh/dvh — those drift with mobile browser chrome.
 iframe_src = f"{PAGES_URL}?embed=1&amp;v={v}"
-iframe_snippet = (
-    "<!-- Digistracts / GoDaddy: paste THIS only. Full game hosts on GitHub Pages. -->\n"
-    "<div style=\"box-sizing:border-box;width:100%;max-width:100%;margin:0;padding:3px;"
-    "background:#2d6b45;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.35)\">\n"
-    "  <div style=\"box-sizing:border-box;position:relative;display:block;width:100%;"
-    "aspect-ratio:16/9;max-height:720px;margin:0;padding:0;overflow:hidden;"
-    "background:#030605;line-height:0;border:0;border-radius:9px\">\n"
-    f"    <iframe\n"
-    f"      src=\"{iframe_src}\"\n"
-    "      title=\"Primal Odyssey\"\n"
-    "      width=\"100%\"\n"
-    "      height=\"405\"\n"
-    "      style=\"box-sizing:border-box;position:absolute;top:0;left:0;right:0;bottom:0;"
-    "width:100%;height:100%;border:0;outline:0;display:block;margin:0;padding:0;background:#030605\"\n"
-    "      allow=\"autoplay; fullscreen\"\n"
-    "      allowfullscreen\n"
-    "      loading=\"eager\"\n"
-    "      scrolling=\"no\"\n"
-    "      referrerpolicy=\"no-referrer-when-downgrade\"\n"
-    "    ></iframe>\n"
-    "  </div>\n"
-    "</div>\n"
-    "<p style=\"text-align:center;font-size:12px;margin:8px 0 0;line-height:1.4\">\n"
-    f"  <a href=\"{PAGES_URL}?embed=1\" target=\"_blank\" rel=\"noopener\">"
-    "Open Primal Odyssey full screen</a>\n"
-    "</p>\n"
-)
+iframe_snippet = f"""<!-- Digistracts / GoDaddy: paste THIS only. Full game hosts on GitHub Pages. -->
+<style>
+.po-gd{{box-sizing:border-box;width:100%;max-width:100%;margin:0;padding:3px;background:#2d6b45;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.35)}}
+.po-gd-inner{{box-sizing:border-box;position:relative;display:block;width:100%;aspect-ratio:16/9;max-height:720px;margin:0;padding:0;overflow:hidden;background:#030605;line-height:0;border:0;border-radius:9px}}
+.po-gd iframe{{box-sizing:border-box;position:absolute;top:0;left:0;right:0;bottom:0;width:100%;height:100%;border:0;outline:0;display:block;margin:0;padding:0;background:#030605}}
+@media (max-width:700px){{
+  .po-gd-inner{{aspect-ratio:auto;height:560px;min-height:560px;max-height:none}}
+}}
+</style>
+<div class="po-gd">
+  <div class="po-gd-inner">
+    <iframe
+      src="{iframe_src}"
+      title="Primal Odyssey"
+      width="100%"
+      height="560"
+      allow="autoplay; fullscreen"
+      allowfullscreen
+      loading="eager"
+      scrolling="no"
+      referrerpolicy="no-referrer-when-downgrade"
+    ></iframe>
+  </div>
+</div>
+<p style="text-align:center;font-size:12px;margin:8px 0 0;line-height:1.4">
+  <a href="{PAGES_URL}?embed=1" target="_blank" rel="noopener">Open Primal Odyssey full screen</a>
+</p>
+"""
 (root / "godaddy_iframe_snippet.html").write_text(iframe_snippet, encoding="utf-8", newline="\n")
 # Same stub under the old GoDaddy filename so nobody pastes a 200KB monolith by habit
 (root / "primal_odyssey_godaddy_block.html").write_text(

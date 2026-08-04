@@ -88,6 +88,13 @@ html.po-embed .po-wip{margin-bottom:8px}
 html.po-embed .po-card .go{animation:none}
 html.po-embed .po-card .preview{height:110px}
 html.po-embed .po-regions{gap:8px}
+/* Tall Digistracts mobile host (like Binary Matrix ~560px): menus use full height; canvas stays 16:9 contain */
+@media (max-width:700px){
+  html.po-embed .po-overlay{padding:12px 10px 16px;align-items:flex-start}
+  html.po-embed .po-card .preview{height:130px}
+  html.po-embed .po-brand{font-size:clamp(26px,8vw,42px)}
+  html.po-embed .po-menu .lead{font-size:13px}
+}
 
 @media (max-width:800px){
   #po-root{padding:8px 6px 16px}
