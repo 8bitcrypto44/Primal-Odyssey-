@@ -749,7 +749,13 @@
     return best && bestD < 7 ? best : null;
   }
 
+  function clearInput() {
+    keys = {};
+    lookDrag = null;
+  }
+
   function openDossier(animal) {
+    clearInput();
     openAnimal = animal;
     tab = "facts";
     mode = "dossier";
@@ -786,6 +792,7 @@
   function closeDossier() {
     ui.dossier.classList.remove("show");
     openAnimal = null;
+    clearInput();
     if (mode === "dossier") mode = "explore";
   }
 
@@ -798,6 +805,7 @@
     if (ui.menuBtn) ui.menuBtn.hidden = false;
     ui.regionChip.textContent = region.name;
     closeDossier();
+    clearInput();
     playRegionMusic(id);
   }
 
@@ -809,6 +817,7 @@
     if (ui.menuBtn) ui.menuBtn.hidden = true;
     stopMusic();
     closeDossier();
+    clearInput();
   }
 
   function loop(now) {
@@ -831,15 +840,17 @@
   }
 
   window.addEventListener("keydown", function (e) {
-    keys[e.key] = true;
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].indexOf(e.key) >= 0) e.preventDefault();
     if (e.key === "Escape") {
       if (mode === "dossier") closeDossier();
       else if (mode === "explore") showTitle();
+      return;
     }
+    if (mode !== "explore") return;
+    keys[e.key] = true;
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].indexOf(e.key) >= 0) e.preventDefault();
   });
   window.addEventListener("keyup", function (e) { keys[e.key] = false; });
-  window.addEventListener("blur", function () { keys = {}; lookDrag = null; });
+  window.addEventListener("blur", function () { clearInput(); });
 
   canvas.addEventListener("mousedown", function (e) {
     if (mode !== "explore") return;
