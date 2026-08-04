@@ -24,6 +24,19 @@
 .po-gd-play iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#030605}
 .po-gd.is-open .po-gd-cover{display:none}
 .po-gd.is-open .po-gd-play{display:block}
+/* Landscape phone while playing — fill the device (Digistracts-style) */
+.po-gd.is-open.is-land{
+  position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;margin:0;
+  background:#030605
+}
+.po-gd.is-open.is-land .po-gd-card{
+  height:100%;border:0;border-radius:0;padding:6px;box-shadow:none;
+  display:flex;flex-direction:column;background:#030605
+}
+.po-gd.is-open.is-land .po-gd-top{display:none}
+.po-gd.is-open.is-land .po-gd-stage{
+  flex:1;min-height:0;aspect-ratio:auto;height:auto;border:0;border-radius:0
+}
 @media (max-width:700px){
   .po-gd-card{padding:4px;border-width:2px}
   .po-gd-top{margin-bottom:4px}
@@ -56,7 +69,7 @@
           title="Primal Odyssey"
           width="100%"
           height="450"
-          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=18"
+          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=19"
           allow="autoplay; fullscreen"
           allowfullscreen
           scrolling="no"
@@ -72,12 +85,33 @@
   var btn=document.getElementById("po-gd-enter");
   var frame=document.getElementById("po-gd-frame");
   if(!root||!btn||!frame)return;
+  var playing=false;
+  function phone(){
+    return ("ontouchstart" in window)||(navigator.maxTouchPoints>0)||window.innerWidth<=900;
+  }
+  function land(){
+    if(window.matchMedia&&window.matchMedia("(orientation: landscape)").matches)return true;
+    return window.innerWidth>window.innerHeight;
+  }
+  function syncLand(){
+    root.classList.toggle("is-land", root.classList.contains("is-open") && playing && phone() && land());
+  }
   btn.addEventListener("click",function(){
     var src=frame.getAttribute("data-src");
     if(src&&!frame.getAttribute("src"))frame.setAttribute("src",src);
     root.classList.add("is-open");
+    playing=true;
     btn.setAttribute("aria-expanded","true");
+    syncLand();
     try{frame.focus();}catch(e){}
   });
+  window.addEventListener("message",function(e){
+    if(!e.data||e.data.type!=="po-chrome")return;
+    playing=!!e.data.explore;
+    if(!playing)root.classList.remove("is-land");
+    else syncLand();
+  });
+  window.addEventListener("resize",syncLand);
+  window.addEventListener("orientationchange",function(){setTimeout(syncLand,120);});
 })();
 </script>

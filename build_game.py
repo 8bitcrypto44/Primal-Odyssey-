@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "18"
+ASSET_VER = "19"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -107,7 +107,7 @@ pages = (
 (root / "index.html").write_bytes(pages.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))
 
 # --- Digistracts/GoDaddy: cover card + expand-to-play iframe ---
-# Match Digistracts chrome: max-width 920, border 4, padding 10, 16:9 stage (800x450).
+# Match Digistracts chrome; landscape phone → page-level full screen (like Digistracts).
 iframe_src_attr = f"{PAGES_URL}?embed=1&amp;v={v}"
 iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand on ENTER -->
 <style>
@@ -135,6 +135,19 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-play iframe{{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#030605}}
 .po-gd.is-open .po-gd-cover{{display:none}}
 .po-gd.is-open .po-gd-play{{display:block}}
+/* Landscape phone while playing — fill the device (Digistracts-style) */
+.po-gd.is-open.is-land{{
+  position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;margin:0;
+  background:#030605
+}}
+.po-gd.is-open.is-land .po-gd-card{{
+  height:100%;border:0;border-radius:0;padding:6px;box-shadow:none;
+  display:flex;flex-direction:column;background:#030605
+}}
+.po-gd.is-open.is-land .po-gd-top{{display:none}}
+.po-gd.is-open.is-land .po-gd-stage{{
+  flex:1;min-height:0;aspect-ratio:auto;height:auto;border:0;border-radius:0
+}}
 @media (max-width:700px){{
   .po-gd-card{{padding:4px;border-width:2px}}
   .po-gd-top{{margin-bottom:4px}}
@@ -183,13 +196,34 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   var btn=document.getElementById("po-gd-enter");
   var frame=document.getElementById("po-gd-frame");
   if(!root||!btn||!frame)return;
+  var playing=false;
+  function phone(){{
+    return ("ontouchstart" in window)||(navigator.maxTouchPoints>0)||window.innerWidth<=900;
+  }}
+  function land(){{
+    if(window.matchMedia&&window.matchMedia("(orientation: landscape)").matches)return true;
+    return window.innerWidth>window.innerHeight;
+  }}
+  function syncLand(){{
+    root.classList.toggle("is-land", root.classList.contains("is-open") && playing && phone() && land());
+  }}
   btn.addEventListener("click",function(){{
     var src=frame.getAttribute("data-src");
     if(src&&!frame.getAttribute("src"))frame.setAttribute("src",src);
     root.classList.add("is-open");
+    playing=true;
     btn.setAttribute("aria-expanded","true");
+    syncLand();
     try{{frame.focus();}}catch(e){{}}
   }});
+  window.addEventListener("message",function(e){{
+    if(!e.data||e.data.type!=="po-chrome")return;
+    playing=!!e.data.explore;
+    if(!playing)root.classList.remove("is-land");
+    else syncLand();
+  }});
+  window.addEventListener("resize",syncLand);
+  window.addEventListener("orientationchange",function(){{setTimeout(syncLand,120);}});
 }})();
 </script>
 """

@@ -38,6 +38,33 @@ html.po-touch-on .po-menu-dock{bottom:140px}
 html.po-touch-on .po-audio-bar{top:8px;bottom:auto;right:8px;max-width:min(220px,46vw)}
 html.po-touch-on .po-hud{top:52px;right:8px}
 html.po-touch-on .po-hint{bottom:140px;font-size:10px}
+
+/* Landscape phone — Digistracts-style immersive play (full iframe / fullscreen) */
+html.po-land,html.po-land body{
+  height:100%;width:100%;margin:0;overflow:hidden;background:#030605
+}
+html.po-land #po-root{
+  position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;margin:0;padding:0;
+  background:#030605
+}
+html.po-land .po-shell{
+  position:absolute;inset:0;border:0;border-radius:0;box-shadow:none;height:100%
+}
+html.po-land #po-canvas{
+  position:absolute;inset:0;width:100%!important;height:100%!important;object-fit:contain;background:#050a06
+}
+html.po-land .po-credit,html.po-land .po-frame{display:none}
+html.po-land.po-touch-on .po-touch{
+  padding:6px 10px;background:linear-gradient(180deg,transparent 0%,rgba(2,10,6,.4) 40%,rgba(2,10,6,.75) 100%)
+}
+html.po-land.po-touch-on .po-stick{width:96px;height:96px}
+html.po-land.po-touch-on .po-knob{width:40px;height:40px}
+html.po-land.po-touch-on .po-look-btn{width:56px;height:56px;font-size:18px}
+html.po-land.po-touch-on .po-menu-dock{bottom:110px;left:8px}
+html.po-land.po-touch-on .po-hint{display:none}
+html.po-land.po-touch-on .po-audio-bar{top:6px;padding:4px 6px}
+html.po-land.po-touch-on .po-vol{width:56px}
+html.po-land .po-pos-chip{display:none}
 .po-overlay{position:absolute;inset:0;z-index:20;display:none;align-items:flex-start;justify-content:center;padding:8px 10px 14px;background:linear-gradient(180deg,rgba(2,10,6,.9),rgba(3,12,8,.96));overflow:auto;-webkit-overflow-scrolling:touch}
 .po-overlay.show{display:flex}
 .po-menu{width:min(960px,100%);margin:0 auto}

@@ -821,15 +821,51 @@
       window.innerWidth <= 900;
   }
 
+  function isLandscape() {
+    if (window.matchMedia && window.matchMedia("(orientation: landscape)").matches) return true;
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    return window.innerWidth > window.innerHeight || (wantsTouchUI() && vh <= 520 && window.innerWidth >= window.innerHeight);
+  }
+
+  function notifyParentChrome() {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: "po-chrome",
+          explore: mode === "explore",
+          land: mode === "explore" && wantsTouchUI() && isLandscape()
+        }, "*");
+      }
+    } catch (e) {}
+  }
+
+  function tryLandscapeFullscreen() {
+    if (mode !== "explore" || !wantsTouchUI() || !isLandscape()) return;
+    const el = document.documentElement;
+    if (document.fullscreenElement || document.webkitFullscreenElement) return;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!req) return;
+    try {
+      const p = req.call(el);
+      if (p && p.catch) p.catch(function () {});
+    } catch (e) {}
+  }
+
   function syncTouchUI() {
-    const on = mode === "explore" && wantsTouchUI();
+    const touch = wantsTouchUI();
+    const on = mode === "explore" && touch;
+    const land = on && isLandscape();
     document.documentElement.classList.toggle("po-touch-on", on);
+    document.documentElement.classList.toggle("po-land", land);
     if (ui.touch) ui.touch.hidden = !on;
     if (ui.hint && mode === "explore" && on) {
-      ui.hint.textContent = "Stick to move · LOOK to turn · Tap animal · REGIONS";
+      ui.hint.textContent = land
+        ? "Stick move · LOOK turn · Tap animals"
+        : "Stick to move · LOOK to turn · Tap animal · REGIONS · Rotate for full screen";
     } else if (ui.hint && mode === "explore") {
       ui.hint.textContent = "Drag to look · Tap animal for dossier · REGIONS menu";
     }
+    notifyParentChrome();
   }
 
   function openDossier(animal) {
@@ -888,6 +924,7 @@
     clearInput();
     syncTouchUI();
     playRegionMusic(id);
+    tryLandscapeFullscreen();
   }
 
   function showTitle() {
@@ -1065,6 +1102,7 @@
       stickId = e.pointerId;
       ui.stick.setPointerCapture(e.pointerId);
       readStick(e.clientX, e.clientY);
+      tryLandscapeFullscreen();
       e.preventDefault();
     });
     ui.stick.addEventListener("pointermove", function (e) {
@@ -1082,6 +1120,7 @@
         if (mode !== "explore") return;
         pad.turn = dir;
         btn.classList.add("is-held");
+        tryLandscapeFullscreen();
         e.preventDefault();
       }
       function up() {
@@ -1100,6 +1139,12 @@
   })();
 
   window.addEventListener("resize", syncTouchUI);
+  window.addEventListener("orientationchange", function () {
+    setTimeout(syncTouchUI, 120);
+  });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncTouchUI);
+  }
   syncMuteUI();
   syncTouchUI();
   preloadRemoteArt();
