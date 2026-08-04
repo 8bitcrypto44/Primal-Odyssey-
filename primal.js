@@ -1,4 +1,7 @@
 (function () {
+  if (window !== window.top || /(?:\?|&)embed=1(?:&|$)/.test(location.search || "")) {
+    document.documentElement.classList.add("po-embed");
+  }
   const canvas = document.getElementById("po-canvas");
   const ctx = canvas.getContext("2d", { alpha: false });
   ctx.imageSmoothingEnabled = false;

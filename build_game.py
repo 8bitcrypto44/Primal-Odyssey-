@@ -85,7 +85,7 @@ pages = (
     "<meta name=\"description\" content=\"Primal Odyssey — explore biomes, meet apex animals, open field dossiers.\">\n"
     "<title>Primal Odyssey</title>\n"
     "<link rel=\"stylesheet\" href=\"primal.css\">\n"
-    "<style>html,body{margin:0;background:#030605;}</style>\n"
+    "<style>html,body{margin:0;height:100%;min-height:100%;background:#030605;}</style>\n"
     "</head>\n<body>\n"
     + body.strip() + "\n"
     "<script src=\"primal_data.js\"></script>\n"
