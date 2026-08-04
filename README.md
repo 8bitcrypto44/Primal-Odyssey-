@@ -3,23 +3,29 @@
 The adventure game — black + forest-green 8-bit exploration.
 
 ## Play locally
-Open `index.html` (already inlined) or run:
 ```
 python -m http.server 8780
 ```
+Then open http://localhost:8780/
 
 ## Hosted play (recommended)
-This repo is built for **GitHub Pages** (no paste size limit). After Pages is on:
-`https://8bitcrypto44.github.io/Primal-Odyssey-/`
+**GitHub Pages** (no paste size limit):  
+https://8bitcrypto44.github.io/Primal-Odyssey-/
 
-### GoDaddy iframe
-Paste this block. Green outline uses **padding** (not CSS `border`). Host is **16:9** so the game is not stretched:
+Asset URLs are cache-busted (`?v=N` on CSS/JS). Bump `ASSET_VER` in `build_game.py` when publishing.
+
+## Digistracts / GoDaddy — iframe only
+
+Digistracts HTML paste limit is ~**51KB**. The full game is ~200KB+ and **will not fit**.
+
+**Paste only** `godaddy_iframe_snippet.html` (same content as `primal_odyssey_godaddy_block.html`):
 
 ```html
+<!-- Digistracts / GoDaddy: paste THIS only. Full game hosts on GitHub Pages. -->
 <div style="box-sizing:border-box;width:100%;max-width:100%;margin:0;padding:3px;background:#2d6b45;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.35)">
   <div style="box-sizing:border-box;position:relative;display:block;width:100%;aspect-ratio:16/9;max-height:720px;margin:0;padding:0;overflow:hidden;background:#030605;line-height:0;border:0;border-radius:9px">
     <iframe
-      src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=9"
+      src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=14"
       title="Primal Odyssey"
       width="100%"
       height="405"
@@ -33,15 +39,14 @@ Paste this block. Green outline uses **padding** (not CSS `border`). Host is **1
 </div>
 ```
 
-Or copy `godaddy_iframe_snippet.html`.
-
-### Legacy Digistracts paste
-`primal_odyssey_godaddy_block.html` is a single-file export. With full dossiers it is **too large** for Digistracts — use the iframe above instead.
-
 ## Rebuild after edits
 ```
 python build_game.py
 ```
+Writes:
+- `index.html` — Pages host (cache-busted assets)
+- `godaddy_iframe_snippet.html` / `primal_odyssey_godaddy_block.html` — Digistracts paste (~1KB)
+- `primal_odyssey_full_singlefile.html` — archive only, **not** for Digistracts
 
 ## Controls
 WASD / arrows · Click animals for dossiers · Esc / REGIONS for menu

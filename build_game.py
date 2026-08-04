@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
-"""Build GitHub Pages multi-file index + optional oversized GoDaddy paste block."""
+"""Build GitHub Pages multi-file host + Digistracts iframe snippet.
+
+Digistracts/GoDaddy paste limit is ~51KB — the full game does NOT fit.
+Only paste the iframe snippet (godaddy_iframe_snippet.html /
+primal_odyssey_godaddy_block.html). Full single-file export is optional archive only.
+"""
 from pathlib import Path
 import re
 
 root = Path(__file__).resolve().parent
+
+# Bump on every publish so Pages/CDN do not serve stale JS/CSS
+ASSET_VER = "14"
+PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
+
 
 def clean_text(s):
     return (
@@ -78,24 +88,63 @@ body_min = re.sub(r">\s+<", "><", body.strip())
 js_main = minify_js(js)
 
 # --- GitHub Pages / iframe host: multi-file (no size budget) ---
+v = ASSET_VER
 pages = (
     "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"
     "<meta charset=\"UTF-8\">\n"
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover\">\n"
     "<meta name=\"description\" content=\"Primal Odyssey — explore biomes, meet apex animals, open field dossiers.\">\n"
     "<title>Primal Odyssey</title>\n"
-    "<link rel=\"stylesheet\" href=\"primal.css?v=13\">\n"
-    "<style>html,body{margin:0;height:100%;min-height:100%;background:#030605;}</style>\n"
+    f"<link rel=\"stylesheet\" href=\"primal.css?v={v}\">\n"
+    "<style>html,body{{margin:0;height:100%;min-height:100%;background:#030605;}}</style>\n"
     "</head>\n<body>\n"
     + body.strip() + "\n"
-    "<script src=\"primal_data.js?v=13\"></script>\n"
-    "<script src=\"primal_sprites.js?v=13\"></script>\n"
-    "<script src=\"primal.js?v=13\"></script>\n"
+    f"<script src=\"primal_data.js?v={v}\"></script>\n"
+    f"<script src=\"primal_sprites.js?v={v}\"></script>\n"
+    f"<script src=\"primal.js?v={v}\"></script>\n"
     "</body>\n</html>\n"
 )
 (root / "index.html").write_bytes(pages.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))
 
-# --- Optional single-file paste (may exceed Digistracts) ---
+# --- Digistracts/GoDaddy: SMALL iframe only (fits ~51KB paste limit) ---
+iframe_src = f"{PAGES_URL}?embed=1&amp;v={v}"
+iframe_snippet = (
+    "<!-- Digistracts / GoDaddy: paste THIS only. Full game hosts on GitHub Pages. -->\n"
+    "<div style=\"box-sizing:border-box;width:100%;max-width:100%;margin:0;padding:3px;"
+    "background:#2d6b45;border-radius:12px;box-shadow:0 10px 24px rgba(0,0,0,.35)\">\n"
+    "  <div style=\"box-sizing:border-box;position:relative;display:block;width:100%;"
+    "aspect-ratio:16/9;max-height:720px;margin:0;padding:0;overflow:hidden;"
+    "background:#030605;line-height:0;border:0;border-radius:9px\">\n"
+    f"    <iframe\n"
+    f"      src=\"{iframe_src}\"\n"
+    "      title=\"Primal Odyssey\"\n"
+    "      width=\"100%\"\n"
+    "      height=\"405\"\n"
+    "      style=\"box-sizing:border-box;position:absolute;top:0;left:0;right:0;bottom:0;"
+    "width:100%;height:100%;border:0;outline:0;display:block;margin:0;padding:0;background:#030605\"\n"
+    "      allow=\"autoplay; fullscreen\"\n"
+    "      allowfullscreen\n"
+    "      loading=\"eager\"\n"
+    "      scrolling=\"no\"\n"
+    "      referrerpolicy=\"no-referrer-when-downgrade\"\n"
+    "    ></iframe>\n"
+    "  </div>\n"
+    "</div>\n"
+    "<p style=\"text-align:center;font-size:12px;margin:8px 0 0;line-height:1.4\">\n"
+    f"  <a href=\"{PAGES_URL}?embed=1\" target=\"_blank\" rel=\"noopener\">"
+    "Open Primal Odyssey full screen</a>\n"
+    "</p>\n"
+)
+(root / "godaddy_iframe_snippet.html").write_text(iframe_snippet, encoding="utf-8", newline="\n")
+# Same stub under the old GoDaddy filename so nobody pastes a 200KB monolith by habit
+(root / "primal_odyssey_godaddy_block.html").write_text(
+    "<!-- DO NOT paste a full game here — Digistracts ~51KB limit. This IS the paste. -->\n"
+    + iframe_snippet,
+    encoding="utf-8",
+    newline="\n",
+)
+
+# --- Optional archive: full single-file (NOT for Digistracts) ---
 safe_js = (
     minify_js(data) + "\n" + minify_js(sprites) + "\n"
     + "(function(){function __poStart(){"
@@ -103,19 +152,19 @@ safe_js = (
     + js_main
     + "}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',__poStart);else __poStart();})();"
 )
-block = (
+full_block = (
     "<style>\n" + css_min + "\n</style>\n"
     + body_min
     + "\n<script>\n" + safe_js + "\n</script>\n"
 ).replace("\r\n", "\n").replace("\r", "\n")
-(root / "primal_odyssey_godaddy_block.html").write_bytes(block.encode("utf-8"))
+(root / "primal_odyssey_full_singlefile.html").write_bytes(full_block.encode("utf-8"))
 
-n = len(block)
-nl = block.count("\n")
-print("pages index.html", (root / "index.html").stat().st_size)
-print("godaddy block", n, "| CRLF", n + nl)
-print("Digistracts tip ~51375; left", 51375 - n)
-assert "SPRITES.cougar" in block
-assert "// swapped" not in block
-if n + nl > 51375:
-    print("NOTE: paste block too large for Digistracts — iframe GitHub Pages index.html instead")
+stub_n = len(iframe_snippet)
+full_n = len(full_block)
+print("pages index.html", (root / "index.html").stat().st_size, f"asset v={v}")
+print("Digistracts iframe stub", stub_n, "bytes (limit ~51375) — OK" if stub_n < 51375 else "TOO BIG")
+print("archive full_singlefile", full_n, "| NOT for Digistracts")
+assert "SPRITES.cougar" in full_block
+assert "iframe" in iframe_snippet
+assert stub_n < 51375, "iframe stub must fit Digistracts paste limit"
+print("Paste godaddy_iframe_snippet.html (or primal_odyssey_godaddy_block.html) into Digistracts.")
