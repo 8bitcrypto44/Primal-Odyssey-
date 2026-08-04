@@ -165,7 +165,6 @@
       wall[y] = [];
       floor[y] = [];
       for (let x = 0; x < MAP; x++) {
-        const edge = x === 0 || y === 0 || x === MAP - 1 || y === MAP - 1;
         const n = Math.sin(x * 0.55) * Math.cos(y * 0.47) + Math.sin((x + y) * 0.19);
         let f = 1;
         if (regionId === "africa") {
@@ -174,7 +173,8 @@
         } else if (regionId === "mountains") {
           if (n < -0.5) f = 2;
         } else if (n > 0.72) f = 3;
-        wall[y][x] = edge ? 1 : 0;
+        // No invisible edge walls — soft clamp + visible rim props below
+        wall[y][x] = 0;
         floor[y][x] = f;
       }
     }
@@ -202,6 +202,13 @@
       }
     }
 
+    function placeEdgeProp(kind, x, y) {
+      sprites.push({
+        x: x, y: y, kind: "prop", prop: kind,
+        scale: worldScale(kind) * (1.05 + Math.random() * 0.25), bob: 0
+      });
+    }
+
     const trees = regionId === "africa" ? ["acacia", "baobab", "acacia"]
       : regionId === "mountains" ? ["pine"] : ["tree", "tree"];
     const treeN = regionId === "mountains" ? 32 : 10;
@@ -212,6 +219,17 @@
     if (regionId === "mountains") {
       for (let i = 0; i < 45; i++) placeProp("grass");
       for (let i = 0; i < 28; i++) placeProp("bush");
+    }
+
+    // Visible map rim so the soft boundary is readable (rocks / trees / pines)
+    const rimRock = regionId === "mountains" ? "snowrock" : "rock";
+    const rimTall = regionId === "africa" ? "acacia" : (regionId === "mountains" ? "pine" : "tree");
+    for (let i = 1; i < MAP - 1; i += 2) {
+      const j = i + 0.5;
+      placeEdgeProp(i % 4 === 1 ? rimTall : rimRock, j, 1.15);
+      placeEdgeProp(i % 4 === 1 ? rimTall : rimRock, j, MAP - 1.15);
+      placeEdgeProp(i % 4 === 3 ? rimTall : rimRock, 1.15, j);
+      placeEdgeProp(i % 4 === 3 ? rimTall : rimRock, MAP - 1.15, j);
     }
 
     for (let y = 1; y < MAP - 1; y++) {
@@ -348,6 +366,8 @@
     const my = (s * fwd + c * strafe) * sp;
     if (!playerBlocked(player.x + mx * 3.2, player.y)) player.x += mx;
     if (!playerBlocked(player.x, player.y + my * 3.2)) player.y += my;
+    player.x = clamp(player.x, 1.5, MAP - 1.5);
+    player.y = clamp(player.y, 1.5, MAP - 1.5);
     if (fwd || strafe) player.bob += dt * 10;
   }
 
