@@ -761,6 +761,7 @@
     ui.title.classList.remove("show");
     ui.hud.hidden = false;
     ui.hint.hidden = false;
+    if (ui.menuBtn) ui.menuBtn.hidden = false;
     ui.regionChip.textContent = region.name;
     closeDossier();
     playRegionMusic(id);
@@ -771,6 +772,7 @@
     ui.title.classList.add("show");
     ui.hud.hidden = true;
     ui.hint.hidden = true;
+    if (ui.menuBtn) ui.menuBtn.hidden = true;
     stopMusic();
     closeDossier();
   }
@@ -817,22 +819,53 @@
     player.dir = lookDrag.dir + (e.clientX - lookDrag.x) * 0.005;
   });
 
+  function canvasPos(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      sx: (clientX - rect.left) * (W / rect.width),
+      sy: (clientY - rect.top) * (H / rect.height)
+    };
+  }
+
+  function tryOpenAt(clientX, clientY) {
+    if (lookMoved > 8) { lookMoved = 0; return; }
+    const p = canvasPos(clientX, clientY);
+    const hit = animalAtScreen(p.sx, p.sy);
+    if (hit) openDossier(hit);
+  }
+
   canvas.addEventListener("click", function (e) {
     if (mode !== "explore") return;
-    if (lookMoved > 8) { lookMoved = 0; return; }
-    const rect = canvas.getBoundingClientRect();
-    const sx = (e.clientX - rect.left) * (W / rect.width);
-    const sy = (e.clientY - rect.top) * (H / rect.height);
-    const hit = animalAtScreen(sx, sy);
-    if (hit) openDossier(hit);
+    tryOpenAt(e.clientX, e.clientY);
+  });
+
+  canvas.addEventListener("touchstart", function (e) {
+    if (mode !== "explore" || !e.touches.length) return;
+    e.preventDefault();
+    lookMoved = 0;
+    lookDrag = { x: e.touches[0].clientX, dir: player.dir };
+  }, { passive: false });
+
+  window.addEventListener("touchmove", function (e) {
+    if (!lookDrag || mode !== "explore" || !e.touches.length) return;
+    e.preventDefault();
+    const dx = e.touches[0].clientX - lookDrag.x;
+    lookMoved = Math.max(lookMoved, Math.abs(dx));
+    player.dir = lookDrag.dir + dx * 0.005;
+  }, { passive: false });
+
+  window.addEventListener("touchend", function (e) {
+    if (mode === "explore" && lookDrag && e.changedTouches && e.changedTouches.length) {
+      const t = e.changedTouches[0];
+      tryOpenAt(t.clientX, t.clientY);
+    }
+    lookDrag = null;
   });
 
   canvas.addEventListener("mousemove", function (e) {
     if (mode !== "explore" || lookDrag) return;
-    const rect = canvas.getBoundingClientRect();
-    const sx = (e.clientX - rect.left) * (W / rect.width);
-    const sy = (e.clientY - rect.top) * (H / rect.height);
-    canvas.style.cursor = animalAtScreen(sx, sy) ? "pointer" : "crosshair";
+    const p = canvasPos(e.clientX, e.clientY);
+    canvas.style.cursor = animalAtScreen(p.sx, p.sy) ? "pointer" : "crosshair";
   });
 
   ui.menuBtn.addEventListener("click", showTitle);
