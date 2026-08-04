@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="description" content="Primal Odyssey — explore biomes, meet apex animals, open field dossiers.">
 <title>Primal Odyssey</title>
-<link rel="stylesheet" href="primal.css?v=22">
+<link rel="stylesheet" href="primal.css?v=23">
 <style>html,body{{margin:0;height:100%;min-height:100%;background:#030605;}}</style>
 </head>
 <body>
@@ -19,6 +19,7 @@
     <div class="po-hud" id="po-hud" hidden>
       <div class="po-hud-l">
         <div class="chip pulse" id="po-region-chip">REGION</div>
+        <button type="button" class="chip" id="po-notes-chip" title="Expedition log">NOTES 0/8</button>
         <div class="chip" id="po-pos-chip">X 0 · Y 0</div>
       </div>
     </div>
@@ -41,24 +42,24 @@
     <div id="po-title" class="po-overlay show" role="dialog" aria-label="Region select">
       <div class="po-menu">
         <div class="po-brand">PRIMAL ODYSSEY</div>
-        <p class="po-tag">Explore wild regions · Meet apex animals · Field dossiers</p>
-        <p class="po-wip" title="Work in progress - unfinished build">WIP · ALPHA · EXPECT BREAKAGE</p>
+        <p class="po-tag">Explore wild regions · Meet apex animals · Collect field notes · Open dossiers</p>
+        <p class="po-wip" title="Work in progress - unfinished build">WIP · ALPHA · LIVING WORLD</p>
         <h2>CHOOSE YOUR EXPEDITION</h2>
-        <p class="lead">Three biomes. Fifteen animals. Tap creatures for field dossiers.</p>
+        <p class="lead">Three living biomes. Weather, day cycle, animal behavior, landmarks, and field notes. Tap creatures for dossiers - Africa hides a rare honey badger.</p>
         <div class="po-regions">
           <button type="button" class="po-card" data-region="africa">
             <img class="preview" src="https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg" alt="Africa cover" width="320" height="110" loading="lazy">
             <div class="body">
               <h3>AFRICA</h3>
-              <p>Savanna, acacias, and watering holes.</p>
-              <div class="meta"><span class="go">START</span> 5 animals</div>
+              <p>Golden grasslands, acacia shade, and crowded watering holes under a hard sun.</p>
+              <div class="meta"><span class="go">START</span> 5 animals + rare find</div>
             </div>
           </button>
           <button type="button" class="po-card" data-region="mountains">
             <img class="preview" src="https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg" alt="Mountains cover" width="320" height="110" loading="lazy">
             <div class="body">
               <h3>MOUNTAINS</h3>
-              <p>Ridges, pines, and snowline hunters.</p>
+              <p>Thin air, pine ridges, snow glitter, and sharp hunters on the high trails.</p>
               <div class="meta"><span class="go">START</span> 5 animals</div>
             </div>
           </button>
@@ -66,7 +67,7 @@
             <img class="preview" src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="Jungle cover" width="320" height="110" loading="lazy">
             <div class="body">
               <h3>JUNGLE</h3>
-              <p>Canopy gloom and ambush predators.</p>
+              <p>Canopy gloom, dripping mist, fern thickets, and ambush predators.</p>
               <div class="meta"><span class="go">START</span> 5 animals</div>
             </div>
           </button>
@@ -93,12 +94,19 @@
         <button type="button" class="po-close" id="po-d-close">CLOSE DOSSIER</button>
       </div>
     </div>
+    <div id="po-log" class="po-overlay" role="dialog" aria-label="Expedition log">
+      <div class="po-dossier">
+        <h2 style="color:var(--line-hi);margin:0 0 8px">EXPEDITION LOG</h2>
+        <div class="panel-body" id="po-log-body"></div>
+        <button type="button" class="po-close" id="po-log-close">CLOSE LOG</button>
+      </div>
+    </div>
   </div>
   <div class="po-frame" aria-hidden="true"></div>
   <p class="po-credit">Primal Odyssey · WIP/alpha · music CC BY Kevin MacLeod · 8bitcrypto_44</p>
 </div>
-<script src="primal_data.js?v=22"></script>
-<script src="primal_sprites.js?v=22"></script>
-<script src="primal.js?v=22"></script>
+<script src="primal_data.js?v=23"></script>
+<script src="primal_sprites.js?v=23"></script>
+<script src="primal.js?v=23"></script>
 </body>
 </html>

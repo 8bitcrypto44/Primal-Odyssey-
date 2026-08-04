@@ -15,6 +15,7 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-hud[hidden],.po-hint[hidden],.po-menu-dock[hidden]{display:none!important}
 .po-hud .chip,.po-audio-bar .chip,.po-menu-dock{pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);font-size:10px;padding:8px 10px;border-radius:8px;font-weight:700}
 .po-hud .chip.pulse{border-color:var(--line-hi);box-shadow:0 0 12px rgba(93,206,122,.25)}
+.po-hud .chip.done{border-color:#e8c86a;color:#e8c86a}
 .po-hud button.chip,.po-audio-bar .chip,.po-menu-dock{cursor:pointer;font-family:inherit}
 .po-hud button.chip:hover,.po-audio-bar .chip:hover,.po-menu-dock:hover{background:#0d2818;border-color:var(--line-hi);color:#fff}
 .po-menu-dock{position:absolute;left:8px;bottom:8px;z-index:6}
@@ -95,7 +96,11 @@ html.po-fs .po-fs-btn{opacity:.85}
 html.po-land.po-touch-on:has(#po-dossier.show) .po-touch,
 html.po-land.po-touch-on:has(#po-dossier.show) .po-audio-bar,
 html.po-land.po-touch-on:has(#po-dossier.show) .po-menu-dock,
-html.po-land.po-touch-on:has(#po-dossier.show) .po-hud{visibility:hidden;pointer-events:none}
+html.po-land.po-touch-on:has(#po-dossier.show) .po-hud,
+html.po-land.po-touch-on:has(#po-log.show) .po-touch,
+html.po-land.po-touch-on:has(#po-log.show) .po-audio-bar,
+html.po-land.po-touch-on:has(#po-log.show) .po-menu-dock,
+html.po-land.po-touch-on:has(#po-log.show) .po-hud{visibility:hidden;pointer-events:none}
 .po-overlay{position:absolute;inset:0;z-index:20;display:none;align-items:flex-start;justify-content:center;padding:8px 10px 14px;background:linear-gradient(180deg,rgba(2,10,6,.9),rgba(3,12,8,.96));overflow:auto;-webkit-overflow-scrolling:touch}
 .po-overlay.show{display:flex}
 .po-menu{width:min(960px,100%);margin:0 auto}

@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "22"
+ASSET_VER = "23"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 

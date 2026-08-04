@@ -2,7 +2,7 @@ window.PO_DATA = {
   africa: {
     id: "africa",
     name: "AFRICAN SAVANNA",
-    blurb: "Golden grasslands under a hard sun.",
+    blurb: "Golden grasslands, acacia shade, and crowded watering holes under a hard sun.",
     ground: ["#c4a35a","#b8944a","#d2b36a","#a8823c"],
     path: "#8a6b35",
     water: "#2a6a7a",
@@ -16,6 +16,7 @@ window.PO_DATA = {
         x:18,
         y:14,
         color:"#c9a227",
+        behavior:"apex", speed:0.72, waterLove:false, fleeDist:0, aggroDist:4.5, packId:"pride", idleBob:0.25,
         facts:        [
           "Lions are the only big cats that form lasting social groups called prides. A pride usually includes related females, their cubs, and one or more adult males that patrol and defend a shared territory. Females often hunt together, using grass cover and teamwork to surround zebras, wildebeest, and other prey on open savanna. Males use roaring, scent marking, and patrols to warn rivals and protect cubs from hyenas or incoming coalitions. Young lions spend years learning stalking, ambush timing, and pride etiquette from mothers and older siblings. At dusk, contact roars carry for kilometers, stitching the grassland together with sound.",
           "A lion's mane is more than decoration. Darker, fuller manes often signal mature, healthy males to both rivals and potential mates. Mane size also varies with climate: cooler regions sometimes produce heavier manes that shield the neck in fights. Females do most daily hunting, but males join on large prey and are vital when competitors press the pride. Coalitions of two or three related males may control a pride for seasons or years before younger challengers arrive. Understanding pride politics explains why lions are apex predators and keystone species on African grasslands.",
@@ -51,6 +52,7 @@ window.PO_DATA = {
         x:42,
         y:22,
         color:"#6b5b5b",
+        behavior:"aquatic", speed:0.48, waterLove:true, fleeDist:0, aggroDist:5.2, idleBob:0.12,
         facts:        [
           "Despite cartoon chubbiness, hippos are among Africa's deadliest large mammals to humans. Most incidents happen in or near water when people surprise a hippo on a shoreline path or fishing boat. They are not true swimmers but buoyant runners that porpoise through deep channels with surprising speed. Territorial bulls control stretches of river, especially during low water when space shrinks. Females with calves are fiercely defensive, charging boats and banks with tusked jaws that can snap a canoe. Respect at the water's edge is non-negotiable on any serious savanna expedition.",
           "Hippos are herbivores with nightly grazing routines that can take them kilometers inland. After sunset they follow familiar trails, mowing grass with wide lips and chomping up to forty kilograms of vegetation before dawn. Daytime is mostly social soaking: pods raft together, yawn-display at rivals, and excrete dung that spreads scent along currents. Their skin secretes a reddish oily fluid once mistaken for blood sweat; it acts as natural sunscreen and antibiotic. Because they overheat on land, mud wallows and river depth regulate body temperature in blistering afternoon heat.",
@@ -86,6 +88,7 @@ window.PO_DATA = {
         x:28,
         y:30,
         color:"#3a3030",
+        behavior:"herd", speed:0.55, waterLove:false, fleeDist:3.8, aggroDist:3.2, packId:"herd", idleBob:0.2,
         facts:        [
           "Cape buffalo, often called African buffalo, are massive bovines built for savanna endurance and herd defense. Both sexes carry heavy horns with fused bases forming a boss on males, a battering shield in fights. Herds mix females, calves, and younger males, while old bulls sometimes wander alone or in small bachelor groups. They need daily water and graze wide grasslands, returning to reliable pools where lions often lurk. Buffalo rank among lions' riskiest prey; a coordinated herd can repel cats with horn sweeps and crushing hooves. Their mood shifts fast from calm grazing to explosive charge when wounded or cornered.",
           "Oxpeckers ride buffalo backs eating ticks, a classic savanna partnership photographed on countless safaris. Birds also peck wounds, which helps some infections yet can slow healing, a messy symbiosis still studied. Buffalo communicate with grunts, scent, and posture; a raised tail can signal alarm before a stampede. Mud wallowing cools skin and dislodges parasites on hot afternoons. Night vision and herd spacing help detect predators; calves stay center mass during travel. Understanding herd geometry explains why lone hikers trigger different reactions than jeep traffic.",
@@ -118,6 +121,7 @@ window.PO_DATA = {
         x:55,
         y:18,
         color:"#8a8580",
+        behavior:"herd", speed:0.5, waterLove:false, fleeDist:2.8, aggroDist:3.5, idleBob:0.15,
         facts:        [
           "Rhinos are living tanks from an ancient lineage, thick-skinned herbivores with one or two nose horns made of keratin like fingernails. Black and white African species names confuse: white rhinos are grazers with wide lips; black rhinos browse shrubs with hooked lips. Poor eyesight pairs with excellent smell and hearing, shaping charge-first reactions when startled. They wallow in mud against flies and sun, leaving polished rubbing stones used for generations. Poaching for horn trade collapsed many populations; guarded reserves and dehorning programs fight back. Rhinos shape savanna by browsing thickets and creating paths smaller animals follow.",
           "Calves walk within hours but stay close to mothers for years; black rhino calves often run ahead, white rhino behind. Territorial bulls mark with dung middens and urine sprays, olfactory bulletin boards. Females reproduce slowly; long gestation and interval between births make recovery from poaching slow. Anti-poaching dogs, drones, and armed rangers now guard some populations around the clock. Community conservancies in Namibia and Kenya link tourism dollars to living rhinos. Genetic banks and IVF experiments offer hope but cannot replace wild habitat.",
@@ -150,6 +154,7 @@ window.PO_DATA = {
         x:12,
         y:26,
         color:"#3f5a32",
+        behavior:"ambush", speed:0.38, waterLove:true, fleeDist:0, aggroDist:4.2, idleBob:0.08,
         facts:        [
           "Nile crocodiles are Africa's largest freshwater predators, patrolling rivers, lakes, and estuaries from Egypt to South Africa. They bask with jaws open to regulate temperature while birds sometimes pick debris from teeth, a risky dental service. Ambush hunting relies on patience: most of the body hides underwater with nostrils and eyes on a plane above surface. Burst strikes launch with tail power, dragging prey underwater to drown before tearing bite-sized chunks. Size records exceed five meters and half a ton, though such giants grow rare under hunting and habitat loss. They are ectotherms, slowing metabolism in cool months yet remaining dangerous year-round at water edges.",
           "Females dig nest holes in sand banks, guarding eggs from monitor lizards and humans. Temperature during incubation influences hatchling sex in many crocodilians, climate change may skew ratios. Hatchlings chirp before emerging; mothers carry them gently to water in jaws that could crush buffalo. Juvenile survival is low; herons, fish, and adult crocs eat tiny ones until size brings safety. Adults communicate with subsonic bellows that vibrate water, advertising territory in breeding season. Population recovery in some countries follows hunting bans and wetland protection.",
@@ -180,7 +185,7 @@ window.PO_DATA = {
   mountains: {
     id: "mountains",
     name: "HIGH PEAKS",
-    blurb: "Thin air, hard stone, sharp hunters.",
+    blurb: "Thin air, pine ridges, snow glitter, and sharp hunters on the high trails.",
     ground: ["#6e6a66","#5a5652","#7a7670","#8a8680"],
     path: "#4a4642",
     water: "#4a6a7a",
@@ -195,6 +200,7 @@ window.PO_DATA = {
         x:20,
         y:20,
         color:"#6b4423",
+        behavior:"apex", speed:0.62, waterLove:false, fleeDist:0, aggroDist:4.0, idleBob:0.22,
         facts:        [
           "Grizzly bears are a North American brown bear population recognized by shoulder hump, dished face, and long claws. The hump is muscle for digging roots, bulbs, and rodent burrows, not fat storage. They occupy alpine meadows, river valleys, and coasts where salmon runs fuel massive weight gain. Omnivorous diet spans berries, nuts, carrion, fish, and occasional ungulate calves. Hyperphagia in autumn drives thousands of calories daily before hibernation torpor. Denning pregnant females give birth during winter sleep, cubs nurse until spring emergence.",
           "Sense of smell exceeds hound dogs by orders of magnitude, detecting food kilometers away. They communicate with rub trees, claw marks, and scent trails other bears read like social media. Solitary except females with cubs or brief mating pairs; males may kill cubs to bring females into estrus. Population recovery in Yellowstone and Glacier follows protected status and garbage management reforms. Climate change shifts berry timing and salmon heat stress, cascading to bear nutrition. Roads fragment habitat; crossing structures reduce vehicle strikes.",
@@ -228,6 +234,7 @@ window.PO_DATA = {
         x:40,
         y:16,
         color:"#7a7a7a",
+        behavior:"apex", speed:0.88, waterLove:false, fleeDist:0, aggroDist:3.5, packId:"pack", idleBob:0.35,
         facts:        [
           "Gray wolves are apex carnivores restored to several mountain and northern ecosystems after extirpation. Pack structure centers on breeding pair and offspring, sizes vary with prey abundance. Cooperative hunting targets weak, old, or young ungulates, shaping herd health. Howls coordinate spacing, reunite scattered members, and warn rival packs. Territories span dozens to hundreds of square kilometers marked by scent and vocal borders. Human conflict concentrates where livestock graze unprotected on public lands. Biologists study Gray Wolf with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors.",
           "Wolves communicate with tail posture, ear angles, and submissive rolls avoiding fights. Pups emerge from dens at weeks old, play-fighting builds hunt skills. Dispersing adolescents seek mates and vacant territory, sometimes crossing highways fatally. Reintroduction in Yellowstone increased beaver dams by reducing elk browsing, a trophic cascade textbook case. Ranchers use fladry, range riders, and compensation programs to reduce lethal control. Legal status shifts with politics; endangered listing debates continue regionally. Seasonal shifts in rain, prey numbers, and temperature change where Gray Wolf feeds, rests, and travels across a typical year.",
@@ -261,6 +268,7 @@ window.PO_DATA = {
         x:52,
         y:28,
         color:"#b8894a",
+        behavior:"ambush", speed:0.78, waterLove:false, fleeDist:2.2, aggroDist:3.8, idleBob:0.3,
         facts:        [
           "Mountain lions, also called cougars or pumas, hold the widest geographic range of any wild terrestrial mammal in the Americas. Solitary and stealthy, they ambush deer and elk with neck bites aiming to sever spine. Tan coats blend with dappled forest and cliff shadow; tail one-third of body length aids balance. Males defend large territories overlapping several females; kittens stay with mothers up to two years. They cannot roar; vocal repertoire includes purrs, chirps, screams, and hisses. Sightings near suburbs increase as development fragments habitat and deer adapt to gardens.",
           "Cougars stash kills under brush, returning nightly until spoiled or stolen by bears. Scat and scrape marks advertise presence on dusty trail bends. Collisions with vehicles on highways rank among top human-caused deaths. Wildlife bridges and underpasses reduce fragmentation in Colorado and California projects. Hunting seasons exist in many western states with quota management. Research DNA from hair snags maps connectivity between mountain islands. Biologists study Mountain Lion with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors.",
@@ -294,6 +302,7 @@ window.PO_DATA = {
         x:30,
         y:10,
         color:"#8a5a20",
+        behavior:"soar", speed:1.05, waterLove:false, fleeDist:1.5, aggroDist:0, idleBob:1.15,
         facts:        [
           "Golden eagles soar on mountain thermals with wings spanning over two meters, hunting marmots, hares, and sometimes young ungulates. Eyesight roughly four to eight times sharper than human average, detecting movement from kilometers up. Feathered legs down to toes differ from bald eagles' bare shanks, useful field mark in overlap zones. Pairs maintain huge territories with aerial displays and cliff nests reused for years. Nest material weighs hundreds of kilograms; branches accumulate season after season. Wind and altitude specialists, they dive at speeds exceeding two hundred kilometers per hour.",
           "Hunting blends perch stillness with contour-gliding low along ridges surprising prey. Mammals dominate diet; birds taken less often except grouse and waterfowl. In Eurasia golden eagles hunt cooperatively in pairs occasionally; North America mostly solo. Lead poisoning from gut piles left by hunters kills eagles silently; non-lead ammo campaigns spread. Wind turbines pose collision risk where ridges overlap migration paths. Telemetry shows daily ranges vast in sparse prey deserts. Biologists study Golden Eagle with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors.",
@@ -326,6 +335,7 @@ window.PO_DATA = {
         x:14,
         y:32,
         color:"#c5d0dc",
+        behavior:"climber", speed:0.7, waterLove:false, fleeDist:3.2, aggroDist:2.5, idleBob:0.28,
         facts:        [
           "Snow leopards haunt Central and South Asian peaks above three thousand meters, ghost cats of rock and snow. Thick rosette fur and long tail balance on cliffs; tail wraps face sleeping in blizzards. They prey on blue sheep, ibex, marmots, and livestock where wild prey scarce. Solitary except mothers with cubs; home ranges span hundreds of square kilometers. Cannot roar due to throat anatomy; hiss, chuff, and wail instead. Estimated wild population few thousand, threatened by poaching, prey loss, and climate shift.",
           "Camouflage makes detection rare; most locals see sign not animal. Camera traps capture passes at dawn on narrow trails. Livestock depredation drives retaliatory killing; insurance schemes compensate herders in some countries. Community rangers in Nepal and Mongolia monitor snares removing traps. Climate warming may push tree lines upward shrinking alpine hunting zones. International treaties protect pelts and bones trafficking. Biologists study Snow Leopard with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors. Seasonal shifts in rain, prey numbers, and temperature change where Snow Leopard feeds, rests, and travels across a typical year.",
@@ -355,7 +365,7 @@ window.PO_DATA = {
   jungle: {
     id: "jungle",
     name: "DEEP JUNGLE",
-    blurb: "Green walls, wet air, hidden eyes.",
+    blurb: "Canopy gloom, dripping mist, fern thickets, and ambush predators.",
     ground: ["#2f5a28","#3a6a30","#245020","#356235"],
     path: "#1e3a1a",
     water: "#1a4a4a",
@@ -370,6 +380,7 @@ window.PO_DATA = {
         x:22,
         y:18,
         color:"#c47a20",
+        behavior:"ambush", speed:0.74, waterLove:false, fleeDist:2.0, aggroDist:3.6, idleBob:0.3,
         facts:        [
           "Jaguars are Americas' largest cats, ranging from Mexican scrub to Amazon floodplains and Pantanal wetlands. Rosette coats include central spots unlike leopards' plain rosettes, useful ID in photos. Skull bite strength pierces turtle shells and caiman skulls with canine precision. Ambush hunters at water edges, they crush necks or skulls rather than long suffocation holds. Melanistic black jaguars occur from dominant dark pigment; spots still visible in sun. Territories overlap river systems where prey concentrates at dawn and dusk. Biologists study Jaguar with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors.",
           "Solitary adults meet briefly to mate; males do not help raise cubs. Cub mortality high from floods, starvation, and male infanticide when new males arrive. Indigenous art from Olmec to Maya featured jaguar as night sun and underworld power. Cattle ranching drives conflict; some ranches pay jaguar-friendly certification premiums. CITES protects international trade; Brazil and Belize lead ecotourism jaguar floats. GPS collars reveal males patrolling fifty square kilometers or more. Seasonal shifts in rain, prey numbers, and temperature change where Jaguar feeds, rests, and travels across a typical year.",
@@ -401,6 +412,7 @@ window.PO_DATA = {
         x:48,
         y:24,
         color:"#3a6a28",
+        behavior:"aquatic", speed:0.42, waterLove:true, fleeDist:0, aggroDist:3.8, idleBob:0.1,
         facts:        [
           "Green anacondas are among heaviest snakes alive, females exceeding males dramatically in Amazon and Orinoco basins. They wait in muddy water ambushing capybara, caiman, deer, and fish near shoreline. Constriction suffocates prey before swallowing headfirst over hours. Eyes and nostrils top head like hippo gear for submerged waiting. Gestation in some populations may involve delayed development; live birth drops dozens of miniatures. They move sluggishly on land but swim with silent muscle waves. Biologists study Green Anaconda with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors.",
           "Heat-sensing pits along lips detect warm-blooded prey at night. Digestion months long after large meal; fasting follows accordingly. Local names include water boa reflecting habitat. Hollywood giant snake myths exceed verified lengths near six to seven meters max. Fishermen encounter them basking on floating logs after floods. Wetland drainage and hunting shrink suitable oxbow habitat. Seasonal shifts in rain, prey numbers, and temperature change where Green Anaconda feeds, rests, and travels across a typical year. Healthy populations of Green Anaconda often signal that the wider food web still has enough space, water, and prey to function.",
@@ -433,6 +445,7 @@ window.PO_DATA = {
         x:14,
         y:28,
         color:"#2f2f36",
+        behavior:"herd", speed:0.42, waterLove:false, fleeDist:2.6, aggroDist:2.8, packId:"troop", idleBob:0.18,
         facts:        [
           "Gorillas are largest living primates split into eastern and western species with subspecies including mountain and lowland forms. Mountain gorillas survive only in volcanic ranges of Rwanda, Uganda, and Democratic Republic of Congo. Silverback males lead family groups deciding travel, nest sites, and defense. Herbivorous diet spans leaves, stems, fruit, bamboo, and occasional insects. Knuckle-walking supports weight on ground and steep slopes alike. Tourism permits fund guards but require disease distance rules protecting apes from human flu. Biologists study Gorilla with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors.",
           "Groups typically eight to twelve with one dominant silverback, blackback sons, females, infants. Chest beating displays communicate size without always escalating to fights. Nest building nightly from branches and leaves, infants sleep with mothers. Vocalizations include grumbles, barks, and pleasure rumbles during grooming. Poaching snares intended for antelope maim gorillas; anti-poaching patrols daily. Ebola and respiratory viruses devastate populations; mask distance protocols mandatory on treks. Seasonal shifts in rain, prey numbers, and temperature change where Gorilla feeds, rests, and travels across a typical year.",
@@ -464,6 +477,7 @@ window.PO_DATA = {
         x:36,
         y:32,
         color:"#e07a2a",
+        behavior:"ambush", speed:0.76, waterLove:false, fleeDist:1.8, aggroDist:4.0, idleBob:0.28,
         facts:        [
           "Tigers are largest living cats with orange black-striped coats unique like fingerprints. Solitary ambush hunters across Asian forests, grasslands, and mangroves from Siberia to Sumatra. Stripes break outline in dappled jungle light; white bellies reduce shadow contrast. Powerful forelimbs and neck muscles drag prey weighing more than themselves. Swimmers cross rivers nightly; mangrove tigers swim between islands. Subspecies include Bengal, Siberian, Indochinese, Malayan, and Sumatran with varying size and fur length. Biologists study Tiger with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors.",
           "Territories marked with scrape, spray, and roar advertise occupancy. Females raise cubs alone; males do not participate parenting. Poaching for skins and traditional medicine parts devastates populations. Project Tiger and global initiatives guard reserves with camera traps and patrols. Prey depletion from bushmeat trade empties forests before loggers arrive. Human-tiger conflict at reserve edges kills livestock and sometimes people. Seasonal shifts in rain, prey numbers, and temperature change where Tiger feeds, rests, and travels across a typical year. Healthy populations of Tiger often signal that the wider food web still has enough space, water, and prey to function.",
@@ -495,6 +509,7 @@ window.PO_DATA = {
         x:56,
         y:14,
         color:"#c49a4a",
+        behavior:"ambush", speed:0.8, waterLove:false, fleeDist:2.4, aggroDist:3.4, idleBob:0.32,
         facts:        [
           "Leopards adapt from rainforest to semi-desert, most versatile big cat geography worldwide. Rosette coat and white tail tip distinguish from jaguar; smaller head relative to body. Nocturnal hunting dominates though dawn dusk activity common. Incredible strength hauls prey up trees away from hyenas and lions. Solitary except mothers with cubs; territories marked by scrape and urine. Melanistic black leopards common in some Asian forests; spots visible in angled light. Biologists study Leopard with camera traps, track surveys, and GPS collars that reveal secret routes through habitat corridors.",
           "Diet spans impala to insects, birds, and domestic dogs near villages. Conflict rises where livestock unprotected at night. Climbing descent headfirst shows ankle flexibility unlike most cats. Camera traps in cities like Mumbai document urban leopards hunting dogs in park edges. Habitat loss fragments populations increasing human contact. CITES regulates fur trade; sport hunting managed controversially in Africa. Seasonal shifts in rain, prey numbers, and temperature change where Leopard feeds, rests, and travels across a typical year. Healthy populations of Leopard often signal that the wider food web still has enough space, water, and prey to function.",
@@ -519,6 +534,33 @@ window.PO_DATA = {
           "Support compensation schemes reducing revenge poison. Do not buy leopard fur rugs; market kills ghosts. Guide rifle last resort; distance prevention first. Report aggressive or injured Leopard individuals to rangers so managers can warn others and prevent tragedies. Choose ethical operators who pay local communities and follow distance rules instead of chasing animals for photos. Learn the difference between bluff displays and true charges for Leopard so you respond correctly instead of panicking. Long-term safety means protecting Leopard habitat so animals can hunt naturally rather than scavenge camps and villages.",
           "Survival strategy: assume unseen leopard watches trail, act accordingly with noise and group discipline. Before entering Leopard habitat, read park signs, attend guide briefings, and pack flashlights, water, and a loud whistle. Never feed Leopard or leave food scraps; habituated animals lose fear and become dangerous to the next family on the trail. Travel in groups where recommended, keep children between adults, and store scented items in locked boxes or sealed bags. If you see Leopard at close range, stay calm, avoid running unless trained guides direct you, and never block an escape path."
         ]}
+    ]
+  }
+};
+
+window.PO_BONUS = {
+  honeybadger: {
+    id:"honeybadger",
+    name:"Honey Badger",
+    latin:"Mellivora capensis",
+    danger:"Fearless · Opportunistic fighter",
+    x:22, y:18, color:"#9e9595",
+    behavior:"apex", speed:0.7, waterLove:false, fleeDist:0, aggroDist:3.0, idleBob:0.4,
+    facts:[
+      "Honey badgers are stocky mustelids famous for toughness, loose skin, and bold foraging across African savanna and scrub. They dig for rodents, raid bee nests for honey and larvae, and will tackle snakes with surprising nerve. Thick skin and thick skull help them shrug off bites and stings that would stop softer mammals. They travel widely at night and rest in burrows by day, leaving clawed digs that explorers can read like a field diary.",
+      "Despite the meme reputation, honey badgers prefer escape and food over pointless fights. They still defend dens fiercely and may bluff-charge if cornered. Conservation concerns include snaring and secondary poisoning from livestock conflict programs. Spotting one on a guided night drive is a rare expedition treat — treat distance as respect, not a dare."
+    ],
+    myths:[
+      "Internet lore paints honey badgers as unstoppable cartoon tanks. Real animals are brave and opportunistic, not invincible. Older traveler tales stretched every snake fight into legend; modern camera traps show clever digging and quick retreats when odds turn.",
+      "Some folklore casts the honey badger as a trickster who steals sweetness from bees. That kernel of truth — bee nest raids — sits inside larger respect stories about not cornering a small fierce neighbor."
+    ],
+    fun:[
+      "Loose skin lets a honey badger twist around in a predator's grip like a furry escape artist. They have been filmed climbing, swimming, and opening tough hides with powerful jaws.",
+      "Field notes often start with a messy dig and end with a vanishing stripe of white on a dark back — the classic honey badger silhouette."
+    ],
+    survive:[
+      "Do not corner a honey badger near a den or kill. Give space, keep dogs leashed, and never try to feed or provoke one for a video.",
+      "If you find an active dig, note it and move on. Report injured or habituated animals to guides so camps stay safe."
     ]
   }
 };
