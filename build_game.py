@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build single-file GoDaddy paste block + local preview for Primal Odyssey."""
+"""Build GitHub Pages multi-file index + optional oversized GoDaddy paste block."""
 from pathlib import Path
 import re
 
@@ -77,7 +77,25 @@ css_min = minify_css(css)
 body_min = re.sub(r">\s+<", "><", body.strip())
 js_main = minify_js(js)
 
-# Delay start until canvas exists (GoDaddy may inject markup around the paste)
+# --- GitHub Pages / iframe host: multi-file (no size budget) ---
+pages = (
+    "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"
+    "<meta charset=\"UTF-8\">\n"
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1\">\n"
+    "<meta name=\"description\" content=\"Primal Odyssey — explore biomes, meet apex animals, open field dossiers.\">\n"
+    "<title>Primal Odyssey</title>\n"
+    "<link rel=\"stylesheet\" href=\"primal.css\">\n"
+    "<style>html,body{margin:0;background:#030605;}</style>\n"
+    "</head>\n<body>\n"
+    + body.strip() + "\n"
+    "<script src=\"primal_data.js\"></script>\n"
+    "<script src=\"primal_sprites.js\"></script>\n"
+    "<script src=\"primal.js\"></script>\n"
+    "</body>\n</html>\n"
+)
+(root / "index.html").write_bytes(pages.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))
+
+# --- Optional single-file paste (may exceed Digistracts) ---
 safe_js = (
     minify_js(data) + "\n" + minify_js(sprites) + "\n"
     + "(function(){function __poStart(){"
@@ -85,33 +103,19 @@ safe_js = (
     + js_main
     + "}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',__poStart);else __poStart();})();"
 )
-
 block = (
     "<style>\n" + css_min + "\n</style>\n"
     + body_min
     + "\n<script>\n" + safe_js + "\n</script>\n"
-)
-block = block.replace("\r\n", "\n").replace("\r", "\n")
-
-out_block = root / "primal_odyssey_godaddy_block.html"
-out_block.write_bytes(block.encode("utf-8"))
-
-preview = (
-    "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n"
-    "<meta charset=\"UTF-8\">\n"
-    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1\">\n"
-    "<title>Primal Odyssey</title>\n"
-    "<style>html,body{margin:0;background:#030605;}</style>\n"
-    "</head>\n<body>\n" + block + "</body>\n</html>\n"
-)
-(root / "index.html").write_bytes(preview.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))
+).replace("\r\n", "\n").replace("\r", "\n")
+(root / "primal_odyssey_godaddy_block.html").write_bytes(block.encode("utf-8"))
 
 n = len(block)
 nl = block.count("\n")
-print("godaddy block", n)
-print("if CRLF paste", n + nl)
-print("index", (root / "index.html").stat().st_size)
-print("limit tip Digistracts ~51375; left", 51375 - n)
+print("pages index.html", (root / "index.html").stat().st_size)
+print("godaddy block", n, "| CRLF", n + nl)
+print("Digistracts tip ~51375; left", 51375 - n)
 assert "SPRITES.cougar" in block
 assert "// swapped" not in block
-assert n + nl <= 51375, "CRLF paste would exceed Digistracts tip"
+if n + nl > 51375:
+    print("NOTE: paste block too large for Digistracts — iframe GitHub Pages index.html instead")

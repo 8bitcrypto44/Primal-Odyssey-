@@ -39,7 +39,7 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-card p{margin:0;font-size:12px;line-height:1.45;color:var(--muted)}
 .po-card .meta{margin-top:10px;font-size:11px;color:var(--accent);display:flex;align-items:center;gap:8px}
 .po-card .go{display:inline-block;padding:3px 8px;border-radius:999px;background:var(--accent);color:#041208;font-weight:700;animation:poGo 1.4s ease-in-out infinite}
-.po-dossier{width:min(720px,100%);margin:auto;background:var(--panel);border:3px solid var(--line);border-radius:14px;padding:16px;max-height:min(90vh,640px);overflow:auto;box-shadow:0 0 40px rgba(45,107,69,.2)}
+.po-dossier{width:min(780px,100%);margin:auto;background:var(--panel);border:3px solid var(--line);border-radius:14px;padding:16px;max-height:min(92vh,760px);overflow:auto;box-shadow:0 0 40px rgba(45,107,69,.2)}
 .po-dossier-top{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
 .po-dossier canvas{width:96px;height:96px;image-rendering:pixelated;border:2px solid var(--line);background:#020805;border-radius:8px}
 .po-dossier h2{font-size:14px;color:var(--line-hi);margin:0 0 6px}
@@ -48,8 +48,8 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-tabs button{font-family:inherit;font-size:10px;padding:8px 10px;border:2px solid var(--line);background:#0a1a10;color:var(--text);border-radius:6px;cursor:pointer;font-weight:700}
 .po-tabs button:hover{border-color:var(--line-hi)}
 .po-tabs button.active{background:var(--accent);color:#041208;border-color:var(--line-hi)}
-.po-dossier .panel-body{font-size:13px;line-height:1.55;color:var(--text);min-height:120px}
-.po-dossier .panel-body p{margin:0 0 10px}
+.po-dossier .panel-body{font-size:13px;line-height:1.65;color:var(--text);min-height:180px}
+.po-dossier .panel-body p{margin:0 0 14px}
 .po-dossier .danger{display:inline-block;margin-top:4px;padding:4px 8px;border-radius:4px;background:var(--danger);color:#ffc8c0;font-size:11px;font-weight:700}
 .po-close{margin-top:14px;font-family:inherit;font-size:11px;padding:10px 14px;border:2px solid var(--line);background:#0d2416;color:var(--text);border-radius:8px;cursor:pointer;font-weight:700}
 .po-close:hover{background:#143522;border-color:var(--line-hi)}
