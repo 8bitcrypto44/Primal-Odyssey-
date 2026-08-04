@@ -84,7 +84,7 @@ pages = (
     "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover\">\n"
     "<meta name=\"description\" content=\"Primal Odyssey — explore biomes, meet apex animals, open field dossiers.\">\n"
     "<title>Primal Odyssey</title>\n"
-    "<link rel=\"stylesheet\" href=\"primal.css\">\n"
+    "<link rel=\"stylesheet\" href=\"primal.css?v=5\">\n"
     "<style>html,body{margin:0;height:100%;min-height:100%;background:#030605;}</style>\n"
     "</head>\n<body>\n"
     + body.strip() + "\n"

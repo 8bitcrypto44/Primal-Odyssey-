@@ -58,22 +58,21 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-close:hover{background:#143522;border-color:var(--line-hi)}
 .po-credit{margin-top:12px;text-align:center;font-size:11px;color:#4a6b55;padding:0 8px;line-height:1.4}
 
-/* Embed: single even frame drawn INSIDE the iframe (inset), so Digistracts
-   can't clip the right edge. No outer border + no double shell ring. */
+/* Frame overlay (embed only) — real element above canvas so all 4 sides show */
+.po-frame{display:none}
 html.po-embed,html.po-embed body{
   height:100%;width:100%;margin:0;padding:0;overflow:hidden;overscroll-behavior:none;touch-action:none;background:#030605
 }
 html.po-embed #po-root{
   max-width:none;width:100%;height:100%;margin:0;padding:0;position:relative;overflow:hidden;background:#030605
 }
-/* One uniform 3px ring — box-sizing keeps all four sides equal */
-html.po-embed #po-root::after{
-  content:"";position:absolute;inset:0;z-index:40;pointer-events:none;box-sizing:border-box;
-  border:3px solid #2d6b45;border-radius:10px
+html.po-embed .po-frame{
+  display:block;position:absolute;inset:0;z-index:100;pointer-events:none;box-sizing:border-box;
+  border:3px solid #2d6b45;border-radius:0;margin:0;padding:0;background:transparent
 }
 html.po-embed .po-shell{
   position:absolute;inset:0;width:100%;height:100%;margin:0;
-  border:0;border-radius:10px;box-shadow:none;overflow:hidden;background:#000
+  border:0;border-radius:0;box-shadow:none;overflow:hidden;background:#000
 }
 html.po-embed #po-canvas{
   position:absolute;inset:0;width:100%!important;height:100%!important;max-height:none;min-height:0;
@@ -104,7 +103,8 @@ html.po-embed .po-regions{gap:8px}
   .po-dossier{padding:12px;max-height:min(85vh,720px);border-radius:10px}
   .po-dossier .panel-body{font-size:12px;line-height:1.55}
   html.po-embed #po-root{padding:0}
-  html.po-embed .po-shell{inset:0;border:0;border-radius:10px;box-shadow:none}
+  html.po-embed .po-shell{inset:0;border:0;border-radius:0;box-shadow:none}
+  html.po-embed .po-frame{border-radius:0}
   html.po-embed .po-card .preview{height:120px}
   html.po-embed .po-card .body{padding:12px 14px 14px}
   html.po-embed .po-card h3{font-size:14px}
