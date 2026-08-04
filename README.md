@@ -18,9 +18,9 @@ Asset URLs are cache-busted (`?v=N` on CSS/JS). Bump `ASSET_VER` in `build_game.
 
 Paste `godaddy_iframe_snippet.html` (same as `primal_odyssey_godaddy_block.html`).
 
-- **Cover** matches other games (`max-width: 920px`) with a 3-region image mosaic + **ENTER EXPEDITION**
-- Clicking Enter expands a tall play panel and loads the GitHub Pages iframe (only then)
-- Desktop play area is 16:9; mobile expands to ~560px tall
+- Same width/chrome as Digistracts: `max-width:920px`, 4px border, 10px padding, **16:9** stage (matches Digistracts 800×450 canvas)
+- Cover mosaic + **ENTER EXPEDITION**; iframe loads only after click
+- Play panel stays 16:9 so height stays aligned with Digistracts
 ## Rebuild after edits
 ```
 python build_game.py
