@@ -1,0 +1,73 @@
+<div id="po-root">
+  <div class="po-shell">
+    <canvas id="po-canvas" width="480" height="270" aria-label="Primal Odyssey world"></canvas>
+    <div class="po-audio po-audio-bar" id="po-audio-bar">
+      <button type="button" class="chip po-mute" id="po-mute" aria-pressed="false" title="Mute">SOUND</button>
+      <label class="po-vol-lab">VOL <input type="range" class="po-vol" id="po-vol" min="0" max="100" value="55" aria-label="Music volume"></label>
+    </div>
+    <div class="po-hud" id="po-hud" hidden>
+      <div class="po-hud-l">
+        <div class="chip pulse" id="po-region-chip">REGION</div>
+        <div class="chip" id="po-pos-chip">X 0 · Y 0</div>
+      </div>
+      <button type="button" class="chip" id="po-menu-btn">REGIONS</button>
+    </div>
+    <div class="po-hint" id="po-hint" hidden>WASD move · Q/E look · Drag look · Click animal · Esc menu</div>
+    <div id="po-title" class="po-overlay show" role="dialog" aria-label="Region select">
+      <div class="po-menu">
+        <div class="po-brand">PRIMAL ODYSSEY</div>
+        <p class="po-tag">Explore wild regions · Meet apex animals · Field dossiers</p>
+        <p class="po-wip" title="Work in progress — unfinished build">WIP · ALPHA · EXPECT BREAKAGE</p>
+        <h2>CHOOSE YOUR EXPEDITION</h2>
+        <p class="lead">Three biomes. Fifteen animals. Tap creatures for field dossiers.</p>
+        <div class="po-regions">
+          <button type="button" class="po-card" data-region="africa">
+            <img class="preview" src="https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg" alt="Africa cover" width="320" height="110" loading="lazy">
+            <div class="body">
+              <h3>AFRICA</h3>
+              <p>Savanna, acacias, and watering holes.</p>
+              <div class="meta"><span class="go">START</span> 5 animals</div>
+            </div>
+          </button>
+          <button type="button" class="po-card" data-region="mountains">
+            <img class="preview" src="https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg" alt="Mountains cover" width="320" height="110" loading="lazy">
+            <div class="body">
+              <h3>MOUNTAINS</h3>
+              <p>Ridges, pines, and snowline hunters.</p>
+              <div class="meta"><span class="go">START</span> 5 animals</div>
+            </div>
+          </button>
+          <button type="button" class="po-card" data-region="jungle">
+            <img class="preview" src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="Jungle cover" width="320" height="110" loading="lazy">
+            <div class="body">
+              <h3>JUNGLE</h3>
+              <p>Canopy gloom and ambush predators.</p>
+              <div class="meta"><span class="go">START</span> 5 animals</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div id="po-dossier" class="po-overlay" role="dialog" aria-label="Animal dossier">
+      <div class="po-dossier">
+        <div class="po-dossier-top">
+          <canvas id="po-dossier-art" width="96" height="96"></canvas>
+          <div>
+            <h2 id="po-d-name">Animal</h2>
+            <p class="latin" id="po-d-latin"></p>
+            <span class="danger" id="po-d-danger"></span>
+          </div>
+        </div>
+        <div class="po-tabs" role="tablist">
+          <button type="button" class="active" data-tab="facts">FACTS</button>
+          <button type="button" data-tab="myths">MYTHS</button>
+          <button type="button" data-tab="fun">FUN</button>
+          <button type="button" data-tab="survive">SURVIVE</button>
+        </div>
+        <div class="panel-body" id="po-d-body"></div>
+        <button type="button" class="po-close" id="po-d-close">CLOSE DOSSIER</button>
+      </div>
+    </div>
+  </div>
+  <p class="po-credit">Primal Odyssey · WIP/alpha · music CC BY Kevin MacLeod · 8bitcrypto_44</p>
+</div>
