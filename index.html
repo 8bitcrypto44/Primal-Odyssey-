@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="description" content="Primal Odyssey — explore biomes, meet apex animals, open field dossiers.">
 <title>Primal Odyssey</title>
-<link rel="stylesheet" href="primal.css?v=17">
+<link rel="stylesheet" href="primal.css?v=18">
 <style>html,body{{margin:0;height:100%;min-height:100%;background:#030605;}}</style>
 </head>
 <body>
@@ -24,6 +24,19 @@
     </div>
     <button type="button" class="chip po-menu-dock" id="po-menu-btn" hidden>REGIONS</button>
     <div class="po-hint" id="po-hint" hidden>Drag to look · Tap animal for dossier · REGIONS menu</div>
+    <div class="po-touch" id="po-touch" hidden aria-label="Mobile controls">
+      <div class="po-stick-wrap">
+        <div class="po-stick" id="po-stick" role="presentation">
+          <div class="po-knob" id="po-knob"></div>
+        </div>
+        <div class="po-stick-lab">MOVE</div>
+      </div>
+      <div class="po-look">
+        <button type="button" class="po-look-btn" id="po-look-l" aria-label="Look left">◀</button>
+        <button type="button" class="po-look-btn" id="po-look-r" aria-label="Look right">▶</button>
+        <div class="po-stick-lab">LOOK</div>
+      </div>
+    </div>
     <div id="po-title" class="po-overlay show" role="dialog" aria-label="Region select">
       <div class="po-menu">
         <div class="po-brand">PRIMAL ODYSSEY</div>
@@ -83,8 +96,8 @@
   <div class="po-frame" aria-hidden="true"></div>
   <p class="po-credit">Primal Odyssey · WIP/alpha · music CC BY Kevin MacLeod · 8bitcrypto_44</p>
 </div>
-<script src="primal_data.js?v=17"></script>
-<script src="primal_sprites.js?v=17"></script>
-<script src="primal.js?v=17"></script>
+<script src="primal_data.js?v=18"></script>
+<script src="primal_sprites.js?v=18"></script>
+<script src="primal.js?v=18"></script>
 </body>
 </html>

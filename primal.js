@@ -22,7 +22,13 @@
       function (e) {
         let el = e.target;
         while (el && el !== document.documentElement) {
-          if (el.classList && (el.classList.contains("po-overlay") || el.classList.contains("po-dossier"))) {
+          if (el.classList && (
+            el.classList.contains("po-overlay") ||
+            el.classList.contains("po-dossier") ||
+            el.classList.contains("po-touch") ||
+            el.classList.contains("po-stick") ||
+            el.classList.contains("po-look-btn")
+          )) {
             return;
           }
           el = el.parentElement;
@@ -60,6 +66,11 @@
     menuBtn: document.getElementById("po-menu-btn"),
     mute: document.getElementById("po-mute"),
     vol: document.getElementById("po-vol"),
+    touch: document.getElementById("po-touch"),
+    stick: document.getElementById("po-stick"),
+    knob: document.getElementById("po-knob"),
+    lookL: document.getElementById("po-look-l"),
+    lookR: document.getElementById("po-look-r"),
     dArt: document.getElementById("po-dossier-art"),
     dName: document.getElementById("po-d-name"),
     dLatin: document.getElementById("po-d-latin"),
@@ -128,6 +139,7 @@
   let lookDrag = null;
   let lookMoved = 0;
   let suppressClickUntil = 0;
+  let pad = { fwd: 0, strafe: 0, turn: 0 };
   let propCache = {};
   let miniBase = null;
 
@@ -359,6 +371,12 @@
     if (keys.s || keys.S || keys.ArrowDown) fwd -= 1;
     if (keys.a || keys.A) strafe -= 1;
     if (keys.d || keys.D) strafe += 1;
+    fwd += pad.fwd;
+    strafe += pad.strafe;
+    turn += pad.turn;
+    fwd = clamp(fwd, -1, 1);
+    strafe = clamp(strafe, -1, 1);
+    turn = clamp(turn, -1, 1);
     player.dir += turn * 2.2 * dt;
     const c = Math.cos(player.dir), s = Math.sin(player.dir);
     const sp = 2.6 * dt;
@@ -788,6 +806,30 @@
   function clearInput() {
     keys = {};
     lookDrag = null;
+    pad.fwd = 0;
+    pad.strafe = 0;
+    pad.turn = 0;
+    if (ui.knob) ui.knob.style.transform = "translate(-50%,-50%)";
+    if (ui.lookL) ui.lookL.classList.remove("is-held");
+    if (ui.lookR) ui.lookR.classList.remove("is-held");
+  }
+
+  function wantsTouchUI() {
+    return ("ontouchstart" in window) ||
+      (navigator.maxTouchPoints > 0) ||
+      (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+      window.innerWidth <= 900;
+  }
+
+  function syncTouchUI() {
+    const on = mode === "explore" && wantsTouchUI();
+    document.documentElement.classList.toggle("po-touch-on", on);
+    if (ui.touch) ui.touch.hidden = !on;
+    if (ui.hint && mode === "explore" && on) {
+      ui.hint.textContent = "Stick to move · LOOK to turn · Tap animal · REGIONS";
+    } else if (ui.hint && mode === "explore") {
+      ui.hint.textContent = "Drag to look · Tap animal for dossier · REGIONS menu";
+    }
   }
 
   function openDossier(animal) {
@@ -795,6 +837,7 @@
     openAnimal = animal;
     tab = "facts";
     mode = "dossier";
+    syncTouchUI();
     ui.dossier.classList.add("show");
     ui.dName.textContent = animal.data.name.toUpperCase();
     ui.dLatin.textContent = animal.data.latin;
@@ -830,6 +873,7 @@
     openAnimal = null;
     clearInput();
     if (mode === "dossier") mode = "explore";
+    syncTouchUI();
   }
 
   function enterRegion(id) {
@@ -842,6 +886,7 @@
     ui.regionChip.textContent = region.name;
     closeDossier();
     clearInput();
+    syncTouchUI();
     playRegionMusic(id);
   }
 
@@ -854,6 +899,7 @@
     stopMusic();
     closeDossier();
     clearInput();
+    syncTouchUI();
   }
 
   function loop(now) {
@@ -990,7 +1036,72 @@
     });
   });
 
+  // --- Mobile stick + look buttons ---
+  (function bindTouchControls() {
+    if (!ui.stick || !ui.knob) return;
+    let stickId = null;
+    function readStick(clientX, clientY) {
+      const r = ui.stick.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      let dx = (clientX - cx) / (r.width * 0.42);
+      let dy = (clientY - cy) / (r.height * 0.42);
+      const m = Math.hypot(dx, dy);
+      if (m > 1) { dx /= m; dy /= m; }
+      pad.strafe = dx;
+      pad.fwd = -dy;
+      const kx = dx * (r.width * 0.28);
+      const ky = dy * (r.height * 0.28);
+      ui.knob.style.transform = "translate(calc(-50% + " + kx + "px), calc(-50% + " + ky + "px))";
+    }
+    function endStick() {
+      stickId = null;
+      pad.fwd = 0;
+      pad.strafe = 0;
+      ui.knob.style.transform = "translate(-50%,-50%)";
+    }
+    ui.stick.addEventListener("pointerdown", function (e) {
+      if (mode !== "explore") return;
+      stickId = e.pointerId;
+      ui.stick.setPointerCapture(e.pointerId);
+      readStick(e.clientX, e.clientY);
+      e.preventDefault();
+    });
+    ui.stick.addEventListener("pointermove", function (e) {
+      if (stickId !== e.pointerId) return;
+      readStick(e.clientX, e.clientY);
+      e.preventDefault();
+    });
+    ui.stick.addEventListener("pointerup", endStick);
+    ui.stick.addEventListener("pointercancel", endStick);
+    ui.stick.addEventListener("lostpointercapture", endStick);
+
+    function bindLook(btn, dir) {
+      if (!btn) return;
+      function down(e) {
+        if (mode !== "explore") return;
+        pad.turn = dir;
+        btn.classList.add("is-held");
+        e.preventDefault();
+      }
+      function up() {
+        if (pad.turn === dir) pad.turn = 0;
+        btn.classList.remove("is-held");
+      }
+      btn.addEventListener("pointerdown", down);
+      btn.addEventListener("pointerup", up);
+      btn.addEventListener("pointercancel", up);
+      btn.addEventListener("pointerleave", function (e) {
+        if (e.buttons === 0) up();
+      });
+    }
+    bindLook(ui.lookL, -1);
+    bindLook(ui.lookR, 1);
+  })();
+
+  window.addEventListener("resize", syncTouchUI);
   syncMuteUI();
+  syncTouchUI();
   preloadRemoteArt();
   requestAnimationFrame(loop);
 
