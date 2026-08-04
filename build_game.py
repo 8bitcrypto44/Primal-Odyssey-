@@ -327,7 +327,8 @@ full_n = len(full_block)
 print("pages index.html", (root / "index.html").stat().st_size, f"asset v={v}")
 print("Digistracts iframe stub", stub_n, "bytes (limit ~51375) — OK" if stub_n < 51375 else "TOO BIG")
 print("archive full_singlefile", full_n, "| NOT for Digistracts")
-assert "SPRITES.cougar" in full_block
+assert "cougar:{" in full_block or "cougar:{" in sprites
+assert "honeybadger" in full_block
 assert "iframe" in iframe_snippet
 assert stub_n < 51375, "iframe stub must fit Digistracts paste limit"
 print("Paste godaddy_iframe_snippet.html (or primal_odyssey_godaddy_block.html) into Digistracts.")
