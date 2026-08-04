@@ -1,6 +1,36 @@
 (function () {
-  if (window !== window.top || /(?:\?|&)embed=1(?:&|$)/.test(location.search || "")) {
+  const isEmbed =
+    window !== window.top || /(?:\?|&)embed=1(?:&|$)/.test(location.search || "");
+  if (isEmbed) {
     document.documentElement.classList.add("po-embed");
+    function lockEmbedScroll() {
+      if (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop) {
+        window.scrollTo(0, 0);
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      }
+    }
+    window.addEventListener("scroll", lockEmbedScroll, { passive: true });
+    window.addEventListener("resize", lockEmbedScroll);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("scroll", lockEmbedScroll);
+      window.visualViewport.addEventListener("resize", lockEmbedScroll);
+    }
+    // Stop Digistracts/GoDaddy parent page from scrolling the iframe out of view
+    document.addEventListener(
+      "touchmove",
+      function (e) {
+        let el = e.target;
+        while (el && el !== document.documentElement) {
+          if (el.classList && (el.classList.contains("po-overlay") || el.classList.contains("po-dossier"))) {
+            return;
+          }
+          el = el.parentElement;
+        }
+        e.preventDefault();
+      },
+      { passive: false, capture: true }
+    );
   }
   const canvas = document.getElementById("po-canvas");
   const ctx = canvas.getContext("2d", { alpha: false });
