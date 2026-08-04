@@ -249,8 +249,16 @@
           const tx = 2 + rnd(MAP - 4) + 0.5, ty = 2 + rnd(MAP - 4) + 0.5;
           if (!wall[ty | 0][tx | 0] && floor[ty | 0][tx | 0] === 3) { x = tx; y = ty; break; }
         }
-      } else if (floor[y | 0][x | 0] === 3) {
-        floor[y | 0][x | 0] = 1;
+      } else if (wall[y | 0][x | 0] || floor[y | 0][x | 0] === 3) {
+        // Nudge to dry land — never mutate water cells into dirt
+        let placed = false;
+        for (let t = 0; t < 60; t++) {
+          const tx = 2 + rnd(MAP - 4) + 0.5, ty = 2 + rnd(MAP - 4) + 0.5;
+          if (!wall[ty | 0][tx | 0] && floor[ty | 0][tx | 0] !== 3) {
+            x = tx; y = ty; placed = true; break;
+          }
+        }
+        if (!placed) { x = 4.5; y = 4.5; }
       }
       sprites.push({
         x: x, y: y, kind: "animal", data: a, id: a.id,
@@ -270,6 +278,10 @@
     const ix = x | 0, iy = y | 0;
     if (ix < 0 || iy < 0 || ix >= MAP || iy >= MAP) return true;
     return floor[iy][ix] === 3;
+  }
+
+  function playerBlocked(x, y) {
+    return blocked(x, y) || wet(x, y);
   }
 
   function animalBlocked(x, y, sp) {
@@ -334,8 +346,8 @@
     const sp = 2.6 * dt;
     const mx = (c * fwd + -s * strafe) * sp;
     const my = (s * fwd + c * strafe) * sp;
-    if (!blocked(player.x + mx * 3.2, player.y)) player.x += mx;
-    if (!blocked(player.x, player.y + my * 3.2)) player.y += my;
+    if (!playerBlocked(player.x + mx * 3.2, player.y)) player.x += mx;
+    if (!playerBlocked(player.x, player.y + my * 3.2)) player.y += my;
     if (fwd || strafe) player.bob += dt * 10;
   }
 
