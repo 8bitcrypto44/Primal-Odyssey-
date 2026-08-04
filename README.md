@@ -13,19 +13,20 @@ This repo is built for **GitHub Pages** (no paste size limit). After Pages is on
 `https://8bitcrypto44.github.io/Primal-Odyssey-/`
 
 ### GoDaddy iframe
-Paste this small HTML block (max-size embed for phones):
+Paste this small HTML block (fills most of the phone screen without scrolling away):
 
 ```html
-<div style="width:100%;max-width:100%;margin:0;padding:0;line-height:0">
+<div style="width:100%;max-width:100%;margin:0;padding:0;line-height:0;overflow:hidden">
 <iframe
   src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1"
   title="Primal Odyssey"
   width="100%"
-  height="900"
-  style="width:100%;max-width:100%;height:min(92dvh,960px);min-height:75vh;border:0;display:block;margin:0;background:#030605"
+  height="720"
+  style="width:100%;max-width:100%;height:85vh;max-height:900px;border:0;display:block;margin:0;padding:0;background:#030605"
   allow="autoplay; fullscreen"
   allowfullscreen
-  loading="lazy"
+  loading="eager"
+  scrolling="no"
 ></iframe>
 </div>
 ```

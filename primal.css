@@ -58,18 +58,29 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-close:hover{background:#143522;border-color:var(--line-hi)}
 .po-credit{margin-top:12px;text-align:center;font-size:11px;color:#4a6b55;padding:0 8px;line-height:1.4}
 
-/* Full-bleed when iframed / ?embed=1 — max size for Digistracts/GoDaddy */
-html.po-embed,html.po-embed body{height:100%;min-height:100%;margin:0;padding:0;overflow:hidden;background:#030605}
-html.po-embed #po-root{max-width:none;width:100%;height:100%;min-height:100dvh;margin:0;padding:0;display:flex;flex-direction:column}
-html.po-embed .po-shell{flex:1 1 auto;width:100%;height:100%;min-height:0;border-radius:0;border-left:0;border-right:0;border-top:0;box-shadow:none;display:flex;flex-direction:column}
-html.po-embed #po-canvas{width:100%;flex:1 1 auto;height:100%;min-height:60dvh;object-fit:contain;background:#050a06}
+/* Full-bleed iframe embed — fill iframe only (never 100dvh; that overflows & scrolls away on mobile) */
+html.po-embed,html.po-embed body{
+  height:100%;width:100%;margin:0;padding:0;overflow:hidden;overscroll-behavior:none;background:#030605;
+  position:fixed;inset:0;-webkit-overflow-scrolling:auto
+}
+html.po-embed #po-root{
+  max-width:none;width:100%;height:100%;margin:0;padding:0;position:relative;overflow:hidden
+}
+html.po-embed .po-shell{
+  position:absolute;inset:0;width:100%;height:100%;margin:0;border-radius:0;border:0;box-shadow:none;overflow:hidden
+}
+html.po-embed #po-canvas{
+  position:absolute;inset:0;width:100%!important;height:100%!important;max-height:none;min-height:0;
+  object-fit:contain;display:block;background:#050a06
+}
 html.po-embed .po-credit{display:none}
-html.po-embed .po-overlay{padding:6px 8px 10px}
-html.po-embed .po-brand{font-size:clamp(26px,8vw,52px);margin-top:4px}
-html.po-embed .po-wip{margin-bottom:10px}
-html.po-embed .po-card .preview{height:clamp(100px,22vh,160px)}
+html.po-embed .po-overlay{padding:6px 8px 10px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+html.po-embed .po-brand{font-size:clamp(22px,7vw,48px);margin-top:2px;animation:none}
+html.po-embed .po-wip{margin-bottom:8px}
+html.po-embed .po-card .go{animation:none}
+html.po-embed .po-card .preview{height:clamp(88px,18vh,140px)}
 html.po-embed .po-regions{gap:8px}
-html.po-embed .po-dossier{max-height:min(92dvh,820px);width:min(960px,100%)}
+html.po-embed .po-dossier{max-height:min(85%,720px);width:min(960px,100%)}
 
 @media (max-width:800px){
   #po-root{padding:8px 6px 16px}
@@ -84,11 +95,10 @@ html.po-embed .po-dossier{max-height:min(92dvh,820px);width:min(960px,100%)}
   .po-vol{width:64px}
   .po-dossier{padding:12px;max-height:min(85vh,720px);border-radius:10px}
   .po-dossier .panel-body{font-size:12px;line-height:1.55}
-  html.po-embed #po-root{padding:0;min-height:100dvh}
-  html.po-embed .po-shell{border-width:0;border-radius:0;min-height:100dvh}
-  html.po-embed #po-canvas{min-height:70dvh}
-  html.po-embed .po-card .preview{height:clamp(120px,26vh,180px)}
-  html.po-embed .po-card .body{padding:14px 16px 16px}
+  html.po-embed #po-root{padding:0}
+  html.po-embed .po-shell{border:0;border-radius:0}
+  html.po-embed .po-card .preview{height:clamp(100px,20vh,150px)}
+  html.po-embed .po-card .body{padding:12px 14px 14px}
   html.po-embed .po-card h3{font-size:14px}
   html.po-embed .po-card p{font-size:13px}
   html.po-embed .po-tabs button,.po-close{min-height:46px;font-size:12px}
@@ -100,5 +110,4 @@ html.po-embed .po-dossier{max-height:min(92dvh,820px);width:min(960px,100%)}
   .po-vol-lab{font-size:9px}
   .po-vol{width:56px}
   .po-hint{max-width:calc(100% - 16px)}
-  html.po-embed #po-canvas{min-height:72dvh}
 }
