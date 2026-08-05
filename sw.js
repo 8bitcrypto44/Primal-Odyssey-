@@ -1,12 +1,14 @@
 /* Primal Odyssey asset cache hint */
-const CACHE = "po-v41";
+const CACHE = "po-v42";
 const ASSETS = [
   "./",
   "./index.html",
-  "./primal.css?v=34",
-  "./primal.js?v=34",
-  "./primal_data.js?v=34",
-  "./primal_sprites.js?v=34"
+  "./primal.css?v=42",
+  "./primal.js?v=42",
+  "./primal_data.js?v=42",
+  "./primal_sprites.js?v=42",
+  "./primal_snes_data.js?v=42",
+  "./primal_snes.js?v=42"
 ];
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ASSETS).catch(function () {}); }));

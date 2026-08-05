@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "41"
+ASSET_VER = "42"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -101,6 +101,8 @@ pages = (
     + body.strip() + "\n"
     f"<script src=\"primal_data.js?v={v}\"></script>\n"
     f"<script src=\"primal_sprites.js?v={v}\"></script>\n"
+    f"<script src=\"primal_snes_data.js?v={v}\"></script>\n"
+    f"<script src=\"primal_snes.js?v={v}\"></script>\n"
     f"<script src=\"primal.js?v={v}\"></script>\n"
     "<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){})}</script>\n"
     "</body>\n</html>\n"

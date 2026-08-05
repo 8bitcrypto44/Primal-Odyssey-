@@ -1,4 +1,4 @@
-# Build / temp
+﻿# Build / temp
 _check.js
 _probe.html
 _probe_out/
@@ -8,3 +8,8 @@ __pycache__/
 Thumbs.db
 .env
 *.log
+_patch_snes*.py
+assets/snes/_*.png
+assets/snes/idylwild.zip
+assets/snes/idylwild/*.psd
+assets/snes/idylwild/*.ase

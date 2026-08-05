@@ -978,6 +978,7 @@
     const R = Object.assign({}, base);
     if (regionId === "wetlands") R.animals = wetlandsAnimals();
     region = R;
+    window.region = region;
     wall = [];
     floor = [];
     sprites = [];
@@ -1333,6 +1334,24 @@
     player.dir = 0.4;
     player.pitch = 0;
     player.bob = 0;
+    if (window.PO_SNES && PO_SNES.maps && PO_SNES.maps[regionId]) {
+      const sm = PO_SNES.maps[regionId];
+      player.x = sm.start[0];
+      player.y = sm.start[1];
+      let si = 0;
+      sprites.forEach(function (sp) {
+        if (sp.kind !== "animal" || sp.herdSil) return;
+        if (si < sm.spawns.length) {
+          sp.x = sm.spawns[si][0];
+          sp.y = sm.spawns[si][1];
+          si++;
+        }
+      });
+      sprites = sprites.filter(function (sp) {
+        return sp.kind !== "prop" || sp.track || sp.binocs || sp.den || (sp.kind === "note");
+      });
+    }
+    window.region = region;
     rebuildMiniBase();
     syncNotesUI();
   }
@@ -1497,11 +1516,18 @@
     return false;
   }
   function playerBlocked(x, y) {
+    if (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps) {
+      return PO_SNES.solidWorld(x, y);
+    }
     // Water is wadeable (slowed in movePlayer); only walls/props block hard
     return blocked(x, y) || propBlocked(x, y);
   }
 
   function animalBlocked(x, y, sp) {
+    if (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps) {
+      if (PO_SNES.solidWorld(x, y)) return !(sp && sp.waterLove);
+      return false;
+    }
     if (blocked(x, y) || propBlocked(x, y)) return true;
     if (sp && sp.waterLove) return false;
     return wet(x, y);
@@ -1810,7 +1836,16 @@
     pitchIn = clamp(pitchIn, -1, 1);
     player.dir += turn * 2.4 * dt;
     player.pitch = clamp(player.pitch + pitchIn * 1.35 * dt, -0.58, 0.58);
-    const c = Math.cos(player.dir), s = Math.sin(player.dir);
+    let c = Math.cos(player.dir), s = Math.sin(player.dir);
+    if (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps) {
+      const mx0 = strafe;
+      const my0 = -fwd;
+      if (Math.abs(mx0) + Math.abs(my0) > 0.01) player.dir = Math.atan2(my0, mx0);
+      c = Math.cos(player.dir);
+      s = Math.sin(player.dir);
+      fwd = Math.hypot(mx0, my0);
+      strafe = 0;
+    }
     let spMul = 1;
     if (wet(player.x, player.y)) spMul *= 0.48;
     if (weather.kind === "snow") spMul *= 0.7;
@@ -1822,8 +1857,12 @@
     const my = (s * fwd + c * strafe) * sp;
     if (!playerBlocked(player.x + mx * 3.2, player.y)) player.x += mx;
     if (!playerBlocked(player.x, player.y + my * 3.2)) player.y += my;
-    player.x = clamp(player.x, 1.5, MAP - 1.5);
-    player.y = clamp(player.y, 1.5, MAP - 1.5);
+    {
+      const mapMax = (window.PO_SNES && PO_SNES.enabled && PO_SNES.current && PO_SNES.current())
+        ? (PO_SNES.current().w - 1.5) : (MAP - 1.5);
+      player.x = clamp(player.x, 1.5, mapMax);
+      player.y = clamp(player.y, 1.5, mapMax);
+    }
     if (fwd || strafe) {
       player.bob += dt * 10;
       footTimer -= dt;
@@ -3761,12 +3800,19 @@
   }
 
   function drawWorld() {
-    drawSkyFloor();
-    drawWalls();
-    drawSprites();
-    drawParticles();
-    drawWeather();
-    drawHUDOverlay();
+    if (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps) {
+      PO_SNES.draw(ctx, W, H, player, sprites, getAnimalCanvas, dayPhase);
+      drawParticles();
+      drawWeather();
+      drawHUDOverlay();
+    } else {
+      drawSkyFloor();
+      drawWalls();
+      drawSprites();
+      drawParticles();
+      drawWeather();
+      drawHUDOverlay();
+    }
     if (noteFlash > 0) {
       ctx.fillStyle = "rgba(93,206,122," + (noteFlash * 0.15) + ")";
       ctx.fillRect(0, 0, W, H);
@@ -3806,6 +3852,20 @@
   }
 
   function animalAtScreen(sx, sy) {
+    if (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps && PO_SNES.current) {
+      const m = PO_SNES.current();
+      const T = (m && m.tile) || 16;
+      const wx = (sx + (PO_SNES.camX || 0)) / T;
+      const wy = (sy + (PO_SNES.camY || 0)) / T;
+      let best = null, bestD = 1.4;
+      for (let i = 0; i < sprites.length; i++) {
+        const sp = sprites[i];
+        if (sp.kind !== "animal" || sp.herdSil) continue;
+        const d = Math.hypot(sp.x - wx, sp.y - wy);
+        if (d < bestD) { bestD = d; best = sp; }
+      }
+      return best;
+    }
     const hits = drawSprites._screen || [];
     let best = null, bestD = 1e9;
     for (let i = 0; i < hits.length; i++) {
