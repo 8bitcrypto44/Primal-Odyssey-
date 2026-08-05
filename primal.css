@@ -8,8 +8,8 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-wip{display:block;width:fit-content;max-width:92%;margin:0 auto 18px;padding:4px 10px;border:1px dashed var(--line);border-radius:6px;color:#c6e86a;font-size:10px;font-weight:700;letter-spacing:1px;text-align:center;background:rgba(61,155,95,.12)}
 @keyframes poPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 @keyframes poGo{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.po-shell{position:relative;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #0a1f12,0 0 28px rgba(61,155,95,.18),0 16px 36px rgba(0,0,0,.6);touch-action:none}
-#po-canvas{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor;cursor:crosshair;background:#050a06;touch-action:none;vertical-align:top}
+.po-shell{position:relative;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #0a1f12,0 0 28px rgba(61,155,95,.18),0 16px 36px rgba(0,0,0,.6);touch-action:none;display:flex;align-items:center;justify-content:center;min-height:min(70vh,520px)}
+#po-canvas{display:block;width:auto;height:auto;max-width:100%;margin:0 auto;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor;cursor:crosshair;background:#050a06;touch-action:none;vertical-align:top}
 .po-hud{
   position:absolute;left:50%;right:auto;top:auto;bottom:10px;
   transform:translateX(-50%);

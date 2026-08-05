@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="description" content="Primal Odyssey — explore biomes, meet apex animals, open field dossiers.">
 <title>Primal Odyssey</title>
-<link rel="stylesheet" href="primal.css?v=40">
+<link rel="stylesheet" href="primal.css?v=41">
 <style>html,body{{margin:0;height:100%;min-height:100%;background:#030605;}}</style>
 </head>
 <body>
 <div id="po-root">
   <div class="po-shell">
-    <canvas id="po-canvas" width="512" height="224" aria-label="Primal Odyssey world"></canvas>
+    <canvas id="po-canvas" width="256" height="224" aria-label="Primal Odyssey world"></canvas>
     <div class="po-audio po-audio-bar" id="po-audio-bar">
       <button type="button" class="chip po-mute" id="po-mute" aria-pressed="false" title="Mute">SOUND</button>
       <label class="po-vol-lab">VOL <input type="range" class="po-vol" id="po-vol" min="0" max="100" value="55" aria-label="Music volume"></label>
@@ -213,9 +213,9 @@
   <div class="po-frame" aria-hidden="true"></div>
   <p class="po-credit">Primal Odyssey · WIP/alpha · music CC BY Kevin MacLeod · 8bitcrypto_44</p>
 </div>
-<script src="primal_data.js?v=40"></script>
-<script src="primal_sprites.js?v=40"></script>
-<script src="primal.js?v=40"></script>
+<script src="primal_data.js?v=41"></script>
+<script src="primal_sprites.js?v=41"></script>
+<script src="primal.js?v=41"></script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){})}</script>
 </body>
 </html>

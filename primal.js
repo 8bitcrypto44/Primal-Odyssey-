@@ -44,19 +44,32 @@
   // ImageData floor stays cheap — keep readable res for Digistracts / fullscreen
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
     (window.matchMedia && matchMedia("(pointer:coarse)").matches);
-  // SNES Mode 5 hi-res: 512x224, nearest-neighbor only
-  const W = 512;
+  // Classic SNES 256x224 (Zelda/CT). Integer-scaled, nearest-neighbor only.
+  const W = 256;
   const H = 224;
   canvas.width = W;
   canvas.height = H;
-  canvas.style.imageRendering = "pixelated";
-  canvas.style.imageRendering = "crisp-edges";
+  canvas.style.imageSmoothingEnabled = false;
   ctx.imageSmoothingEnabled = false;
   const MAP = 36;
   const FOV = Math.PI / 3;
-  const TEX = 128;
+  const TEX = 256;
   const FLOOR_STEP_X = 1;
   const FLOOR_STEP_Y = 1;
+  function poIntegerScale() {
+    const shell = canvas.parentElement;
+    if (!shell) return;
+    const maxW = shell.clientWidth || W;
+    const maxH = shell.clientHeight || H;
+    const s = Math.max(1, Math.floor(Math.min(maxW / W, maxH / H)));
+    canvas.style.width = (W * s) + "px";
+    canvas.style.height = (H * s) + "px";
+    canvas.style.imageRendering = "pixelated";
+    canvas.style.margin = "0 auto";
+    canvas.style.display = "block";
+  }
+  poIntegerScale();
+  window.addEventListener("resize", poIntegerScale);
   const UNIT_FT = 11;
   const HT_FT = {
     acacia: 36, baobab: 58, pine: 85, tree: 110,
@@ -1078,28 +1091,50 @@
     const rocks = [rid + "_rock1", rid + "_rock2", rid + "_rock3", rid + "_rock4", rid + "_rock5"];
     const grasses = [rid + "_grass1", rid + "_grass2", rid + "_grass3"];
     const bushes = [rid + "_bush1", rid + "_bush2"];
-    const treeN = rid === "mountains" ? 22 : (rid === "jungle" ? 20 : 16);
-    for (let i = 0; i < treeN; i++) placeProp(trees[rnd(trees.length)]);
-    const rockN = rid === "mountains" ? 16 : 12;
-    for (let i = 0; i < rockN; i++) placeProp(rocks[rnd(rocks.length)]);
+    // Dense SNES outdoor packing — carpet + clustered canopy
+    function placeCluster(kinds, count, radius) {
+      const cx = 4 + Math.random() * (MAP - 8);
+      const cy = 4 + Math.random() * (MAP - 8);
+      for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const rad = Math.random() * radius;
+        const x = cx + Math.cos(ang) * rad;
+        const y = cy + Math.sin(ang) * rad;
+        if (!openSpot(x, y)) continue;
+        const kind = kinds[rnd(kinds.length)];
+        sprites.push({
+          x: x, y: y, kind: "prop", prop: kind,
+          scale: worldScale(kind) * (0.8 + Math.random() * 0.45), bob: 0
+        });
+      }
+    }
+    const treeClusters = rid === "jungle" ? 10 : (rid === "mountains" ? 8 : 7);
+    for (let c = 0; c < treeClusters; c++) placeCluster(trees, rid === "jungle" ? 7 : 5, 3.2);
+    for (let i = 0; i < 18; i++) placeProp(rocks[rnd(rocks.length)]);
+    // Grass carpet grid
+    for (let gy = 2; gy < MAP - 2; gy += 1) {
+      for (let gx = 2; gx < MAP - 2; gx += 1) {
+        if (wall[gy][gx] || floor[gy][gx] === 3) continue;
+        if (Math.random() > (rid === "jungle" ? 0.55 : 0.42)) continue;
+        const x = gx + 0.2 + Math.random() * 0.6;
+        const y = gy + 0.2 + Math.random() * 0.6;
+        if (Math.hypot(x - 4.5, y - 4.5) < 2.2) continue;
+        const kind = Math.random() < 0.35 ? bushes[rnd(bushes.length)] : grasses[rnd(grasses.length)];
+        sprites.push({
+          x: x, y: y, kind: "prop", prop: kind,
+          scale: worldScale(kind) * (0.55 + Math.random() * 0.55), bob: 0
+        });
+      }
+    }
+    if (rid === "wetlands") {
+      for (let i = 0; i < 28; i++) placeProp("wetlands_grass3");
+      for (let i = 0; i < 18; i++) placeProp("wet_lily");
+    }
+    if (rid === "jungle") {
+      for (let i = 0; i < 20; i++) placeProp("jungle_tree3");
+    }
     if (rid === "mountains") {
-      for (let i = 0; i < 20; i++) placeProp(grasses[rnd(grasses.length)]);
-      for (let i = 0; i < 12; i++) placeProp(bushes[rnd(bushes.length)]);
-      for (let i = 0; i < 10; i++) placeProp("mountains_tree2");
-    } else if (rid === "africa") {
-      for (let i = 0; i < 28; i++) placeProp(grasses[rnd(grasses.length)]);
-      for (let i = 0; i < 10; i++) placeProp(bushes[rnd(bushes.length)]);
-      for (let i = 0; i < 14; i++) placeProp("africa_bush2");
-    } else if (rid === "wetlands") {
-      for (let i = 0; i < 16; i++) placeProp("wetlands_grass3");
-      for (let i = 0; i < 12; i++) placeProp(grasses[rnd(grasses.length)]);
-      for (let i = 0; i < 10; i++) placeProp("wet_lily");
-      for (let i = 0; i < 10; i++) placeProp(bushes[rnd(bushes.length)]);
-    } else {
-      for (let i = 0; i < 20; i++) placeProp(grasses[rnd(grasses.length)]);
-      for (let i = 0; i < 14; i++) placeProp(bushes[rnd(bushes.length)]);
-      for (let i = 0; i < 10; i++) placeProp("jungle_tree3");
-      for (let i = 0; i < 10; i++) placeProp(grasses[rnd(grasses.length)]);
+      for (let i = 0; i < 16; i++) placeProp("mountains_tree2");
     }
 
     const rimRock = rocks[0];
@@ -1956,6 +1991,7 @@
       ];
     }
     if (tex) {
+      // Dense SNES tile repeat — blades/dirt readable at feet
       let u = ((fx * TEX) % TEX + TEX) % TEX | 0;
       let v = ((fy * TEX) % TEX + TEX) % TEX | 0;
       const i = (v * TEX + u) * 4;
@@ -2052,27 +2088,7 @@
       ctx.fillStyle = "rgba(255,200,100,0.12)";
       ctx.beginPath(); ctx.arc(celX, Math.max(8, celY), 28, 0, Math.PI * 2); ctx.fill();
     }
-    // Mid-horizon parallax silhouette
-    const scroll2 = ((player.dir * 55) % 200 + 200) % 200;
-    ctx.fillStyle = R.id === "mountains" ? "rgba(40,55,70,0.55)"
-      : (R.id === "jungle" || R.id === "wetlands" ? "rgba(10,40,22,0.5)" : "rgba(50,70,35,0.4)");
-    ctx.beginPath();
-    ctx.moveTo(0, horizon);
-    for (let x = 0; x <= W; x += 8) {
-      const h = 10 + 18 * Math.abs(Math.sin((x + scroll2) * 0.035))
-        + 8 * Math.abs(Math.sin((x + scroll2 * 1.7) * 0.02));
-      ctx.lineTo(x, horizon - h);
-    }
-    ctx.lineTo(W, horizon);
-    ctx.closePath();
-    ctx.fill();
-    if (R.id === "wetlands" || R.id === "jungle") {
-      ctx.fillStyle = "rgba(8,30,16,0.35)";
-      for (let i = 0; i < 14; i++) {
-        const x = ((i * 53 + scroll2 * 0.4) % (W + 20)) - 10;
-        ctx.fillRect(x | 0, horizon - 28 - (i % 3) * 6, 3, 28 + (i % 3) * 6);
-      }
-    }
+    // SNES midground layer only (no crude polygon silhouette)
     const para = remoteParallax[R.id];
     if (para) {
       const pscroll = ((player.dir * 80) % para.width + para.width) % para.width;
@@ -2555,7 +2571,7 @@
 
   function fitRemoteToCanvas(img, mode) {
     // SNES nearest-neighbor: props keep detail; animals chunky downsample
-    const max = mode === "prop" ? 192 : 64;
+    const max = mode === "prop" ? 256 : 72;
     let tw = img.width, th = img.height;
     const scale = Math.min(1, max / Math.max(tw, th));
     let w = Math.max(8, (tw * scale) | 0);
@@ -2720,7 +2736,7 @@
       loadImg(LOCAL_SKY[rid], function (img) {
         const c = document.createElement("canvas");
         c.width = W;
-        c.height = Math.ceil(H * 0.5);
+        c.height = Math.max(96, Math.ceil(H * 0.52));
         const g = c.getContext("2d");
         g.imageSmoothingEnabled = false;
         g.drawImage(img, 0, 0, c.width, c.height);

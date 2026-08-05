@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
-"""v40b — SNES outdoor quality (Chrono Trigger / Mana / FF6 style).
+"""v41 — Real SNES outdoor tiles (16x16 motifs → atlases) + detailed sprites.
 
-512x224 Mode 5 target. Organic clumps, bark knots, dithered skies,
-16-color-ish palettes, black outlines.
+Why prior art looked empty/choppy:
+  - sparse billboards on a barren floor
+  - blob ellipses instead of 16x16 tile craft
+  - Mode-5 512x224 stretched raycaster floors (artifacts mush)
+
+This pack paints Chrono Trigger / LttP style 16x16 tiles, stamps them into
+256x256 grounds, and builds denser multi-clump trees with 8+ shades.
 """
 from pathlib import Path
 from PIL import Image
@@ -10,7 +15,7 @@ import math
 import random
 
 root = Path(__file__).resolve().parent
-OUTLINE = (12, 10, 8)
+OUT = (12, 10, 8)
 
 
 def save(img, *parts):
@@ -24,514 +29,531 @@ def clamp(v, a=0, b=255):
     return max(a, min(b, int(v)))
 
 
-def shade(c, f):
-    return (clamp(c[0] * f), clamp(c[1] * f), clamp(c[2] * f))
-
-
 def mix(a, b, t):
     return tuple(clamp(a[i] * (1 - t) + b[i] * t) for i in range(3))
 
 
+def shade(c, f):
+    return (clamp(c[0] * f), clamp(c[1] * f), clamp(c[2] * f))
+
+
 def px(img, x, y, c, a=255):
-    if 0 <= x < img.width and 0 <= y < img.height and c is not None:
-        if len(c) == 4:
-            img.putpixel((x, y), c)
-        else:
-            img.putpixel((x, y), c + (a,))
-
-
-def geta(img, x, y):
     if 0 <= x < img.width and 0 <= y < img.height:
-        return img.getpixel((x, y))[3]
-    return 0
+        img.putpixel((x, y), (c[0], c[1], c[2], a) if len(c) == 3 else c)
 
 
-def blob(img, cx, cy, rx, ry, cols, seed=0):
-    """Organic filled ellipse with noisy edge + multi shade."""
-    rng = random.Random(seed + cx * 17 + cy * 31)
-    for y in range(cy - ry - 2, cy + ry + 3):
-        for x in range(cx - rx - 2, cx + rx + 3):
-            if rx < 1 or ry < 1:
-                continue
-            nx = (x - cx) / rx
-            ny = (y - cy) / ry
-            d = nx * nx + ny * ny
-            jitter = (rng.random() - 0.5) * 0.35
-            if d > 1.0 + jitter:
-                continue
-            # lighting: top-left highlight
-            lit = 0.55 - nx * 0.25 - ny * 0.35 + rng.random() * 0.1
-            if lit > 0.72:
-                c = cols[0]
-            elif lit > 0.45:
-                c = cols[1] if (x + y + seed) % 2 == 0 else cols[0]
-            elif lit > 0.28:
-                c = cols[2]
-            else:
-                c = cols[3] if len(cols) > 3 else cols[2]
-            # edge darken
-            if d > 0.78:
-                c = cols[-1]
+def outline(img):
+    w, h = img.size
+    src = img.copy()
+    for y in range(h):
+        for x in range(w):
+            if src.getpixel((x, y))[3] < 20:
+                for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < w and 0 <= ny < h and src.getpixel((nx, ny))[3] > 80:
+                        px(img, x, y, OUT)
+                        break
+
+
+# ---------- 16x16 TILE CRAFT ----------
+def tile_grass(pal, variant, seed):
+    """SNES outdoor grass — blades, dirt pockets, flowers."""
+    rng = random.Random(seed)
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    base, mid, dark, hi, accent = pal
+    for y in range(16):
+        for x in range(16):
+            c = base
+            if (x + y * 3 + variant) % 5 == 0:
+                c = mid
+            if (x * 2 + y) % 7 == 0:
+                c = dark
             px(img, x, y, c)
+    # vertical blade strokes
+    for i in range(10):
+        x = (i * 3 + variant * 2) % 16
+        h = 4 + (i + variant) % 5
+        y0 = 16 - h
+        for yy in range(h):
+            px(img, x, y0 + yy, hi if yy < 2 else mid)
+            if yy == 0 and rng.random() < 0.4:
+                px(img, x, y0 - 1 if y0 > 0 else 0, accent)
+    # dirt pocket
+    if variant % 2 == 0:
+        for y in range(10, 15):
+            for x in range(4, 9):
+                if (x + y) % 2 == 0:
+                    px(img, x, y, dark)
+    # flower / pebble
+    if variant == 1:
+        px(img, 11, 5, accent); px(img, 12, 5, accent); px(img, 11, 6, shade(accent, 0.7))
+    if variant == 2:
+        px(img, 3, 8, hi); px(img, 4, 8, mid)
+    return img
 
 
-def bark_trunk(img, x0, y0, w, h, cols, seed=0):
+def tile_dirt(pal, seed):
+    rng = random.Random(seed)
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    a, b, c, d, _ = pal
+    for y in range(16):
+        for x in range(16):
+            col = a
+            if (x ^ y) & 1:
+                col = b
+            if (x + y * 2) % 9 == 0:
+                col = c
+            px(img, x, y, col)
+    for _ in range(8):
+        px(img, rng.randint(0, 15), rng.randint(0, 15), d)
+    # edge bevel like SNES path tiles
+    for i in range(16):
+        px(img, i, 0, shade(a, 1.15))
+        px(img, i, 15, shade(a, 0.75))
+        px(img, 0, i, shade(a, 1.1))
+        px(img, 15, i, shade(a, 0.8))
+    return img
+
+
+def tile_stone(pal, seed):
+    rng = random.Random(seed)
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    a, b, c, d, e = pal
+    for y in range(16):
+        for x in range(16):
+            px(img, x, y, a if ((x // 4) + (y // 4)) % 2 == 0 else b)
+    # cracks
+    for y in range(2, 14):
+        px(img, 7 + (y % 3), y, c)
+    for _ in range(6):
+        px(img, rng.randint(1, 14), rng.randint(1, 14), d)
+    for i in range(16):
+        px(img, i, 0, e); px(img, 0, i, e)
+    return img
+
+
+def stamp_atlas(tiles, size=256):
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    n = size // 16
+    for ty in range(n):
+        for tx in range(n):
+            t = tiles[(tx + ty * 3) % len(tiles)]
+            img.paste(t, (tx * 16, ty * 16))
+            # break grid: occasional flip via redraw noise
+            if (tx + ty) % 5 == 0:
+                for yy in range(16):
+                    for xx in range(2):
+                        p = t.getpixel((xx, yy))
+                        if p[3] > 0:
+                            img.putpixel((tx * 16 + 14 + xx, ty * 16 + yy), p)
+    return img
+
+
+# ---------- DETAILED SPRITES ----------
+def leaf_clump(img, cx, cy, r, cols, seed):
+    rng = random.Random(seed)
+    for i in range(r * r * 3):
+        ang = rng.random() * math.pi * 2
+        rad = rng.random() ** 0.6 * r
+        x = int(cx + math.cos(ang) * rad)
+        y = int(cy + math.sin(ang) * rad * 0.75)
+        # lighting
+        lit = 0.5 - math.cos(ang) * 0.2 - math.sin(ang) * 0.25 + rng.random() * 0.1
+        if lit > 0.7:
+            c = cols[0]
+        elif lit > 0.45:
+            c = cols[1]
+        elif lit > 0.25:
+            c = cols[2]
+        else:
+            c = cols[3]
+        if rad > r * 0.85:
+            c = cols[4]
+        px(img, x, y, c)
+        if rng.random() < 0.25:
+            px(img, x + 1, y, c)
+
+
+def bark(img, x0, y0, w, h, cols, seed):
     rng = random.Random(seed)
     for y in range(y0, y0 + h):
         for x in range(x0, x0 + w):
             u = (x - x0) / max(1, w - 1)
             c = cols[1]
-            if u < 0.25:
+            if u < 0.2:
                 c = cols[0]
-            elif u > 0.75:
+            elif u > 0.8:
                 c = cols[2]
-            if y % 5 == 0:
+            if y % 4 == 0:
                 c = cols[3]
-            if rng.random() < 0.08:
+            if rng.random() < 0.06:
                 c = cols[3]
             px(img, x, y, c)
-    # knots
-    for _ in range(max(1, h // 18)):
+    for _ in range(max(2, h // 12)):
         kx = x0 + rng.randint(1, max(1, w - 2))
-        ky = y0 + rng.randint(4, max(5, h - 4))
+        ky = y0 + rng.randint(3, max(4, h - 3))
         px(img, kx, ky, cols[3])
         px(img, kx + 1, ky, cols[2])
+        px(img, kx, ky + 1, cols[2])
 
 
-def outline_opaque(img):
-    w, h = img.size
-    src = img.copy()
-    for y in range(h):
-        for x in range(w):
-            if src.getpixel((x, y))[3] < 16:
-                for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, 1)):
-                    nx, ny = x + dx, y + dy
-                    if 0 <= nx < w and 0 <= ny < h and src.getpixel((nx, ny))[3] > 60:
-                        px(img, x, y, OUTLINE)
-                        break
-
-
-def soft_shadow(img, cx, cy, rx, ry):
-    for y in range(cy - ry, cy + ry + 1):
-        for x in range(cx - rx, cx + rx + 1):
-            if rx and ry:
-                d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-                if d <= 1:
-                    a = int(110 * (1 - d))
-                    if geta(img, x, y) < 10:
-                        px(img, x, y, (0, 0, 0), a)
-
-
-BIOME = {
-    "africa": dict(
-        leaf=[(168, 200, 72), (120, 160, 48), (72, 112, 36), (40, 72, 24), (28, 52, 16)],
-        trunk=[(160, 112, 56), (112, 72, 36), (72, 44, 20), (48, 28, 12)],
-        rock=[(200, 176, 128), (160, 136, 96), (112, 92, 64), (72, 56, 40), (48, 36, 24)],
-        grass=[(180, 210, 80), (140, 170, 52), (96, 128, 36), (64, 92, 24), (210, 230, 120)],
-        bush=[(100, 148, 48), (72, 112, 36), (48, 80, 24), (28, 52, 16), (200, 100, 40)],
-        sky_top=(56, 120, 200), sky_mid=(120, 170, 220), sky_bot=(230, 200, 120),
-        ground=[(190, 160, 90), (150, 120, 60), (110, 88, 44), (70, 110, 40), (210, 180, 110)],
-        wall=[(170, 140, 90), (120, 95, 60), (80, 60, 40), (50, 38, 24)],
-        para=[(90, 110, 50), (60, 80, 35), (120, 140, 70)],
-    ),
-    "mountains": dict(
-        leaf=[(90, 160, 100), (50, 120, 70), (28, 84, 48), (16, 56, 32), (10, 40, 22)],
-        trunk=[(120, 84, 48), (84, 56, 32), (56, 36, 20), (36, 24, 12)],
-        rock=[(220, 228, 236), (170, 180, 192), (120, 130, 142), (80, 88, 100), (50, 56, 68)],
-        grass=[(170, 190, 120), (120, 150, 80), (80, 110, 55), (50, 80, 40), (235, 242, 250)],
-        bush=[(70, 120, 80), (48, 90, 58), (32, 64, 40), (20, 44, 28), (210, 90, 110)],
-        sky_top=(90, 140, 210), sky_mid=(170, 200, 235), sky_bot=(245, 248, 252),
-        ground=[(150, 155, 165), (110, 118, 128), (80, 90, 100), (200, 210, 220), (70, 110, 70)],
-        wall=[(140, 148, 158), (100, 108, 118), (70, 78, 88), (210, 220, 230)],
-        para=[(70, 80, 100), (45, 55, 75), (100, 110, 130)],
-    ),
-    "jungle": dict(
-        leaf=[(60, 190, 90), (28, 140, 60), (12, 96, 40), (6, 64, 26), (4, 44, 18)],
-        trunk=[(110, 70, 36), (76, 48, 24), (48, 30, 14), (28, 16, 8)],
-        rock=[(120, 130, 90), (90, 100, 70), (60, 68, 48), (40, 46, 32), (24, 28, 18)],
-        grass=[(50, 180, 90), (30, 140, 65), (16, 100, 45), (10, 70, 30), (90, 210, 120)],
-        bush=[(40, 140, 70), (24, 100, 50), (14, 70, 34), (8, 48, 22), (190, 50, 70)],
-        sky_top=(24, 50, 80), sky_mid=(40, 100, 120), sky_bot=(30, 90, 50),
-        ground=[(70, 100, 45), (50, 76, 32), (34, 52, 22), (90, 70, 35), (20, 40, 16)],
-        wall=[(90, 60, 35), (60, 40, 22), (40, 26, 14), (24, 14, 8)],
-        para=[(12, 45, 22), (6, 30, 14), (24, 70, 36)],
-    ),
-    "wetlands": dict(
-        leaf=[(80, 170, 130), (48, 130, 100), (28, 96, 72), (16, 64, 50), (10, 44, 36)],
-        trunk=[(120, 90, 55), (84, 60, 36), (56, 40, 24), (36, 24, 14)],
-        rock=[(140, 150, 140), (100, 110, 105), (70, 80, 76), (48, 56, 52), (32, 40, 38)],
-        grass=[(90, 170, 120), (60, 130, 90), (40, 100, 70), (24, 70, 48), (210, 190, 80)],
-        bush=[(60, 130, 95), (40, 100, 70), (26, 70, 50), (14, 48, 34), (230, 190, 70)],
-        sky_top=(70, 130, 170), sky_mid=(120, 170, 185), sky_bot=(180, 210, 180),
-        ground=[(80, 110, 75), (55, 85, 60), (40, 70, 85), (100, 120, 80), (30, 55, 70)],
-        wall=[(100, 110, 90), (70, 80, 65), (48, 56, 45), (30, 36, 30)],
-        para=[(35, 75, 65), (22, 55, 48), (55, 95, 80)],
-    ),
+BIOMES = {
+    "africa": {
+        "grass": [(168, 190, 70), (130, 155, 50), (90, 115, 35), (200, 215, 100), (220, 160, 50)],
+        "dirt": [(180, 145, 85), (150, 120, 65), (110, 85, 45), (70, 50, 30), (200, 170, 110)],
+        "stone": [(170, 145, 105), (130, 110, 80), (90, 75, 55), (60, 48, 35), (200, 180, 140)],
+        "leaf": [(190, 210, 80), (145, 175, 55), (100, 135, 40), (60, 95, 28), (35, 60, 18)],
+        "trunk": [(165, 115, 55), (120, 80, 40), (80, 50, 25), (50, 30, 15)],
+        "sky": [(70, 130, 210), (140, 180, 230), (235, 205, 130)],
+        "para": [(100, 125, 55), (70, 95, 40), (130, 150, 70)],
+        "wall": [(160, 130, 85), (115, 90, 55), (75, 55, 35), (45, 32, 20)],
+    },
+    "mountains": {
+        "grass": [(150, 175, 110), (110, 140, 80), (75, 100, 55), (190, 205, 150), (235, 242, 250)],
+        "dirt": [(140, 145, 155), (105, 112, 122), (75, 82, 92), (50, 55, 65), (190, 198, 210)],
+        "stone": [(200, 208, 220), (150, 160, 175), (105, 115, 130), (70, 78, 90), (235, 242, 250)],
+        "leaf": [(80, 150, 95), (45, 115, 70), (25, 80, 48), (14, 55, 32), (8, 38, 22)],
+        "trunk": [(130, 95, 55), (95, 65, 38), (60, 40, 22), (38, 24, 12)],
+        "sky": [(100, 150, 215), (175, 205, 240), (245, 248, 252)],
+        "para": [(75, 85, 105), (50, 60, 80), (110, 120, 140)],
+        "wall": [(145, 152, 165), (105, 112, 125), (70, 78, 90), (210, 220, 230)],
+    },
+    "jungle": {
+        "grass": [(45, 140, 65), (28, 105, 48), (16, 75, 32), (70, 175, 95), (30, 90, 40)],
+        "dirt": [(85, 65, 35), (60, 45, 25), (40, 28, 15), (25, 16, 8), (110, 85, 45)],
+        "stone": [(100, 110, 75), (70, 80, 55), (45, 52, 35), (28, 34, 22), (130, 140, 100)],
+        "leaf": [(55, 185, 85), (30, 140, 60), (14, 100, 42), (8, 70, 28), (4, 45, 18)],
+        "trunk": [(120, 80, 40), (85, 55, 28), (55, 35, 16), (32, 18, 8)],
+        "sky": [(30, 55, 85), (45, 100, 115), (35, 95, 55)],
+        "para": [(15, 50, 25), (8, 35, 16), (30, 80, 40)],
+        "wall": [(95, 65, 35), (65, 42, 22), (40, 26, 12), (22, 14, 8)],
+    },
+    "wetlands": {
+        "grass": [(80, 155, 110), (55, 120, 85), (35, 90, 60), (110, 180, 130), (210, 190, 70)],
+        "dirt": [(75, 95, 70), (55, 75, 60), (40, 70, 85), (30, 50, 65), (100, 115, 85)],
+        "stone": [(125, 135, 125), (90, 100, 95), (60, 70, 65), (40, 48, 44), (160, 168, 160)],
+        "leaf": [(70, 165, 125), (45, 125, 95), (28, 95, 70), (16, 65, 48), (10, 45, 34)],
+        "trunk": [(130, 100, 60), (95, 70, 40), (60, 45, 25), (38, 28, 14)],
+        "sky": [(80, 140, 175), (130, 175, 190), (185, 215, 185)],
+        "para": [(40, 80, 70), (25, 58, 50), (60, 100, 85)],
+        "wall": [(105, 115, 95), (75, 85, 70), (50, 58, 48), (32, 38, 32)],
+    },
 }
 
 
+def make_ground(region):
+    b = BIOMES[region]
+    tiles = []
+    for v in range(6):
+        tiles.append(tile_grass(b["grass"], v, hash(region) + v * 17))
+    for v in range(3):
+        tiles.append(tile_dirt(b["dirt"], hash(region) + 100 + v))
+    for v in range(2):
+        tiles.append(tile_stone(b["stone"], hash(region) + 200 + v))
+    # weight grass heavier by duplicating
+    tiles = tiles[:6] * 2 + tiles[6:]
+    return stamp_atlas(tiles, 256)
+
+
 def make_tree(region, n):
-    img = Image.new("RGBA", (80, 112), (0, 0, 0, 0))
-    b = BIOME[region]
+    img = Image.new("RGBA", (112, 144), (0, 0, 0, 0))
+    b = BIOMES[region]
     leaf, trunk = b["leaf"], b["trunk"]
-    soft_shadow(img, 40, 106, 18, 4)
+    # shadow
+    for y in range(136, 142):
+        for x in range(30, 82):
+            if ((x - 56) / 26) ** 2 + ((y - 138) / 3) ** 2 < 1:
+                px(img, x, y, (0, 0, 0), 100)
 
     if region == "mountains":
-        # layered fir
-        bark_trunk(img, 37, 78, 6, 26, trunk, n * 40)
+        bark(img, 52, 95, 8, 40, trunk, n)
         tiers = {
-            1: [(40, 18, 10, 8), (40, 32, 16, 10), (40, 48, 22, 12), (40, 66, 18, 10)],
-            2: [(40, 12, 8, 7), (40, 24, 14, 9), (40, 40, 20, 11), (40, 58, 24, 12), (40, 76, 16, 9)],
-            3: [(40, 20, 12, 9), (40, 36, 20, 11), (40, 54, 26, 13), (40, 72, 18, 10)],
+            1: [(56, 28, 14), (56, 48, 22), (56, 72, 28), (56, 96, 22)],
+            2: [(56, 18, 12), (56, 36, 18), (56, 56, 26), (56, 80, 32), (56, 104, 20)],
+            3: [(56, 30, 16), (56, 52, 24), (56, 78, 30), (56, 102, 22)],
         }[n]
-        for i, (cx, cy, rx, ry) in enumerate(tiers):
-            # triangle-ish via stacked blobs
-            for k in range(ry):
-                ww = int(rx * (k + 1) / ry)
-                blob(img, cx, cy + k, ww, 2, leaf, n * 100 + i * 10 + k)
-            # snow
+        for i, (cx, cy, r) in enumerate(tiers):
+            # triangular fir: fill wedge
+            for row in range(r):
+                w = 1 + row * 2
+                if w > r * 2:
+                    w = r * 2
+                for x in range(cx - w // 2, cx + w // 2 + 1):
+                    c = leaf[0] if row < r // 3 else (leaf[1] if (x + row) % 2 == 0 else leaf[2])
+                    if row > r * 0.75:
+                        c = leaf[3]
+                    px(img, x, cy + row, c)
             if i < 2:
                 for x in range(cx - 4, cx + 5):
-                    px(img, x, cy - 1, (240, 246, 252))
-                    if abs(x - cx) < 3:
-                        px(img, x, cy, (210, 220, 235))
-    elif region == "africa":
-        tw = 10 if n == 2 else 6
-        bark_trunk(img, 40 - tw // 2, 58, tw, 44, trunk, n * 11)
-        # branch arms
-        if n != 2:
-            bark_trunk(img, 16, 52, 20, 4, trunk, 1)
-            bark_trunk(img, 44, 50, 20, 4, trunk, 2)
-        else:
-            bark_trunk(img, 22, 48, 36, 10, trunk, 3)
-            bark_trunk(img, 18, 44, 12, 6, trunk, 4)
-            bark_trunk(img, 50, 44, 12, 6, trunk, 5)
-        clusters = {
-            1: [(40, 34, 26, 14), (22, 36, 14, 10), (58, 34, 14, 10), (40, 22, 12, 8), (30, 28, 10, 7), (50, 28, 10, 7)],
-            2: [(40, 32, 20, 18), (26, 26, 14, 12), (54, 28, 14, 12), (40, 18, 12, 10)],
-            3: [(40, 32, 22, 12), (18, 38, 12, 9), (62, 36, 12, 9), (32, 22, 10, 7), (48, 22, 10, 7), (40, 42, 14, 8)],
-        }[n]
-        for i, (cx, cy, rx, ry) in enumerate(clusters):
-            blob(img, cx, cy, rx, ry, leaf, 200 + n * 50 + i)
-    elif region == "jungle":
-        tw = 8 if n == 2 else 6
-        bark_trunk(img, 40 - tw // 2, 48, tw, 54, trunk, n * 7)
-        clusters = {
-            1: [(40, 28, 22, 18), (22, 36, 14, 14), (58, 34, 14, 14), (40, 14, 12, 10), (28, 20, 10, 9), (52, 18, 10, 9)],
-            2: [(40, 26, 24, 20), (18, 32, 15, 15), (62, 30, 15, 15), (40, 12, 14, 11)],
-            3: [(40, 30, 18, 16), (24, 24, 13, 13), (56, 22, 13, 13), (12, 40, 10, 10), (68, 38, 10, 10), (40, 14, 11, 9)],
-        }[n]
-        for i, (cx, cy, rx, ry) in enumerate(clusters):
-            blob(img, cx, cy, rx, ry, leaf, 300 + n * 40 + i)
-        # vines with leaves
-        for vi, (vx, top, bot) in enumerate(((20, 40, 85), (58, 38, 90), (30, 44, 80), (50, 42, 88))):
-            if n == 1 and vi > 1:
-                continue
-            for y in range(top, bot):
-                px(img, vx + ((y // 5) % 2), y, leaf[2])
-                if y % 6 == 0:
-                    blob(img, vx, y, 4, 3, leaf, 900 + y)
-    else:  # wetlands mangrove
-        bark_trunk(img, 37, 55, 7, 42, trunk, n * 9)
-        for kx, ky, kw, kh in ((18, 72, 5, 28), (54, 70, 5, 30), (26, 80, 4, 20), (48, 78, 4, 22)):
-            if n == 1 and kx in (26, 48):
-                continue
-            bark_trunk(img, kx, ky, kw, kh, trunk, kx)
-        clusters = {
-            1: [(40, 34, 22, 12), (22, 38, 12, 9), (58, 36, 12, 9), (40, 24, 11, 8)],
-            2: [(40, 32, 20, 15), (24, 30, 13, 11), (56, 30, 13, 11), (40, 18, 11, 9)],
-            3: [(40, 36, 18, 11), (20, 40, 11, 8), (60, 38, 11, 8), (32, 26, 9, 7), (48, 26, 9, 7)],
-        }[n]
-        for i, (cx, cy, rx, ry) in enumerate(clusters):
-            blob(img, cx, cy, rx, ry, leaf, 400 + n * 30 + i)
-        for x in range(22, 58, 4):
-            for y in range(40, 58):
-                if (x * 3 + y) % 5 == 0:
-                    px(img, x, y, leaf[2])
+                    px(img, x, cy, (245, 250, 255))
+                    px(img, x, cy + 1, (220, 230, 240))
+    else:
+        tw = 14 if (region == "africa" and n == 2) else (10 if region == "jungle" else 8)
+        bark(img, 56 - tw // 2, 70, tw, 65, trunk, n * 9)
+        if region == "africa":
+            if n != 2:
+                bark(img, 22, 68, 28, 5, trunk, 1)
+                bark(img, 62, 66, 28, 5, trunk, 2)
+            else:
+                bark(img, 30, 62, 52, 12, trunk, 3)
+            clumps = {
+                1: [(56, 42, 28), (32, 48, 16), (80, 46, 16), (56, 28, 14), (42, 36, 12), (70, 36, 12)],
+                2: [(56, 40, 24), (36, 34, 16), (76, 36, 16), (56, 22, 14)],
+                3: [(56, 44, 26), (28, 52, 14), (84, 50, 14), (44, 30, 12), (68, 30, 12)],
+            }[n]
+        elif region == "jungle":
+            clumps = {
+                1: [(56, 38, 26), (30, 48, 18), (82, 46, 18), (56, 20, 14), (40, 28, 12), (72, 26, 12)],
+                2: [(56, 36, 30), (26, 44, 18), (86, 42, 18), (56, 16, 16)],
+                3: [(56, 40, 24), (34, 32, 16), (78, 30, 16), (18, 54, 12), (94, 52, 12), (56, 18, 12)],
+            }[n]
+            # vines
+            for vx, top, bot in ((28, 55, 115), (84, 52, 120), (42, 58, 110), (70, 56, 118)):
+                if n == 1 and vx in (42, 70):
+                    continue
+                for y in range(top, bot):
+                    px(img, vx + ((y // 6) % 2), y, leaf[2])
+                    if y % 7 == 0:
+                        leaf_clump(img, vx, y, 4, leaf, y)
+        else:  # wetlands
+            bark(img, 28, 100, 6, 32, trunk, 11)
+            bark(img, 78, 98, 6, 34, trunk, 12)
+            clumps = {
+                1: [(56, 46, 26), (32, 52, 14), (80, 50, 14), (56, 32, 12)],
+                2: [(56, 42, 24), (34, 40, 16), (78, 40, 16), (56, 24, 14)],
+                3: [(56, 48, 22), (30, 54, 12), (82, 52, 12), (44, 34, 10), (68, 34, 10)],
+            }[n]
+        for i, (cx, cy, r) in enumerate(clumps):
+            leaf_clump(img, cx, cy, r, leaf, 500 + n * 40 + i)
 
-    outline_opaque(img)
+    outline(img)
     return img
 
 
 def make_rock(region, n):
-    img = Image.new("RGBA", (56, 48), (0, 0, 0, 0))
-    cols = BIOME[region]["rock"]
-    soft_shadow(img, 28, 44, 16, 3)
-    polys = {
-        1: [(8, 22, 20, 14), (18, 12, 16, 16), (28, 20, 18, 16)],
-        2: [(6, 24, 22, 12), (16, 14, 18, 14), (30, 10, 14, 16), (34, 24, 14, 12)],
-        3: [(10, 18, 18, 18), (22, 10, 16, 14), (4, 26, 14, 12)],
-        4: [(4, 16, 16, 20), (16, 20, 20, 16), (28, 12, 14, 14)],
-        5: [(12, 22, 20, 14), (8, 14, 24, 12), (20, 6, 16, 14), (30, 16, 14, 12)],
+    img = Image.new("RGBA", (64, 56), (0, 0, 0, 0))
+    cols = BIOMES[region]["stone"]
+    # treat stone palette as leaf-like shades for clump
+    c5 = list(cols)
+    shapes = {
+        1: [(32, 30, 22), (22, 34, 12), (42, 32, 12)],
+        2: [(32, 28, 24), (18, 32, 12), (46, 30, 12), (32, 18, 10)],
+        3: [(30, 32, 18), (40, 28, 14), (20, 36, 10)],
+        4: [(24, 30, 16), (40, 32, 16), (32, 20, 12)],
+        5: [(32, 30, 20), (20, 26, 12), (44, 26, 12), (32, 16, 10)],
     }[n]
-    for i, (x, y, w, h) in enumerate(polys):
-        blob(img, x + w // 2, y + h // 2, w // 2, h // 2, cols, 50 + n * 10 + i)
-    # cracks
-    for y in range(14, 40, 3):
-        px(img, 24 + (n % 4), y, cols[-1])
-        px(img, 25 + (n % 4), y + 1, cols[-1])
+    for i, (cx, cy, r) in enumerate(shapes):
+        leaf_clump(img, cx, cy, r, c5, 70 + n * 10 + i)
     if region == "mountains":
-        for x in range(14, 42):
-            if geta(img, x, 12) > 40:
-                px(img, x, 10, (245, 250, 255))
-                px(img, x, 11, (220, 230, 240))
-    outline_opaque(img)
+        for x in range(16, 48):
+            if img.getpixel((x, 16))[3] > 40:
+                px(img, x, 14, (245, 250, 255))
+                px(img, x, 15, (220, 230, 240))
+    outline(img)
     return img
 
 
 def make_grass(region, n):
-    img = Image.new("RGBA", (48, 56), (0, 0, 0, 0))
-    g = BIOME[region]["grass"]
-    rng = random.Random(region + str(n))
-    count = 18 if n == 2 else (14 if n == 1 else 12)
-    for i in range(count):
-        x = 6 + (i * 37 + n * 5) % 36
-        h = (18 if n == 2 else 28 if n == 1 else 38) - (i % 5) * 2
-        y0 = 52 - h
+    img = Image.new("RGBA", (56, 64), (0, 0, 0, 0))
+    g = BIOMES[region]["grass"]
+    rng = random.Random(region + str(n) + "g")
+    blades = 22 if n != 3 else 14
+    for i in range(blades):
+        x = 6 + (i * 41 + n * 7) % 44
+        h = (22 if n == 2 else 32 if n == 1 else 48) - (i % 6) * 2
         lean = (i % 3) - 1
         for yy in range(h):
-            xx = x + (lean if yy > h // 2 else 0)
-            c = g[0] if yy < 4 else (g[1] if yy < h // 2 else g[2])
-            if (xx + yy) % 3 == 0:
+            xx = x + (lean if yy > h * 0.4 else 0) + (1 if yy > h * 0.7 and lean else 0)
+            c = g[0] if yy < 3 else (g[1] if yy < h // 2 else g[2])
+            if (xx + yy) % 4 == 0:
                 c = g[3]
-            px(img, xx, y0 + yy, c)
-            if yy < 2:
-                px(img, xx, y0 + yy, g[4] if region == "mountains" else g[0])
-        px(img, x + lean, y0 - 1, g[0])
+            px(img, xx, 60 - h + yy, c)
+        px(img, x + lean, 60 - h - 1, g[0])
     if region == "wetlands" and n == 3:
-        for bx in (16, 30):
-            for yy in range(20, 52):
+        for bx in (18, 34):
+            for yy in range(16, 60):
                 px(img, bx, yy, g[2])
-            for dy in range(10):
-                for dx in range(4):
-                    px(img, bx - 1 + dx, 8 + dy, g[4] if dy < 8 else (90, 70, 30))
-    outline_opaque(img)
+            for dy in range(12):
+                for dx in range(5):
+                    px(img, bx - 1 + dx, 6 + dy, g[4] if dy < 9 else (100, 75, 35))
+    outline(img)
     return img
 
 
 def make_bush(region, n):
-    img = Image.new("RGBA", (56, 48), (0, 0, 0, 0))
-    cols = BIOME[region]["bush"]
-    soft_shadow(img, 28, 44, 16, 3)
+    img = Image.new("RGBA", (64, 56), (0, 0, 0, 0))
+    leaf = BIOMES[region]["leaf"]
     if n == 1:
-        blob(img, 28, 28, 20, 14, cols, 1)
-        blob(img, 16, 30, 12, 10, cols, 2)
-        blob(img, 40, 29, 12, 10, cols, 3)
-        blob(img, 28, 18, 11, 9, cols, 4)
+        leaf_clump(img, 32, 32, 22, leaf, 1)
+        leaf_clump(img, 18, 34, 12, leaf, 2)
+        leaf_clump(img, 46, 33, 12, leaf, 3)
+        leaf_clump(img, 32, 20, 12, leaf, 4)
     else:
-        blob(img, 18, 28, 14, 12, cols, 5)
-        blob(img, 38, 26, 15, 13, cols, 6)
-        blob(img, 28, 16, 12, 10, cols, 7)
-        berry = cols[4]
-        for bx, by in ((14, 26), (22, 32), (34, 20), (42, 30), (28, 24), (18, 20)):
+        leaf_clump(img, 22, 32, 16, leaf, 5)
+        leaf_clump(img, 42, 30, 16, leaf, 6)
+        leaf_clump(img, 32, 18, 12, leaf, 7)
+        berry = BIOMES[region]["grass"][4]
+        for bx, by in ((16, 28), (26, 36), (38, 22), (48, 34), (32, 28)):
             px(img, bx, by, berry); px(img, bx + 1, by, berry)
             px(img, bx, by + 1, shade(berry, 0.7))
-    outline_opaque(img)
-    return img
-
-
-def make_ground(region):
-    img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
-    g = BIOME[region]["ground"]
-    rng = random.Random(region)
-    for y in range(128):
-        for x in range(128):
-            # dual-layer 16px tiles
-            tx, ty = x % 16, y % 16
-            tile = ((x // 16) + (y // 16) * 3) % 4
-            c = g[tile % 3]
-            # bevel
-            if tx == 0 or ty == 0:
-                c = shade(c, 0.82)
-            if tx == 15 or ty == 15:
-                c = shade(c, 1.08)
-            # speckles
-            if (x * 13 + y * 7) % 29 == 0:
-                c = g[3]
-            if region == "wetlands" and ((x // 8) + (y // 8)) % 3 == 0 and ty > 9:
-                c = mix(c, (40, 85, 105), 0.4)
-            if region == "mountains" and (x ^ y) % 19 == 0:
-                c = g[3]
-            px(img, x, y, c)
-    for _ in range(120):
-        x, y = rng.randint(0, 127), rng.randint(0, 127)
-        px(img, x, y, g[rng.randint(0, 3)])
-        if rng.random() < 0.3:
-            px(img, x + 1, y, g[1])
-    return img
-
-
-def make_water(frame):
-    img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
-    for y in range(128):
-        for x in range(128):
-            w1 = math.sin((x + frame * 10) * 0.18 + y * 0.05)
-            w2 = math.cos((y + frame * 6) * 0.22 + x * 0.04)
-            v = w1 + w2
-            if v > 0.8:
-                c = (120, 200, 210)
-            elif v > 0.2:
-                c = (50, 130, 155)
-            elif v > -0.4:
-                c = (28, 95, 125)
-            else:
-                c = (16, 65, 95)
-            if (x + y * 2 + frame * 3) % 17 == 0:
-                c = mix(c, (200, 230, 240), 0.5)
-            px(img, x, y, c)
+    outline(img)
     return img
 
 
 def make_sky(region):
-    img = Image.new("RGBA", (512, 112), (0, 0, 0, 0))
-    b = BIOME[region]
+    img = Image.new("RGBA", (256, 112), (0, 0, 0, 0))
+    top, mid, bot = BIOMES[region]["sky"]
     for y in range(112):
-        t = y / 111.0
-        if t < 0.45:
-            c = mix(b["sky_top"], b["sky_mid"], t / 0.45)
-        else:
-            c = mix(b["sky_mid"], b["sky_bot"], (t - 0.45) / 0.55)
-        # horizontal dither band for SNES look
-        for x in range(512):
-            cc = c
-            if abs(t - 0.45) < 0.06 and (x + y) % 2 == 0:
-                cc = mix(b["sky_top"], b["sky_bot"], 0.5)
-            px(img, x, y, cc)
-    # multi-layer clouds
-    rng = random.Random(region + "sky")
-    for i in range(10):
-        cx = (i * 55 + 30) % 512
-        cy = 12 + (i % 4) * 12
-        cols = [
-            mix(b["sky_bot"], (255, 255, 255), 0.7),
-            mix(b["sky_mid"], (255, 255, 255), 0.55),
-            mix(b["sky_top"], (200, 200, 210), 0.3),
-            mix(b["sky_top"], (100, 100, 120), 0.4),
-        ]
-        blob(img, cx, cy, 28 + (i % 3) * 8, 7 + (i % 2) * 3, cols, 70 + i)
-        blob(img, cx + 18, cy + 2, 18, 5, cols, 80 + i)
-    # far terrain under sky
-    for x in range(512):
+        t = y / 111
+        c = mix(top, mid, t / 0.5) if t < 0.5 else mix(mid, bot, (t - 0.5) / 0.5)
+        for x in range(256):
+            # SNES dither band
+            if 0.42 < t < 0.58 and (x + y) % 2 == 0:
+                c2 = mix(top, bot, 0.5)
+                px(img, x, y, c2)
+            else:
+                px(img, x, y, c)
+    # clouds — multi-pixel fluffy
+    rng = random.Random(region + "sky41")
+    for i in range(7):
+        cx = 20 + i * 36
+        cy = 14 + (i % 3) * 10
+        for _ in range(80):
+            x = cx + rng.randint(-18, 18)
+            y = cy + rng.randint(-5, 5)
+            px(img, x % 256, y, mix(bot, (255, 255, 255), 0.65))
+        for _ in range(40):
+            x = cx + 8 + rng.randint(-12, 12)
+            y = cy + 2 + rng.randint(-3, 3)
+            px(img, x % 256, y, mix(mid, (220, 220, 230), 0.4))
+    # far hills
+    para = BIOMES[region]["para"]
+    for x in range(256):
         if region == "mountains":
-            h = int(18 + 28 * abs(math.sin(x * 0.012)) + 10 * abs(math.sin(x * 0.04)))
-            for y in range(112 - h, 112):
-                px(img, x, y, mix(b["sky_top"], (50, 60, 80), 0.55 + (y - (112 - h)) * 0.01))
-            if h > 30:
-                px(img, x, 112 - h, (235, 242, 250))
+            h = int(14 + 26 * abs(math.sin(x * 0.04)) + 10 * abs(math.sin(x * 0.11)))
         elif region in ("jungle", "wetlands"):
-            h = 16 + (x * 11) % 36
-            for y in range(112 - h, 112):
-                px(img, x, y, b["para"][0] if (x + y) % 2 == 0 else b["para"][1])
+            h = 12 + (x * 9) % 28
         else:
-            h = int(8 + 12 * abs(math.sin(x * 0.02)))
-            for y in range(112 - h, 112):
-                px(img, x, y, mix(b["sky_bot"], b["para"][0], 0.5))
+            h = int(6 + 10 * abs(math.sin(x * 0.05)))
+        for y in range(112 - h, 112):
+            px(img, x, y, para[0] if (x + y) % 2 == 0 else para[1])
+        if region == "mountains" and h > 22:
+            px(img, x, 112 - h, (240, 246, 252))
     return img
 
 
 def make_parallax(region):
-    img = Image.new("RGBA", (512, 88), (0, 0, 0, 0))
-    p = BIOME[region]["para"]
-    leaf = BIOME[region]["leaf"]
+    # Wide detailed midground — trees/peaks as pixel columns
+    img = Image.new("RGBA", (512, 96), (0, 0, 0, 0))
+    p = BIOMES[region]["para"]
+    leaf = BIOMES[region]["leaf"]
+    trunk = BIOMES[region]["trunk"]
     for x in range(512):
-        h = 20 + int(24 * abs(math.sin(x * 0.018)) + 12 * abs(math.sin(x * 0.05 + 0.7)))
+        h = 22 + int(28 * abs(math.sin(x * 0.02)) + 14 * abs(math.sin(x * 0.055 + 1)))
         if region == "mountains":
-            h = 28 + int(36 * abs(math.sin(x * 0.013)) + 14 * abs(math.sin(x * 0.037)))
-        for y in range(88 - h, 88):
-            t = (y - (88 - h)) / max(1, h)
-            c = mix(p[0], p[1], t)
-            if (x // 3 + y) % 8 == 0:
-                c = p[2]
-            px(img, x, y, c, 235)
-        if region != "mountains" and x % 15 == 0:
-            th = 10 + (x % 7) * 2
-            bark_trunk(img, x, 88 - h - th, 3, th, BIOME[region]["trunk"], x)
-            blob(img, x + 1, 88 - h - th, 7, 5, leaf, x)
-        if region == "mountains" and h > 40:
-            for yy in range(3):
-                px(img, x, 88 - h + yy, (230, 238, 248), 200)
+            h = 30 + int(40 * abs(math.sin(x * 0.015)) + 16 * abs(math.sin(x * 0.04)))
+        for y in range(96 - h, 96):
+            t = (y - (96 - h)) / max(1, h)
+            px(img, x, y, mix(p[0], p[1], t), 240)
+        if region != "mountains" and x % 12 == 0:
+            th = 14 + (x % 9)
+            bark(img, x, 96 - h - th, 3, th, trunk, x)
+            leaf_clump(img, x + 1, 96 - h - th, 8, leaf, x)
+        if region == "mountains" and h > 45:
+            for yy in range(4):
+                px(img, x, 96 - h + yy, (235, 242, 250), 220)
     return img
 
 
 def make_wall(region):
-    img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
-    w = BIOME[region]["wall"]
-    for y in range(128):
-        for x in range(128):
-            bx, by = x // 16, y // 12
-            c = w[(bx + by) % 3]
-            tx, ty = x % 16, y % 12
-            if tx == 0 or ty == 0:
-                c = w[3]
-            if tx == 15 or ty == 11:
-                c = shade(w[(bx + by) % 3], 1.15)
-            if (x * 3 + y * 5) % 17 == 0:
-                c = shade(c, 0.85)
+    b = BIOMES[region]
+    tiles = [tile_stone(b["wall"] + [b["wall"][0]], hash(region) + i) for i in range(8)]
+    # expand wall palette to 5
+    return stamp_atlas(tiles, 128)
+
+
+def make_water(frame):
+    img = Image.new("RGBA", (256, 256), (0, 0, 0, 0))
+    for y in range(256):
+        for x in range(256):
+            w1 = math.sin((x + frame * 12) * 0.12 + y * 0.04)
+            w2 = math.cos((y + frame * 7) * 0.15)
+            v = w1 + w2
+            if v > 1.0:
+                c = (140, 210, 220)
+            elif v > 0.3:
+                c = (55, 140, 165)
+            elif v > -0.4:
+                c = (28, 100, 130)
+            else:
+                c = (14, 70, 100)
+            if (x + y + frame * 4) % 19 == 0:
+                c = mix(c, (210, 235, 245), 0.55)
             px(img, x, y, c)
-    rng = random.Random(region + "wall")
-    for _ in range(70):
-        x, y = rng.randint(0, 127), rng.randint(0, 127)
-        if region == "mountains":
-            px(img, x, y, (230, 238, 248)); px(img, x + 1, y, (200, 210, 220))
-        elif region == "jungle":
-            px(img, x, y, (40, 120, 50)); px(img, x + 1, y, (20, 90, 35))
-        elif region == "wetlands":
-            px(img, x, y, (40, 100, 80))
-        else:
-            px(img, x, y, shade(w[0], 1.25))
     return img
 
 
 def make_lily():
     img = Image.new("RGBA", (48, 40), (0, 0, 0, 0))
-    blob(img, 24, 28, 18, 8, [(50, 140, 90), (30, 110, 70), (18, 80, 50), (10, 55, 35)], 1)
+    leaf = [(55, 150, 95), (35, 120, 75), (20, 90, 55), (12, 60, 38), (8, 40, 26)]
+    leaf_clump(img, 24, 26, 16, leaf, 1)
     for a in range(8):
         ang = a * math.pi / 4
-        blob(img, int(24 + math.cos(ang) * 7), int(14 + math.sin(ang) * 4), 5, 3,
-             [(240, 210, 90), (220, 180, 60), (180, 130, 40), (140, 90, 20)], 10 + a)
-    blob(img, 24, 14, 4, 4, [(220, 140, 40), (180, 100, 30), (140, 70, 20), (100, 50, 15)], 99)
-    outline_opaque(img)
+        leaf_clump(img, int(24 + math.cos(ang) * 7), int(14 + math.sin(ang) * 4), 5,
+                   [(245, 215, 90), (220, 180, 55), (180, 130, 35), (130, 90, 20), (90, 60, 15)], 10 + a)
+    outline(img)
     return img
 
 
 def make_landmark(kind):
-    img = Image.new("RGBA", (96, 72), (0, 0, 0, 0))
+    img = Image.new("RGBA", (112, 80), (0, 0, 0, 0))
     if kind == "watering_hole":
-        soft_shadow(img, 48, 58, 30, 6)
-        blob(img, 48, 48, 32, 14, [(40, 120, 150), (30, 95, 125), (20, 70, 100), (12, 50, 75)], 1)
-        blob(img, 48, 46, 20, 8, [(90, 180, 190), (50, 140, 160), (30, 100, 130), (20, 70, 100)], 2)
-        for x in range(20, 76, 5):
-            blob(img, x, 36, 3, 6, BIOME["africa"]["grass"], x)
+        leaf_clump(img, 56, 52, 30, [(50, 140, 170), (35, 110, 140), (22, 80, 110), (12, 55, 80), (8, 40, 60)], 1)
+        leaf_clump(img, 56, 48, 18, [(100, 190, 200), (60, 150, 170), (35, 110, 140), (20, 80, 110), (12, 55, 80)], 2)
+        for x in range(24, 88, 4):
+            leaf_clump(img, x, 38, 4, BIOMES["africa"]["leaf"], x)
     elif kind == "cairn":
-        for i, (cx, cy, rx, ry) in enumerate([(48, 52, 16, 8), (48, 40, 12, 8), (48, 28, 8, 8)]):
-            blob(img, cx, cy, rx, ry, BIOME["mountains"]["rock"], 10 + i)
+        for i, (cx, cy, r) in enumerate([(56, 58, 16), (56, 44, 12), (56, 32, 9)]):
+            leaf_clump(img, cx, cy, r, list(BIOMES["mountains"]["stone"]), 10 + i)
     elif kind == "boardwalk":
-        for i in range(7):
-            bark_trunk(img, 12 + i * 11, 28, 9, 28, BIOME["wetlands"]["trunk"], i)
-        bark_trunk(img, 10, 54, 76, 5, BIOME["wetlands"]["trunk"], 9)
+        for i in range(8):
+            bark(img, 14 + i * 12, 30, 10, 32, BIOMES["wetlands"]["trunk"], i)
+        bark(img, 12, 58, 88, 6, BIOMES["wetlands"]["trunk"], 9)
     elif kind == "reed_blind":
-        for x in range(18, 78, 3):
-            for y in range(12, 60):
-                px(img, x, y, BIOME["wetlands"]["grass"][(x + y) % 3])
-        bark_trunk(img, 28, 24, 40, 22, BIOME["wetlands"]["trunk"], 1)
+        g = BIOMES["wetlands"]["grass"]
+        for x in range(20, 92, 2):
+            for y in range(10, 68):
+                px(img, x, y, g[(x + y) % 3])
+        bark(img, 32, 28, 48, 24, BIOMES["wetlands"]["trunk"], 1)
     elif kind == "ranger_post":
-        bark_trunk(img, 34, 18, 28, 42, BIOME["africa"]["trunk"], 1)
-        bark_trunk(img, 28, 12, 40, 10, BIOME["africa"]["trunk"], 2)
-        for y in range(30, 42):
-            for x in range(42, 52):
-                px(img, x, y, (50, 110, 160))
+        bark(img, 40, 18, 32, 48, BIOMES["africa"]["trunk"], 1)
+        bark(img, 34, 12, 44, 10, BIOMES["africa"]["trunk"], 2)
+        for y in range(32, 44):
+            for x in range(50, 62):
+                px(img, x, y, (55, 120, 170))
     else:
-        blob(img, 48, 30, 34, 22, BIOME["jungle"]["leaf"], 1)
-        blob(img, 48, 30, 12, 8, [(40, 70, 120), (30, 55, 95), (20, 40, 70), (12, 28, 50)], 2)
-        for x in range(24, 72, 6):
-            bark_trunk(img, x, 44, 3, 20, BIOME["jungle"]["trunk"], x)
-    outline_opaque(img)
+        leaf_clump(img, 56, 34, 36, BIOMES["jungle"]["leaf"], 1)
+        leaf_clump(img, 56, 34, 12, [(45, 75, 130), (30, 55, 100), (20, 40, 75), (12, 28, 50), (8, 18, 35)], 2)
+        for x in range(28, 84, 6):
+            bark(img, x, 48, 3, 22, BIOMES["jungle"]["trunk"], x)
+    outline(img)
     return img
 
 
 def main():
     n = 0
     for region in ("africa", "mountains", "jungle", "wetlands"):
+        save(make_ground(region), "assets", "ground", f"{region}.png"); n += 1
+        save(make_sky(region), "assets", "sky", f"{region}.png"); n += 1
+        save(make_parallax(region), "assets", "parallax", f"{region}.png"); n += 1
+        # wall: expand palette to 5 entries
+        wpal = BIOMES[region]["wall"]
+        while len(wpal) < 5:
+            wpal = list(wpal) + [wpal[-1]]
+        BIOMES[region]["wall5"] = wpal
+        tiles = [tile_stone(tuple(wpal), hash(region) + i) for i in range(8)]
+        save(stamp_atlas(tiles, 128), "assets", "walls", f"{region}.png"); n += 1
+        save(stamp_atlas(tiles, 128).resize((64, 64), Image.NEAREST), "assets", "props", f"wall{region}.png"); n += 1
         for i in range(1, 4):
             save(make_tree(region, i), "assets", "props", f"{region}_tree{i}.png"); n += 1
         for i in range(1, 6):
@@ -540,11 +562,6 @@ def main():
             save(make_grass(region, i), "assets", "props", f"{region}_grass{i}.png"); n += 1
         for i in range(1, 3):
             save(make_bush(region, i), "assets", "props", f"{region}_bush{i}.png"); n += 1
-        save(make_ground(region), "assets", "ground", f"{region}.png"); n += 1
-        save(make_sky(region), "assets", "sky", f"{region}.png"); n += 1
-        save(make_parallax(region), "assets", "parallax", f"{region}.png"); n += 1
-        save(make_wall(region), "assets", "walls", f"{region}.png"); n += 1
-        save(make_wall(region).resize((64, 64), Image.NEAREST), "assets", "props", f"wall{region}.png"); n += 1
 
     for f in range(3):
         save(make_water(f), "assets", "ground", f"water{f}.png"); n += 1
@@ -565,14 +582,12 @@ def main():
     for lm in ("watering_hole", "cairn", "boardwalk", "reed_blind", "ranger_post", "canopy_gap"):
         save(make_landmark(lm), "assets", "landmarks", f"{lm}.png"); n += 1
 
-    bird = Image.new("RGBA", (32, 20), (0, 0, 0, 0))
-    blob(bird, 14, 10, 10, 6, [(60, 60, 70), (40, 40, 50), (25, 25, 35), (15, 15, 20)], 1)
-    blob(bird, 22, 8, 4, 3, [(230, 230, 210), (200, 200, 180), (160, 160, 140), (100, 100, 90)], 2)
-    for x in range(2, 7):
-        px(bird, x, 9, (210, 150, 50)); px(bird, x, 10, (180, 120, 30))
-    outline_opaque(bird); save(bird, "assets", "props", "bird.png"); n += 1
-
-    print(f"SNES v40b assets: {n}")
+    print(f"v41 SNES tile assets: {n}")
+    # verify detail
+    g = Image.open(root / "assets" / "ground" / "africa.png")
+    t = Image.open(root / "assets" / "props" / "africa_tree1.png")
+    print("ground", g.size, "colors", len({p[:3] for p in g.getdata()}))
+    print("tree", t.size, "colors", len({p[:3] for p in t.getdata() if p[3] > 10}))
 
 
 if __name__ == "__main__":

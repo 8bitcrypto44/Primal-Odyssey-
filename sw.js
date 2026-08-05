@@ -1,5 +1,5 @@
 /* Primal Odyssey asset cache hint */
-const CACHE = "po-v40";
+const CACHE = "po-v41";
 const ASSETS = [
   "./",
   "./index.html",
