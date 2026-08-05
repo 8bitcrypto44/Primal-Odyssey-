@@ -40,12 +40,15 @@
   }
   const canvas = document.getElementById("po-canvas");
   const ctx = canvas.getContext("2d", { alpha: false });
-  ctx.imageSmoothingEnabled = false;
-  canvas.style.imageRendering = "pixelated";
-  const W = 480, H = 270;
+  // Higher internal res for fullscreen / Digistracts 16:9 hosts
+  const W = 720, H = 405;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   const MAP = 36;
   const FOV = Math.PI / 3;
-  const TEX = 64;
+  const TEX = 128;
   const UNIT_FT = 11;
   const HT_FT = {
     acacia: 30, baobab: 50, pine: 75, tree: 100,
@@ -773,12 +776,13 @@
   function drawSkyFloor() {
     const R = region;
     const phase = dayPhase();
-    const bobY = Math.sin(player.bob) * 4;
+    const bobY = Math.sin(player.bob) * 6;
     const horizon = (H / 2 + bobY) | 0;
     const skyImg = remoteSky[R.id];
     if (skyImg) {
       const scroll = ((player.dir * 120) % skyImg.width + skyImg.width) % skyImg.width;
-      ctx.imageSmoothingEnabled = false;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(skyImg, -scroll, 0, skyImg.width, horizon);
       ctx.drawImage(skyImg, -scroll + skyImg.width, 0, skyImg.width, horizon);
       ctx.fillStyle = "rgba(" +
@@ -798,7 +802,7 @@
     }
     const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
     const planeX = -dirY * 0.66, planeY = dirX * 0.66;
-    const stepY = 1, stepX = 2;
+    const stepY = 1, stepX = 1;
     for (let y = horizon + 1; y < H; y += stepY) {
       const rowDist = (0.5 * H) / (y - horizon);
       const fog = clamp(1 - rowDist / 16, 0.2, 1);
@@ -931,40 +935,60 @@
   const remoteSky = {};
 
   function fitRemoteToCanvas(img) {
-    const max = 96;
-    const scale = Math.min(max / img.width, max / img.height);
-    const w = Math.max(8, (img.width * scale) | 0), h = Math.max(8, (img.height * scale) | 0);
+    // Keep more source detail; smooth downsample (photos look soft, not blocky)
+    const max = 192;
+    const scale = Math.min(1, max / Math.max(img.width, img.height));
+    const w = Math.max(16, (img.width * scale) | 0);
+    const h = Math.max(16, (img.height * scale) | 0);
     const tmp = document.createElement("canvas");
     tmp.width = w; tmp.height = h;
     const tctx = tmp.getContext("2d");
-    tctx.imageSmoothingEnabled = false;
+    tctx.imageSmoothingEnabled = true;
+    tctx.imageSmoothingQuality = "high";
     tctx.drawImage(img, 0, 0, w, h);
     let minX = 0, minY = 0, maxX = w - 1, maxY = h - 1;
     try {
       const data = tctx.getImageData(0, 0, w, h), px = data.data;
-      // Only remove near-white background — no fringe erode (destroys pixel-art)
+      function sample(ix, iy) {
+        const i = (iy * w + ix) * 4;
+        return [px[i], px[i + 1], px[i + 2]];
+      }
+      const corners = [sample(0, 0), sample(w - 1, 0), sample(0, h - 1), sample(w - 1, h - 1)];
+      let br = 0, bg = 0, bb = 0;
+      for (let c = 0; c < 4; c++) { br += corners[c][0]; bg += corners[c][1]; bb += corners[c][2]; }
+      br = (br / 4) | 0; bg = (bg / 4) | 0; bb = (bb / 4) | 0;
+      const brightBackdrop = br > 200 && bg > 200 && bb > 200;
       for (let i = 0; i < px.length; i += 4) {
         const r = px[i], g = px[i + 1], b = px[i + 2];
         const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-        if (r > 232 && g > 232 && b > 232 && mx - mn < 28) px[i + 3] = 0;
+        if (r > 220 && g > 220 && b > 220 && mx - mn < 32) { px[i + 3] = 0; continue; }
+        if (brightBackdrop) {
+          const dr = r - br, dg = g - bg, db = b - bb;
+          if (dr * dr + dg * dg + db * db < 1400 && mx > 170) { px[i + 3] = 0; continue; }
+        }
+        if (g > 160 && g > r * 1.25 && g > b * 1.25 && r < 140) px[i + 3] = 0;
       }
       minX = w; minY = h; maxX = 0; maxY = 0;
+      let any = false;
       for (let i = 0; i < px.length; i += 4) {
-        if (px[i + 3] > 20) {
+        if (px[i + 3] > 24) {
+          any = true;
           const x = (i / 4) % w, y = (i / 4 / w) | 0;
           if (x < minX) minX = x; if (y < minY) minY = y;
           if (x > maxX) maxX = x; if (y > maxY) maxY = y;
         }
       }
+      if (!any) { minX = 0; minY = 0; maxX = w - 1; maxY = h - 1; }
       tctx.putImageData(data, 0, 0);
-      if (maxX <= minX || maxY <= minY) { minX = 0; minY = 0; maxX = w - 1; maxY = h - 1; }
     } catch (e) {}
-    const cw = maxX - minX + 1, ch = maxY - minY + 1;
+    const cw = Math.max(8, maxX - minX + 1), ch = Math.max(8, maxY - minY + 1);
     const off = document.createElement("canvas");
     off.width = cw; off.height = ch;
     const octx = off.getContext("2d");
-    octx.imageSmoothingEnabled = false;
+    octx.imageSmoothingEnabled = true;
+    octx.imageSmoothingQuality = "high";
     octx.drawImage(tmp, minX, minY, cw, ch, 0, 0, cw, ch);
+    off._photo = true;
     return off;
   }
 
@@ -1009,7 +1033,8 @@
         const c = document.createElement("canvas");
         c.width = c.height = TEX;
         const g = c.getContext("2d");
-        g.imageSmoothingEnabled = false;
+        g.imageSmoothingEnabled = true;
+        g.imageSmoothingQuality = "high";
         g.drawImage(img, 0, 0, TEX, TEX);
         remoteGround[rid] = g.getImageData(0, 0, TEX, TEX);
       });
@@ -1018,9 +1043,10 @@
       loadImg(REMOTE_SKY[rid], function (img) {
         const c = document.createElement("canvas");
         c.width = W;
-        c.height = H / 2;
+        c.height = Math.ceil(H * 0.55);
         const g = c.getContext("2d");
-        g.imageSmoothingEnabled = false;
+        g.imageSmoothingEnabled = true;
+        g.imageSmoothingQuality = "high";
         g.drawImage(img, 0, 0, c.width, c.height);
         remoteSky[rid] = c;
       });
@@ -1031,10 +1057,10 @@
     if (remoteProps[prop]) return remoteProps[prop];
     if (propCache[prop]) return propCache[prop];
     const off = document.createElement("canvas");
-    off.width = off.height = 64;
+    off.width = off.height = 96;
     const octx = off.getContext("2d");
     octx.imageSmoothingEnabled = false;
-    drawPropBillboard(octx, prop, 64);
+    drawPropBillboard(octx, prop, 96);
     propCache[prop] = off;
     return off;
   }
@@ -1043,23 +1069,23 @@
     const key = "a:" + id;
     if (remoteArt[id]) return remoteArt[id];
     if (propCache[key]) return propCache[key];
-    const sz = PO_SPRITES.spriteSize(id, 3);
+    const sz = PO_SPRITES.spriteSize(id, 5);
     const off = document.createElement("canvas");
-    off.width = Math.max(48, sz.w + 8);
-    off.height = Math.max(48, sz.h + 14);
+    off.width = Math.max(64, sz.w + 12);
+    off.height = Math.max(64, sz.h + 18);
     const octx = off.getContext("2d");
     octx.imageSmoothingEnabled = false;
     octx.fillStyle = "rgba(0,0,0,0.35)";
     octx.beginPath();
-    octx.ellipse(off.width / 2, off.height - 5, off.width * 0.28, 4, 0, 0, Math.PI * 2);
+    octx.ellipse(off.width / 2, off.height - 6, off.width * 0.28, 5, 0, 0, Math.PI * 2);
     octx.fill();
-    PO_SPRITES.drawSprite(octx, id, 4, 2, 3, 0);
+    PO_SPRITES.drawSprite(octx, id, 6, 3, 5, 0);
     propCache[key] = off;
     return off;
   }
 
   function drawSprites() {
-    const bobY = Math.sin(player.bob) * 4;
+    const bobY = Math.sin(player.bob) * 6;
     const phase = dayPhase();
     const labelDist = phase.name === "night" ? 3.2 : 5.5;
     const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
@@ -1098,9 +1124,9 @@
           ctx.fillStyle = "rgba(4,20,10,0.8)";
           ctx.fillRect(spriteScreenX - 28, y0 - 12, 56, 10);
           ctx.fillStyle = "#5dce7a";
-          ctx.font = "8px monospace";
+          ctx.font = "11px monospace";
           ctx.textAlign = "center";
-          ctx.fillText("NOTE · E", spriteScreenX, y0 - 4);
+          ctx.fillText("NOTE · walk close", spriteScreenX, y0 - 4);
           ctx.textAlign = "left";
         }
         continue;
@@ -1114,15 +1140,19 @@
       const drawEndX = drawStartX + spriteW;
       if (drawEndX < 0 || drawStartX >= W || drawStartY >= H || drawStartY + spriteH < 0) continue;
       const flip = sp.kind === "animal" && sp.face < 0;
+      const fogA = clamp(1.15 - transformY / 18, 0.35, 1);
+      ctx.save();
+      ctx.globalAlpha = fogA;
+      ctx.imageSmoothingEnabled = !!(img._photo);
+      ctx.imageSmoothingQuality = "high";
       if (flip) {
-        ctx.save();
         ctx.translate(drawStartX + spriteW, drawStartY);
         ctx.scale(-1, 1);
         ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, spriteW, spriteH);
-        ctx.restore();
       } else {
         ctx.drawImage(img, 0, 0, img.width, img.height, drawStartX, drawStartY, spriteW, spriteH);
       }
+      ctx.restore();
 
       if (sp.kind === "animal") {
         drawSprites._screen.push({
@@ -1139,9 +1169,9 @@
           const lw = Math.min(110, 8 + label.length * 5);
           ctx.fillRect(spriteScreenX - lw / 2, drawStartY - 14, lw, 11);
           ctx.fillStyle = sp.rare ? "#e8c86a" : "#5dce7a";
-          ctx.font = "8px monospace";
+          ctx.font = "11px monospace";
           ctx.textAlign = "center";
-          ctx.fillText(label, spriteScreenX, drawStartY - 5);
+          ctx.fillText(label, spriteScreenX, drawStartY - 6);
           ctx.textAlign = "left";
         }
       }
@@ -1162,7 +1192,7 @@
       ctx.fillStyle = "rgba(4,20,10,0.8)";
       ctx.fillRect(sx - 48, sy - 8, 96, 12);
       ctx.fillStyle = "#9ec9ad";
-      ctx.font = "8px monospace";
+      ctx.font = "11px monospace";
       ctx.textAlign = "center";
       ctx.fillText(lm.label, sx, sy + 2);
       ctx.textAlign = "left";
