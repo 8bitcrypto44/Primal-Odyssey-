@@ -83,6 +83,8 @@
     knob: document.getElementById("po-knob"),
     lookL: document.getElementById("po-look-l"),
     lookR: document.getElementById("po-look-r"),
+    lookU: document.getElementById("po-look-u"),
+    lookD: document.getElementById("po-look-d"),
     dArt: document.getElementById("po-dossier-art"),
     dName: document.getElementById("po-d-name"),
     dLatin: document.getElementById("po-d-latin"),
@@ -249,7 +251,7 @@
   let wall = [];
   let floor = [];
   let sprites = [];
-  let player = { x: 3.5, y: 3.5, dir: 0, bob: 0 };
+  let player = { x: 3.5, y: 3.5, dir: 0, pitch: 0, bob: 0 };
   let keys = {};
   let openAnimal = null;
   let tab = "facts";
@@ -258,7 +260,7 @@
   let lookDrag = null;
   let lookMoved = 0;
   let suppressClickUntil = 0;
-  let pad = { fwd: 0, strafe: 0, turn: 0 };
+  let pad = { fwd: 0, strafe: 0, turn: 0, pitch: 0 };
   let propCache = {};
   let miniBase = null;
   let landmarks = [];
@@ -282,6 +284,16 @@
 
   function rnd(n) { return Math.floor(Math.random() * n); }
   function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function viewBob() { return Math.sin(player.bob) * 6; }
+  function pitchPx() { return player.pitch * H * 0.72; }
+  function horizonY() {
+    return Math.max(10, Math.min(H - 12, (H / 2 + viewBob() + pitchPx()) | 0));
+  }
+  const GAIT_HZ = {
+    lion: 3.4, tiger: 3.3, leopard: 3.6, jaguar: 3.5, snowleopard: 3.4, cougar: 3.5,
+    wolf: 3.8, grizzly: 2.4, gorilla: 2.2, hippo: 1.8, rhino: 1.9, buffalo: 2.0,
+    croc: 1.5, anaconda: 1.2, eagle: 4.5, honeybadger: 3.6
+  };
   function hexRgb(h) {
     h = h.replace("#", "");
     return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
@@ -487,6 +499,7 @@
     player.x = 4.5;
     player.y = 4.5;
     player.dir = 0.4;
+    player.pitch = 0;
     player.bob = 0;
     rebuildMiniBase();
     syncNotesUI();
@@ -510,6 +523,7 @@
     sprites.push({
       x: x, y: y, kind: "animal", data: a, id: a.id,
       scale: worldScale(a.id), bob: 0, animT: Math.random() * 10,
+      gait: Math.random() * Math.PI * 2,
       vx: 0, vy: 0, walkT: 0.5 + Math.random() * 2, face: 1,
       waterLove: waterLove,
       behavior: a.behavior || "apex",
@@ -660,8 +674,23 @@
       sp.animT = (sp.animT || 0) + dt;
       sp.walkT -= dt;
       if (sp.walkT <= 0) retargetAnimal(sp);
-      const moving = Math.hypot(sp.vx, sp.vy) > 0.05;
-      sp.bob = Math.sin(sp.animT * (moving ? 8 : 2)) * (sp.idleBob || 0.2) * (sp.behavior === "soar" ? 2.2 : 1);
+      const spd = Math.hypot(sp.vx, sp.vy);
+      const moving = spd > 0.08;
+      const hz = GAIT_HZ[sp.id] || 2.8;
+      if (moving) sp.gait = (sp.gait || 0) + dt * hz * Math.PI * 2 * clamp(spd / 0.7, 0.55, 1.35);
+      else sp.gait = (sp.gait || 0) + dt * 1.2;
+      const stride = Math.sin(sp.gait);
+      const plant = Math.abs(Math.cos(sp.gait));
+      if (sp.behavior === "soar") {
+        sp.bob = Math.sin(sp.animT * 5.5) * 0.55 + stride * 0.12;
+        sp.lean = Math.sin(sp.animT * 2.2) * 0.04;
+        sp.squash = 1 + Math.sin(sp.animT * 6) * 0.04;
+      } else {
+        sp.bob = (moving ? stride * 0.28 * plant : Math.sin(sp.animT * 2) * (sp.idleBob || 0.15));
+        sp.lean = moving ? stride * 0.07 : 0;
+        sp.squash = moving ? (0.94 + plant * 0.1) : 1;
+      }
+      sp.walkFrame = moving ? ((sp.gait / (Math.PI / 2)) | 0) : 0;
       const nx = sp.x + sp.vx * dt;
       const ny = sp.y + sp.vy * dt;
       if (!animalBlocked(nx, sp.y, sp)) sp.x = nx;
@@ -721,20 +750,25 @@
   }
 
   function movePlayer(dt) {
-    let turn = 0, fwd = 0, strafe = 0;
+    let turn = 0, fwd = 0, strafe = 0, pitchIn = 0;
     if (keys.ArrowLeft || keys.q || keys.Q) turn -= 1;
     if (keys.ArrowRight || keys.e || keys.E) turn += 1;
-    if (keys.w || keys.W || keys.ArrowUp) fwd += 1;
-    if (keys.s || keys.S || keys.ArrowDown) fwd -= 1;
+    if (keys.w || keys.W) fwd += 1;
+    if (keys.s || keys.S) fwd -= 1;
     if (keys.a || keys.A) strafe -= 1;
     if (keys.d || keys.D) strafe += 1;
+    if (keys.ArrowUp || keys.r || keys.R || keys.i || keys.I) pitchIn += 1;
+    if (keys.ArrowDown || keys.f || keys.F || keys.k || keys.K) pitchIn -= 1;
     fwd += pad.fwd;
     strafe += pad.strafe;
     turn += pad.turn;
+    pitchIn += pad.pitch;
     fwd = clamp(fwd, -1, 1);
     strafe = clamp(strafe, -1, 1);
     turn = clamp(turn, -1, 1);
-    player.dir += turn * 2.2 * dt;
+    pitchIn = clamp(pitchIn, -1, 1);
+    player.dir += turn * 2.4 * dt;
+    player.pitch = clamp(player.pitch + pitchIn * 1.35 * dt, -0.58, 0.58);
     const c = Math.cos(player.dir), s = Math.sin(player.dir);
     const sp = 2.6 * dt;
     const mx = (c * fwd + -s * strafe) * sp;
@@ -801,8 +835,8 @@
   function drawSkyFloor() {
     const R = region;
     const phase = dayPhase();
-    const bobY = Math.sin(player.bob) * 6;
-    const horizon = Math.max(1, Math.min(H - 2, (H / 2 + bobY) | 0));
+    const bobY = viewBob();
+    const horizon = horizonY();
     const skyImg = remoteSky[R.id];
     if (skyImg) {
       const scroll = ((player.dir * 120) % skyImg.width + skyImg.width) % skyImg.width;
@@ -972,9 +1006,60 @@
     jungle: "https://i.postimg.cc/Kz5CkRWq/sky-jungle.jpg"
   };
   const remoteArt = {};
+  const remoteWalk = {};
   const remoteProps = {};
   const remoteGround = {};
   const remoteSky = {};
+  // Local AI walk strips (4 frames) shipped with Pages
+  const WALK_SHEETS = {
+    lion: "assets/walk/lion.png",
+    wolf: "assets/walk/wolf.png",
+    buffalo: "assets/walk/buffalo.png",
+    tiger: "assets/walk/tiger.png",
+    grizzly: "assets/walk/grizzly.png",
+    honeybadger: "assets/walk/honeybadger.png",
+    gorilla: "assets/walk/gorilla.png",
+    croc: "assets/walk/croc.png"
+  };
+
+  function makeGaitFrames(src) {
+    const poses = [
+      { lean: -0.1, squash: 0.93, shift: -3 },
+      { lean: 0.02, squash: 1.05, shift: 0 },
+      { lean: 0.1, squash: 0.93, shift: 3 },
+      { lean: -0.02, squash: 1.03, shift: 0 }
+    ];
+    const frames = [];
+    for (let i = 0; i < poses.length; i++) {
+      const p = poses[i];
+      const c = document.createElement("canvas");
+      c.width = src.width + 12;
+      c.height = src.height + 10;
+      const g = c.getContext("2d");
+      g.imageSmoothingEnabled = true;
+      g.translate(c.width / 2 + p.shift, c.height - 2);
+      g.transform(1, 0, p.lean, p.squash, 0, 0);
+      g.drawImage(src, -src.width / 2, -src.height);
+      c._photo = !!src._photo;
+      frames.push(c);
+    }
+    return frames;
+  }
+
+  function sliceWalkStrip(img, n) {
+    n = n || 4;
+    const fw = (img.width / n) | 0;
+    const frames = [];
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement("canvas");
+      const tmp = document.createElement("canvas");
+      tmp.width = fw; tmp.height = img.height;
+      const tctx = tmp.getContext("2d");
+      tctx.drawImage(img, i * fw, 0, fw, img.height, 0, 0, fw, img.height);
+      frames.push(fitRemoteToCanvas(tmp, "animal"));
+    }
+    return frames;
+  }
 
   function fitRemoteToCanvas(img, mode) {
     // Props keep foliage greens; animals only punch white/studio backdrops
@@ -1066,6 +1151,13 @@
     Object.keys(REMOTE).forEach(function (id) {
       loadImg(REMOTE[id], function (img) {
         remoteArt[id] = fitRemoteToCanvas(img, "animal");
+        if (!remoteWalk[id]) remoteWalk[id] = makeGaitFrames(remoteArt[id]);
+        delete propCache["a:" + id];
+      });
+    });
+    Object.keys(WALK_SHEETS).forEach(function (id) {
+      loadImg(WALK_SHEETS[id], function (img) {
+        remoteWalk[id] = sliceWalkStrip(img, 4);
         delete propCache["a:" + id];
       });
     });
@@ -1110,9 +1202,14 @@
     return off;
   }
 
-  function getAnimalCanvas(id) {
-    const key = "a:" + id;
+  function getAnimalCanvas(id, frame) {
+    const walk = remoteWalk[id];
+    if (walk && walk.length) {
+      const fi = ((frame % walk.length) + walk.length) % walk.length;
+      return walk[fi];
+    }
     if (remoteArt[id]) return remoteArt[id];
+    const key = "a:" + id;
     if (propCache[key]) return propCache[key];
     const sz = PO_SPRITES.spriteSize(id, 5);
     const off = document.createElement("canvas");
@@ -1181,7 +1278,8 @@
   }
 
   function drawSprites() {
-    const bobY = Math.sin(player.bob) * 6;
+    const bobY = viewBob();
+    const pitch = pitchPx();
     const phase = dayPhase();
     const labelDist = phase.name === "night" ? 3.2 : 5.5;
     const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
@@ -1205,18 +1303,22 @@
       let sc = sp.scale || worldScale(sp.id || sp.prop);
       if (sp.kind === "note") sc = 0.55;
       if (sp.behavior === "soar") sc *= 1.05;
-      const bobOff = (sp.bob || 0) * (8 / Math.max(0.6, transformY));
+      if (sp.kind === "animal" && sp.squash) sc *= sp.squash;
+      const bobOff = (sp.bob || 0) * (10 / Math.max(0.6, transformY));
       let spriteH = Math.abs((H / transformY) * sc) | 0;
       if (sp.kind === "note") spriteH = Math.max(18, spriteH);
       if (spriteH < 3) continue;
 
+      const walkFr = sp.kind === "animal" ? (sp.walkFrame || 0) : 0;
       const img = sp.kind === "note" ? getNoteCanvas()
-        : (sp.kind === "animal" ? getAnimalCanvas(sp.id) : getPropCanvas(sp.prop));
-      const spriteW = Math.max(4, (spriteH * (img.width / img.height)) | 0);
-      const floorY = (H / 2 + bobY + (H * 0.5) / transformY) | 0;
+        : (sp.kind === "animal" ? getAnimalCanvas(sp.id, walkFr) : getPropCanvas(sp.prop));
+      let spriteW = Math.max(4, (spriteH * (img.width / img.height)) | 0);
+      if (sp.kind === "animal" && sp.lean) spriteW = Math.max(4, (spriteW * (1 + Math.abs(sp.lean) * 0.35)) | 0);
+      const floorY = (H / 2 + bobY + pitch + (H * 0.5) / transformY) | 0;
       const floatY = sp.kind === "note" ? ((Math.sin(t * 3 + sp.bob) * 4) | 0) : 0;
+      const leanX = sp.kind === "animal" ? ((sp.lean || 0) * spriteW * 0.35) | 0 : 0;
       const drawStartY = floorY - spriteH - (bobOff | 0) + floatY;
-      const drawStartX = (-spriteW / 2 + spriteScreenX) | 0;
+      const drawStartX = (-spriteW / 2 + spriteScreenX + leanX) | 0;
       const drawEndX = drawStartX + spriteW;
       if (drawEndX < 0 || drawStartX >= W || drawStartY >= H || drawStartY + spriteH < 0) continue;
       const flip = sp.kind === "animal" && sp.face < 0;
@@ -1235,9 +1337,16 @@
       if (flip) {
         ctx.translate(drawStartX + spriteW, drawStartY);
         ctx.scale(-1, 1);
+        if (sp.kind === "animal" && sp.lean) ctx.transform(1, 0, sp.lean * 0.5, 1, 0, 0);
         ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, spriteW, spriteH);
       } else {
-        ctx.drawImage(img, 0, 0, img.width, img.height, drawStartX, drawStartY, spriteW, spriteH);
+        if (sp.kind === "animal" && sp.lean) {
+          ctx.translate(drawStartX + spriteW / 2, drawStartY + spriteH);
+          ctx.transform(1, 0, sp.lean * 0.5, 1, 0, 0);
+          ctx.drawImage(img, 0, 0, img.width, img.height, -spriteW / 2, -spriteH, spriteW, spriteH);
+        } else {
+          ctx.drawImage(img, 0, 0, img.width, img.height, drawStartX, drawStartY, spriteW, spriteH);
+        }
       }
       ctx.restore();
 
@@ -1288,7 +1397,7 @@
       const transformY = invDet * (-planeY * dx + planeX * dy);
       if (transformY <= 0.2) continue;
       const sx = ((W / 2) * (1 + transformX / transformY)) | 0;
-      const sy = (H / 2 + bobY - 20 / transformY) | 0;
+      const sy = (H / 2 + bobY + pitchPx() - 20 / transformY) | 0;
       ctx.fillStyle = "rgba(4,20,10,0.8)";
       ctx.fillRect(sx - 48, sy - 8, 96, 12);
       ctx.fillStyle = "#9ec9ad";
@@ -1410,9 +1519,12 @@
     pad.fwd = 0;
     pad.strafe = 0;
     pad.turn = 0;
+    pad.pitch = 0;
     if (ui.knob) ui.knob.style.transform = "translate(-50%,-50%)";
     if (ui.lookL) ui.lookL.classList.remove("is-held");
     if (ui.lookR) ui.lookR.classList.remove("is-held");
+    if (ui.lookU) ui.lookU.classList.remove("is-held");
+    if (ui.lookD) ui.lookD.classList.remove("is-held");
   }
 
   function wantsTouchUI() {
@@ -1501,10 +1613,10 @@
     if (ui.touch) ui.touch.hidden = !exploring;
     if (ui.hint && mode === "explore" && exploring) {
       ui.hint.textContent = land
-        ? "FULL SCREEN · Stick · LOOK · Notebooks glow · Tap animals"
-        : "Stick · LOOK · Walk onto glowing NOTES · Tap animals · FULL SCREEN";
+        ? "FULL SCREEN · Stick · LOOK ▲▼◀▶ · Drag canvas · Tap animals"
+        : "Stick · LOOK all ways · Drag to look · NOTES · FULL SCREEN";
     } else if (ui.hint && mode === "explore") {
-      ui.hint.textContent = "WASD move · Drag look · Tap animal · Walk onto NOTES · L log · Esc regions";
+      ui.hint.textContent = "WASD move · Drag look around · Arrows look · Tap animal · L log · Esc";
     }
     syncFsBtn();
     notifyParentChrome();
@@ -1634,13 +1746,16 @@
   canvas.addEventListener("mousedown", function (e) {
     if (mode !== "explore") return;
     lookMoved = 0;
-    lookDrag = { x: e.clientX, dir: player.dir };
+    lookDrag = { x: e.clientX, y: e.clientY, dir: player.dir, pitch: player.pitch };
   });
   window.addEventListener("mouseup", function () { lookDrag = null; });
   window.addEventListener("mousemove", function (e) {
     if (!lookDrag || mode !== "explore") return;
-    lookMoved = Math.max(lookMoved, Math.abs(e.clientX - lookDrag.x));
-    player.dir = lookDrag.dir + (e.clientX - lookDrag.x) * 0.005;
+    const dx = e.clientX - lookDrag.x;
+    const dy = e.clientY - lookDrag.y;
+    lookMoved = Math.max(lookMoved, Math.hypot(dx, dy));
+    player.dir = lookDrag.dir + dx * 0.0055;
+    player.pitch = clamp(lookDrag.pitch - dy * 0.0045, -0.58, 0.58);
   });
 
   function canvasPos(clientX, clientY) {
@@ -1681,15 +1796,17 @@
     if (mode !== "explore" || !e.touches.length) return;
     e.preventDefault();
     lookMoved = 0;
-    lookDrag = { x: e.touches[0].clientX, dir: player.dir };
+    lookDrag = { x: e.touches[0].clientX, y: e.touches[0].clientY, dir: player.dir, pitch: player.pitch };
   }, { passive: false });
 
   window.addEventListener("touchmove", function (e) {
     if (!lookDrag || mode !== "explore" || !e.touches.length) return;
     e.preventDefault();
     const dx = e.touches[0].clientX - lookDrag.x;
-    lookMoved = Math.max(lookMoved, Math.abs(dx));
-    player.dir = lookDrag.dir + dx * 0.005;
+    const dy = e.touches[0].clientY - lookDrag.y;
+    lookMoved = Math.max(lookMoved, Math.hypot(dx, dy));
+    player.dir = lookDrag.dir + dx * 0.0055;
+    player.pitch = clamp(lookDrag.pitch - dy * 0.0045, -0.58, 0.58);
   }, { passive: false });
 
   window.addEventListener("touchend", function (e) {
@@ -1815,8 +1932,30 @@
         if (e.buttons === 0) up();
       });
     }
+    function bindPitch(btn, dir) {
+      if (!btn) return;
+      function down(e) {
+        if (mode !== "explore") return;
+        pad.pitch = dir;
+        btn.classList.add("is-held");
+        tryLandscapeFullscreen();
+        e.preventDefault();
+      }
+      function up() {
+        if (pad.pitch === dir) pad.pitch = 0;
+        btn.classList.remove("is-held");
+      }
+      btn.addEventListener("pointerdown", down);
+      btn.addEventListener("pointerup", up);
+      btn.addEventListener("pointercancel", up);
+      btn.addEventListener("pointerleave", function (e) {
+        if (e.buttons === 0) up();
+      });
+    }
     bindLook(ui.lookL, -1);
     bindLook(ui.lookR, 1);
+    bindPitch(ui.lookU, 1);
+    bindPitch(ui.lookD, -1);
   })();
 
   window.addEventListener("resize", syncTouchUI);
