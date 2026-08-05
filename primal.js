@@ -59,17 +59,57 @@
   const TEX = 256;
   const FLOOR_STEP_X = 1;
   const FLOOR_STEP_Y = 1;
+  function canvasContentBox(shellRect) {
+    const rect = canvas.getBoundingClientRect();
+    const s = shellRect || (canvas.parentElement && canvas.parentElement.getBoundingClientRect()) || rect;
+    let left = rect.left;
+    let top = rect.top;
+    let width = Math.max(1, rect.width);
+    let height = Math.max(1, rect.height);
+    const cs = window.getComputedStyle(canvas);
+    const contain = cs.objectFit === "contain" ||
+      document.documentElement.classList.contains("po-embed") ||
+      document.documentElement.classList.contains("po-land");
+    if (contain) {
+      const ar = W / H;
+      const rar = width / height;
+      let cw, ch, ox, oy;
+      if (rar > ar) {
+        ch = height;
+        cw = height * ar;
+        ox = (width - cw) / 2;
+        oy = 0;
+      } else {
+        cw = width;
+        ch = width / ar;
+        ox = 0;
+        oy = (height - ch) / 2;
+      }
+      left += ox;
+      top += oy;
+      width = cw;
+      height = ch;
+    }
+    return {
+      left: left - s.left,
+      top: top - s.top,
+      width: width,
+      height: height,
+      bottomGap: Math.max(0, s.height - (top - s.top + height))
+    };
+  }
+
   function syncHudOverlay() {
     if (!hudCanvas || !hctx) return;
     const shell = canvas.parentElement;
-    const rect = canvas.getBoundingClientRect();
-    const srect = shell ? shell.getBoundingClientRect() : rect;
-    const cssW = Math.max(1, rect.width || W);
-    const cssH = Math.max(1, rect.height || H);
+    const srect = shell ? shell.getBoundingClientRect() : canvas.getBoundingClientRect();
+    const box = canvasContentBox(srect);
+    const cssW = box.width;
+    const cssH = box.height;
     hudCssW = cssW;
     hudCssH = cssH;
-    hudCanvas.style.left = Math.round(rect.left - srect.left) + "px";
-    hudCanvas.style.top = Math.round(rect.top - srect.top) + "px";
+    hudCanvas.style.left = Math.round(box.left) + "px";
+    hudCanvas.style.top = Math.round(box.top) + "px";
     const dpr = Math.min(2.5, window.devicePixelRatio || 1);
     const bw = Math.round(cssW * dpr);
     const bh = Math.round(cssH * dpr);
@@ -82,6 +122,58 @@
     hctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     hctx.imageSmoothingEnabled = true;
     if (hctx.imageSmoothingQuality) hctx.imageSmoothingQuality = "high";
+    syncChromeToCanvas(box);
+  }
+
+  function syncChromeToCanvas(box) {
+    const shell = canvas.parentElement;
+    if (!shell) return;
+    if (!box) box = canvasContentBox(shell.getBoundingClientRect());
+    const touchEl = document.getElementById("po-touch");
+    const touchOn = document.documentElement.classList.contains("po-touch-on") &&
+      touchEl && !touchEl.hidden;
+    const land = document.documentElement.classList.contains("po-land");
+    // Only lift above sticks when touch pads are actually showing
+    const lift = touchOn ? (land ? Math.min(100, box.height * 0.22) : Math.min(132, box.height * 0.3)) : 0;
+    const bar = document.getElementById("po-bottom-bar");
+    if (bar) {
+      bar.style.left = Math.round(box.left) + "px";
+      bar.style.width = Math.round(box.width) + "px";
+      bar.style.right = "auto";
+      bar.style.bottom = Math.round(box.bottomGap + lift) + "px";
+    }
+    if (touchEl) {
+      touchEl.style.left = Math.round(box.left) + "px";
+      touchEl.style.width = Math.round(box.width) + "px";
+      touchEl.style.right = "auto";
+      touchEl.style.bottom = Math.round(box.bottomGap) + "px";
+    }
+    const hintEl = document.getElementById("po-hint");
+    if (hintEl) {
+      hintEl.style.left = Math.round(box.left + box.width / 2) + "px";
+      hintEl.style.right = "auto";
+      hintEl.style.bottom = Math.round(box.bottomGap + lift + (touchOn ? 44 : 52)) + "px";
+    }
+    const objEl = document.getElementById("po-obj");
+    if (objEl) {
+      objEl.style.left = Math.round(box.left + 8) + "px";
+      objEl.style.top = Math.round(box.top + 8) + "px";
+      objEl.style.bottom = "auto";
+      objEl.style.right = "auto";
+      objEl.style.transform = "none";
+    }
+    const questEl = document.getElementById("po-quest-chip");
+    if (questEl) {
+      questEl.style.left = Math.round(box.left + box.width / 2) + "px";
+      questEl.style.top = Math.round(box.top + 8) + "px";
+      questEl.style.right = "auto";
+    }
+    const cautionEl = document.getElementById("po-caution");
+    if (cautionEl) {
+      cautionEl.style.left = Math.round(box.left + box.width / 2) + "px";
+      cautionEl.style.top = Math.round(box.top + 44) + "px";
+      cautionEl.style.right = "auto";
+    }
   }
   function poIntegerScale() {
     const shell = canvas.parentElement;
@@ -4252,6 +4344,13 @@
   }
 
   function wantsTouchUI() {
+    // PC with mouse: keep desktop chrome even if a touchscreen is present
+    try {
+      if (window.matchMedia("(pointer: fine)").matches &&
+          !window.matchMedia("(pointer: coarse)").matches) {
+        return false;
+      }
+    } catch (e) {}
     return ("ontouchstart" in window) ||
       (navigator.maxTouchPoints > 0) ||
       (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
@@ -4345,6 +4444,7 @@
     }
     syncFsBtn();
     notifyParentChrome();
+    syncChromeToCanvas();
   }
 
   function openDossier(animal) {
@@ -4935,6 +5035,11 @@
   function onFsChange() {
     syncFsBtn();
     syncTouchUI();
+    poIntegerScale();
+    requestAnimationFrame(function () {
+      poIntegerScale();
+      syncChromeToCanvas();
+    });
   }
   document.addEventListener("fullscreenchange", onFsChange);
   document.addEventListener("webkitfullscreenchange", onFsChange);

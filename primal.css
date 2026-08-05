@@ -26,11 +26,12 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
   pointer-events:none;z-index:4;image-rendering:auto;
   width:auto;height:auto;max-width:none
 }
-/* Unified bottom chrome — Regions / Journal / Tools / Photo / chips / Sound */
+/* Unified bottom chrome — Regions / Journal / Tools / Photo / chips / Sound
+   Position is synced to the canvas content box in JS (bottom of player view). */
 .po-bottom-bar{
   position:absolute;left:0;right:0;bottom:0;z-index:9;
   display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
-  gap:8px;padding:8px 8px 10px;pointer-events:none;
+  gap:8px;padding:8px 8px 10px;pointer-events:none;box-sizing:border-box;
   background:linear-gradient(180deg,transparent 0%,rgba(2,10,6,.42) 55%,rgba(2,10,6,.78) 100%)
 }
 .po-bottom-actions{
@@ -95,15 +96,12 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-look-btn:active,.po-look-btn.is-held{background:rgba(61,155,95,.35);color:#fff;transform:scale(.96)}
 .po-stick-lab{font-size:12px;font-weight:700;letter-spacing:.4px;color:#cfe8d6;text-shadow:0 1px 3px #000}
 
-/* Touch: lift bottom chrome above virtual sticks — keep one row, no corner pile */
+/* Touch: stick pads stay at canvas bottom; chrome lift is applied in JS */
 html.po-touch-on .po-bottom-bar{
-  bottom:148px;padding:6px 8px;background:linear-gradient(180deg,transparent,rgba(2,10,6,.5));
+  padding:6px 8px;background:linear-gradient(180deg,transparent,rgba(2,10,6,.5));
   z-index:10
 }
-html.po-touch-on .po-obj{
-  top:auto;bottom:214px;left:50%;transform:translateX(-50%);right:auto;max-width:min(92%,340px)
-}
-html.po-touch-on .po-hint{bottom:210px;font-size:13px}
+html.po-touch-on .po-hint{font-size:13px}
 html.po-touch-on .po-touch{z-index:8}
 
 /* Landscape phone — Digistracts-style immersive play (full iframe / fullscreen) */
@@ -130,7 +128,7 @@ html.po-land.po-touch-on .po-look-btn{width:44px;height:40px;font-size:15px}
 html.po-land.po-touch-on .po-look-u,
 html.po-land.po-touch-on .po-look-d{width:96px;height:34px}
 html.po-land.po-touch-on .po-bottom-bar{
-  bottom:104px;padding:4px 8px 6px;gap:6px
+  padding:4px 8px 6px;gap:6px
 }
 html.po-land.po-touch-on .po-bottom-bar .chip,
 html.po-land.po-touch-on .po-audio-bar .chip{padding:6px 9px;font-size:12px;min-height:34px}
@@ -138,13 +136,9 @@ html.po-land.po-touch-on .po-audio-bar{padding:4px 6px}
 html.po-land.po-touch-on .po-vol{width:44px}
 html.po-land.po-touch-on .po-hint{display:none}
 html.po-land .po-pos-chip{display:none}
-html.po-land.po-touch-on .po-obj{
-  top:8px;bottom:auto;left:8px;right:auto;transform:none;max-width:min(220px,38vw)
-}
 html.po-land.po-touch-on .po-quest-chip{
-  top:8px;max-width:min(46%,280px)
+  max-width:min(46%,280px)
 }
-html.po-land.po-touch-on .po-caution{top:46px}
 html.po-fs .po-fs-btn{opacity:.9}
 /* Dossier open in landscape — keep immersive shell; hide play chrome under overlay */
 html.po-land.po-touch-on:has(#po-dossier.show) .po-touch,
