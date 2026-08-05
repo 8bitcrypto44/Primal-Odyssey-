@@ -13,3 +13,17 @@ assets/snes/_*.png
 assets/snes/idylwild.zip
 assets/snes/idylwild/*.psd
 assets/snes/idylwild/*.ase
+
+assets/snes/player/agent.zip
+assets/snes/player/db16.gif
+assets/snes/player/agent/Agent Free Version/Attack/
+assets/snes/player/agent/Agent Free Version/Avatar/
+assets/snes/player/agent/Agent Free Version/Climb/
+assets/snes/player/agent/Agent Free Version/Death/
+assets/snes/player/agent/Agent Free Version/Hit/
+assets/snes/player/agent/Agent Free Version/Idle/
+assets/snes/player/agent/Agent Free Version/Pull/
+assets/snes/player/agent/Agent Free Version/Push/
+assets/snes/player/agent/Agent Free Version/Run/
+assets/snes/_*.png
+

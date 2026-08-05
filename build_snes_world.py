@@ -73,8 +73,15 @@ GROUND = {
     "path_n": (5, 0), "path_s": (5, 2), "path_w": (3, 1), "path_e": (7, 1),
     "path_nw": (3, 0), "path_ne": (6, 0), "path_sw": (3, 2), "path_se": (6, 2),
     "path_nsw": (4, 0), "path_nse": (6, 1), "path_we": (4, 1), "path_full": (8, 1),
+    # grass↔dirt field blends (soft edges, not just roads)
+    "blend_n": (4, 0), "blend_s": (4, 2), "blend_w": (3, 1), "blend_e": (6, 1),
+    "blend_nw": (3, 0), "blend_ne": (6, 0), "blend_sw": (3, 2), "blend_se": (6, 2),
+    "blend_spot": (10, 0), "blend_spot2": (11, 0), "blend_spot3": (12, 0),
     # cliffs
     "cliff": (0, 6), "cliff2": (1, 6), "cliff3": (2, 6), "cliff4": (3, 6), "cliff5": (4, 6),
+    # extra water shore pieces (tighter lakes)
+    "wInNE": (0, 10), "wInNW": (0, 11), "wInSE": (0, 14), "wInSW": (0, 15),
+    "wCapN": (5, 10), "wCapS": (5, 14), "wCapE": (4, 11), "wCapW": (1, 11),
     # open / animated water
     "water": (22, 10), "water2": (23, 10), "water3": (24, 10),
     "water_a": (10, 10), "water_b": (11, 10), "water_c": (8, 11),
@@ -118,6 +125,9 @@ WATER_MASK = {
     7: "wNES", 11: "wNEW", 13: "wNWS", 14: "wSEW",
     15: "wALL",
 }
+# prefer capped / inner tiles for single-edge lakes
+WATER_MASK_TIGHT = dict(WATER_MASK)
+WATER_MASK_TIGHT.update({1: "wCapN", 2: "wCapE", 4: "wCapS", 8: "wCapW", 15: "wALL"})
 SAND_WATER_MASK = {
     0: "water",
     1: "swN", 2: "swE", 4: "swS", 8: "swW",
@@ -223,114 +233,113 @@ def extract_idylwild():
 
 
 def make_player_sheet():
-    """16x24 explorer, 4 dirs x 3 frames. dirs: down,left,right,up."""
+    """Assemble CC0 Chasersgaming NES Agent walk (16x24, 4 dir x 3 frames), safari recolor."""
+    base = snes / "player" / "agent" / "Agent Free Version" / "Walk"
     sheet = Image.new("RGBA", (16 * 3, 24 * 4), (0, 0, 0, 0))
-    skin = (210, 168, 118, 255)
-    skin_s = (180, 130, 90, 255)
-    hair = (48, 32, 18, 255)
-    hair_h = (70, 48, 28, 255)
-    shirt = (46, 118, 72, 255)
-    shirt_s = (28, 78, 48, 255)
-    shirt_h = (70, 150, 95, 255)
-    pants = (48, 52, 78, 255)
-    pants_s = (32, 34, 52, 255)
-    boot = (36, 26, 16, 255)
-    pack = (110, 78, 42, 255)
-    outline = (18, 14, 10, 255)
-
-    def put(im, x, y, c):
-        if 0 <= x < 16 and 0 <= y < 24:
-            im.putpixel((x, y), c)
-
-    def rect(im, x0, y0, x1, y1, c):
-        for y in range(y0, y1 + 1):
-            for x in range(x0, x1 + 1):
-                put(im, x, y, c)
-
-    def draw_explorer(face, frame):
-        im = Image.new("RGBA", (16, 24), (0, 0, 0, 0))
-        bob = 0 if frame == 1 else (1 if frame == 0 else 0)
-        leg = frame
-        cy = 1 + bob
-        # hair / head
-        rect(im, 5, cy, 10, cy + 1, hair)
-        rect(im, 4, cy + 1, 11, cy + 5, skin)
-        rect(im, 4, cy + 5, 11, cy + 5, skin_s)
-        rect(im, 5, cy, 10, cy, hair_h)
-        # eyes / face
-        if face == 0:
-            put(im, 6, cy + 3, outline); put(im, 9, cy + 3, outline)
-            put(im, 7, cy + 4, skin_s); put(im, 8, cy + 4, skin_s)
-        elif face == 1:
-            put(im, 5, cy + 3, outline)
-            rect(im, 4, cy + 1, 5, cy + 4, skin_s)
-        elif face == 2:
-            put(im, 10, cy + 3, outline)
-            rect(im, 10, cy + 1, 11, cy + 4, skin_s)
-        else:
-            rect(im, 5, cy, 10, cy + 2, hair)
-            rect(im, 4, cy + 2, 11, cy + 5, skin)
-        # torso
-        rect(im, 4, cy + 6, 11, cy + 12, shirt)
-        rect(im, 4, cy + 6, 4, cy + 12, shirt_s)
-        rect(im, 11, cy + 6, 11, cy + 12, shirt_s)
-        rect(im, 5, cy + 6, 10, cy + 6, shirt_h)
-        # pack
-        if face == 3:
-            rect(im, 5, cy + 7, 10, cy + 11, pack)
-        elif face == 1:
-            rect(im, 11, cy + 7, 12, cy + 11, pack)
-        elif face == 2:
-            rect(im, 3, cy + 7, 4, cy + 11, pack)
-        # arms
-        if face in (0, 3):
-            put(im, 3, cy + 8, skin); put(im, 3, cy + 9, skin)
-            put(im, 12, cy + 8, skin); put(im, 12, cy + 9, skin)
-        elif face == 1:
-            put(im, 3, cy + 8, skin); put(im, 2, cy + 9, skin)
-        else:
-            put(im, 12, cy + 8, skin); put(im, 13, cy + 9, skin)
-        # legs
-        ly = cy + 13
-        if leg == 0:
-            rect(im, 5, ly, 6, ly + 5, pants)
-            rect(im, 9, ly, 10, ly + 4, pants_s)
-            rect(im, 5, ly + 6, 6, ly + 6, boot)
-            rect(im, 9, ly + 5, 10, ly + 5, boot)
-        elif leg == 2:
-            rect(im, 5, ly, 6, ly + 4, pants_s)
-            rect(im, 9, ly, 10, ly + 5, pants)
-            rect(im, 5, ly + 5, 6, ly + 5, boot)
-            rect(im, 9, ly + 6, 10, ly + 6, boot)
-        else:
-            rect(im, 5, ly, 6, ly + 6, pants)
-            rect(im, 9, ly, 10, ly + 6, pants)
-            rect(im, 5, ly + 7, 6, ly + 7, boot)
-            rect(im, 9, ly + 7, 10, ly + 7, boot)
-        # outline pass — dark pixels adjacent to transparent
-        out = im.copy()
-        for y in range(24):
-            for x in range(16):
-                if im.getpixel((x, y))[3] == 0:
-                    continue
-                for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1)):
-                    nx, ny = x + dx, y + dy
-                    if nx < 0 or ny < 0 or nx >= 16 or ny >= 24 or im.getpixel((nx, ny))[3] == 0:
-                        # only outline outer edge lightly
-                        if dx == 0 and dy == -1 and y <= cy + 1:
-                            out.putpixel((x, y), outline if im.getpixel((x, y)) == hair or im.getpixel((x, y)) == hair_h else im.getpixel((x, y)))
-        return im
-
     frames = {}
-    dirs = ["down", "left", "right", "up"]
-    for di, dname in enumerate(dirs):
+    dirs = [("down", "SOUTH"), ("left", "WEST"), ("right", "EAST"), ("up", "NORTH")]
+    for di, (dname, dkey) in enumerate(dirs):
+        strip = Image.open(base / f"C_Idle_{dkey}_strip4.png").convert("RGBA")
         for fi in range(3):
-            fr = draw_explorer(di, fi)
+            fr = strip.crop((fi * 16, 0, fi * 16 + 16, 24))
+            px = fr.load()
+            for y in range(24):
+                for x in range(16):
+                    r, g, b, a = px[x, y]
+                    if a < 8:
+                        continue
+                    # blue suit → khaki / field green
+                    if b > r + 20 and b > g and b > 80:
+                        px[x, y] = (
+                            min(255, int(r * 0.55 + 45)),
+                            min(255, int(g * 0.85 + 55)),
+                            min(255, int(b * 0.3 + 20)),
+                            a,
+                        )
             sheet.paste(fr, (fi * 16, di * 24), fr)
             frames[f"player_{dname}_{fi}"] = {
                 "x": fi * 16, "y": di * 24, "w": 16, "h": 24, "solid": False
             }
     sheet.save(out / "player.png")
+    return frames
+
+
+def make_topdown_animals():
+    """Bake simple 3/4 top-down animal stamps from palette silhouettes."""
+    # id -> (body RGB, accent RGB, shape)
+    specs = {
+        "lion": ((180, 140, 60), (90, 60, 30), "quad"),
+        "lioness": ((170, 130, 55), (80, 55, 28), "quad"),
+        "tiger": ((200, 110, 40), (30, 20, 10), "quad"),
+        "leopard": ((190, 150, 70), (50, 35, 20), "quad"),
+        "jaguar": ((160, 120, 50), (40, 28, 15), "quad"),
+        "snowleopard": ((190, 200, 210), (80, 90, 100), "quad"),
+        "cougar": ((180, 140, 70), (70, 50, 30), "quad"),
+        "wolf": ((140, 140, 150), (60, 60, 70), "quad"),
+        "buffalo": ((70, 50, 30), (40, 30, 20), "heavy"),
+        "rhino": ((150, 150, 150), (90, 90, 90), "heavy"),
+        "hippo": ((80, 110, 160), (40, 60, 100), "heavy"),
+        "gorilla": ((50, 48, 48), (30, 28, 28), "ape"),
+        "grizzly": ((100, 70, 40), (50, 35, 20), "heavy"),
+        "eagle": ((180, 160, 130), (90, 50, 20), "bird"),
+        "croc": ((50, 100, 55), (25, 55, 30), "long"),
+        "anaconda": ((30, 140, 70), (20, 80, 40), "long"),
+        "honeybadger": ((160, 155, 150), (40, 40, 40), "quad"),
+    }
+    sheet = Image.new("RGBA", (32 * 4, 24 * ((len(specs) + 3) // 4)), (0, 0, 0, 0))
+    frames = {}
+    for i, (aid, (body, accent, shape)) in enumerate(specs.items()):
+        im = Image.new("RGBA", (28, 20), (0, 0, 0, 0))
+        px = im.load()
+        cx, cy = 14, 12
+
+        def dot(x, y, c, r=0):
+            for yy in range(y - r, y + r + 1):
+                for xx in range(x - r, x + r + 1):
+                    if 0 <= xx < 28 and 0 <= yy < 20 and (xx - x) ** 2 + (yy - y) ** 2 <= r * r + 0.5:
+                        px[xx, yy] = (*c, 255)
+
+        if shape == "bird":
+            for dx in range(-10, 11):
+                for dy in range(-2, 3):
+                    if abs(dx) + abs(dy) * 3 < 12:
+                        dot(cx + dx, cy + dy, body)
+            dot(cx, cy - 4, accent, 2)
+            dot(cx - 8, cy, accent, 1)
+            dot(cx + 8, cy, accent, 1)
+        elif shape == "long":
+            for t in range(-10, 11):
+                dot(cx + t, cy + (t // 5), body, 2 if abs(t) < 7 else 1)
+            dot(cx + 9, cy - 1, accent, 2)
+        elif shape == "ape":
+            dot(cx, cy + 2, body, 5)
+            dot(cx, cy - 4, body, 3)
+            dot(cx - 5, cy + 1, accent, 2)
+            dot(cx + 5, cy + 1, accent, 2)
+        elif shape == "heavy":
+            dot(cx, cy + 1, body, 6)
+            dot(cx + 5, cy - 2, body, 4)
+            dot(cx - 5, cy + 3, accent, 2)
+            dot(cx + 6, cy + 3, accent, 2)
+        else:
+            dot(cx, cy + 1, body, 5)
+            dot(cx + 4, cy - 3, body, 3)
+            # legs
+            dot(cx - 3, cy + 5, accent, 1)
+            dot(cx + 2, cy + 5, accent, 1)
+            dot(cx + 5, cy + 4, accent, 1)
+            # ear
+            dot(cx + 2, cy - 6, accent, 1)
+            if aid == "tiger":
+                for sx in range(8, 18, 3):
+                    dot(sx, cy, (20, 15, 10), 0)
+        col = i % 4
+        row = i // 4
+        sheet.paste(im, (col * 32 + 2, row * 24 + 2), im)
+        frames[f"td_{aid}"] = {
+            "x": col * 32 + 2, "y": row * 24 + 2, "w": 28, "h": 20, "solid": False
+        }
+    sheet.save(out / "animals_td.png")
     return frames
 
 
@@ -367,11 +376,17 @@ def build_atlas(objs, player_frames):
             name.startswith("tree") or name.startswith("ptree") or name.startswith("rock")
             or name in ("cave", "sign")
         )
-        # walk-behind: collide only near feet
         feet = max(6, min(12, h // 5))
+        canopy = name.startswith("tree") or name.startswith("ptree")
         frames[name] = {
             "x": x, "y": y, "w": w, "h": h, "solid": solid,
             "feet": feet, "anchor": h - feet // 2,
+            "canopy": canopy, "canopyH": int(h * 0.55) if canopy else 0,
+            "anim": name.startswith("bush") or name.startswith("detail"),
+            "biome": (
+                "mountains" if "pine" in name or name.startswith("ptree") else
+                "any"
+            ),
         }
         x += w + 2
         row_h = max(row_h, h)
@@ -383,10 +398,7 @@ def build_atlas(objs, player_frames):
 
 def water_autotile(ground, region):
     H, W = len(ground), len(ground[0])
-    mask_table = SAND_WATER_MASK if region == "africa" else WATER_MASK
-    # first mark raw water
-    raw = [[is_waterish(ground[y][x]) and not str(ground[y][x]).startswith("sw") and not (str(ground[y][x]).startswith("w") and not str(ground[y][x]).startswith("water")) for x in range(W)] for y in range(H)]
-    # simplify: anything that was placed as water*
+    mask_table = SAND_WATER_MASK if region == "africa" else WATER_MASK_TIGHT
     raw = [[str(ground[y][x]).startswith("water") for x in range(W)] for y in range(H)]
     out_g = [row[:] for row in ground]
     for y in range(H):
@@ -406,6 +418,38 @@ def water_autotile(ground, region):
                 out_g[y][x] = ("water", "water2", "water3", "water_a")[(x + y) % 4]
             else:
                 out_g[y][x] = mask_table.get(bits, "water")
+    return out_g
+
+
+def dirt_blend_pass(ground):
+    """Soften grass cells that touch dirt/path/sand with blend metatiles."""
+    H, W = len(ground), len(ground[0])
+    dirtish = set()
+    for y in range(H):
+        for x in range(W):
+            t = ground[y][x]
+            if is_pathish(t) or t.startswith("sand") or t.startswith("dirt") or t.startswith("blend"):
+                dirtish.add((x, y))
+    out_g = [row[:] for row in ground]
+    grassish = ("grass", "grass2", "grass3", "grass4", "grass5", "grass6", "dark_grass", "dark_grass2", "mud", "mud2", "snow", "snow2")
+    for y in range(1, H - 1):
+        for x in range(1, W - 1):
+            t = ground[y][x]
+            if t not in grassish:
+                continue
+            n = (x, y - 1) in dirtish
+            s = (x, y + 1) in dirtish
+            e = (x + 1, y) in dirtish
+            w = (x - 1, y) in dirtish
+            bits = (1 if n else 0) | (2 if e else 0) | (4 if s else 0) | (8 if w else 0)
+            if bits == 0:
+                continue
+            blend = {
+                1: "blend_n", 2: "blend_e", 4: "blend_s", 8: "blend_w",
+                3: "blend_ne", 6: "blend_se", 12: "blend_sw", 9: "blend_nw",
+                5: "blend_spot", 10: "blend_spot2",
+            }.get(bits, "blend_spot3")
+            out_g[y][x] = blend
     return out_g
 
 
@@ -505,6 +549,32 @@ def chunk_ridge(ground, objects, frames, cx, cy, rnd, region):
         objects.append({"id": "cave", "x": (cx + length // 2) * TW + 8, "y": cy * TW + 8})
 
 
+def chunk_oasis(ground, objects, frames, cx, cy, rnd):
+    """Africa postcard: sand ring + pond + palms/bushes."""
+    stamp_disk(ground, cx, cy, 6, "sand")
+    stamp_disk(ground, cx, cy, 3, "water")
+    bush_ids = [k for k in frames if k.startswith("bush") or k.startswith("tree")]
+    for ang_i in range(8):
+        import math
+        ang = ang_i * 0.785
+        tx = int(cx + 5 * math.cos(ang))
+        ty = int(cy + 5 * math.sin(ang))
+        if bush_ids and 2 <= tx < MAP_W - 2 and 2 <= ty < MAP_H - 2:
+            objects.append({"id": bush_ids[ang_i % len(bush_ids)], "x": tx * TW + 8, "y": ty * TW + 10})
+
+
+def chunk_lookout(ground, objects, frames, cx, cy, rnd):
+    stamp_rect(ground, cx - 1, cy - 4, cx + 6, cy + 1, "cliff")
+    for i in range(6):
+        if 1 <= cx + i < MAP_W - 1 and 1 <= cy < MAP_H - 1:
+            ground[cy][cx + i] = ("cliff", "cliff2", "cliff3")[i % 3]
+    if "cave" in frames:
+        objects.append({"id": "cave", "x": (cx + 2) * TW + 8, "y": cy * TW + 8})
+    if "sign" in frames:
+        objects.append({"id": "sign", "x": (cx - 1) * TW + 8, "y": (cy + 2) * TW + 8})
+    stamp_rect(ground, cx - 1, cy + 2, cx + 3, cy + 4, "dirt")
+
+
 def chunk_trail(ground, objects, frames, x0, y0, rnd, steps=40):
     x, y = x0, y0
     for _ in range(steps):
@@ -564,6 +634,9 @@ def gen_map(region, frames, seed=42):
         chunk_grove(ground, objects, frames, 20, 55, rnd, region)
         # sandy clearing
         stamp_disk(ground, 55, 25, 5, "sand")
+        chunk_oasis(ground, objects, frames, 55, 50, rnd)
+    if region in ("mountains", "jungle"):
+        chunk_lookout(ground, objects, frames, 12, 22, rnd)
     if region == "wetlands":
         for _ in range(3):
             chunk_watering_hole(ground, objects, frames, rnd.randint(15, W - 15), rnd.randint(15, H - 15), rnd, region)
@@ -581,6 +654,7 @@ def gen_map(region, frames, seed=42):
 
     ground = water_autotile(ground, region)
     ground = path_autotile(ground)
+    ground = dirt_blend_pass(ground)
 
     def walkable(tx, ty):
         t = ground[ty][tx]
@@ -657,7 +731,9 @@ def main():
     objs.update(extract_idylwild())
     print("objects", len(objs), sorted(objs.keys())[:20], "...")
     player_frames = make_player_sheet()
+    animal_frames = make_topdown_animals()
     frames = build_atlas(objs, player_frames)
+    frames.update(animal_frames)
     base = Image.open(out / "atlas.png")
     tints = {
         "africa": (0.2, 1.06, 1.04),
@@ -674,7 +750,7 @@ def main():
         print(rid, "objs", len(maps[rid]["objects"]), "details", len(maps[rid]["details"]))
 
     js = []
-    js.append("// Auto-built SNES tilemap data v43 — Puny World + Idylwild")
+    js.append("// Auto-built SNES tilemap data v44 — Puny World + Idylwild + Agent")
     js.append("window.PO_SNES = window.PO_SNES || {};")
     js.append("PO_SNES.TILE = 16;")
     js.append("PO_SNES.frames = " + json.dumps(frames) + ";")
@@ -684,9 +760,20 @@ def main():
         js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png",')
     js.append("};")
     js.append('PO_SNES.playerSheet = "assets/snes/built/player.png";')
+    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png";')
     js.append("PO_SNES.waterAnim = [\"water\",\"water2\",\"water3\",\"water_a\"];")
     (root / "primal_snes_data.js").write_text("\n".join(js), encoding="utf-8")
-    print("Wrote atlases + player + primal_snes_data.js")
+
+    (snes / "CREDITS.txt").write_text(
+        "Puny World Overworld Tileset by Shade — CC0\n"
+        "https://opengameart.org/content/16x16-puny-world-tileset\n\n"
+        "Idylwild Foliage Pack — free for any use (attribution appreciated)\n"
+        "https://opengameart.org/content/idylwilds-foliage-pack\n\n"
+        "RPG Character 'Agent' NES by Chasersgaming — CC0\n"
+        "https://opengameart.org/content/rpg-character-agent-nes\n",
+        encoding="utf-8",
+    )
+    print("Wrote atlases + player + animals + primal_snes_data.js")
 
 
 if __name__ == "__main__":
