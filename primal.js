@@ -4407,7 +4407,7 @@
     const fs = isNativeFullscreen();
     ui.fsBtn.hidden = !show;
     ui.fsBtn.setAttribute("aria-pressed", fs ? "true" : "false");
-    ui.fsBtn.textContent = fs ? "Exit full screen" : "Full screen";
+    ui.fsBtn.textContent = fs ? "Exit FS" : "FS";
     document.documentElement.classList.toggle("po-fs", fs);
   }
 

@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "56"
+ASSET_VER = "57"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -157,15 +157,6 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd.is-loading .po-gd-load{{display:flex}}
 .po-gd.is-open .po-gd-cover{{display:none}}
 .po-gd.is-open .po-gd-play{{display:block}}
-.po-gd-fs{{
-  display:none;position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:20;
-  border:2px solid #5dce7a;border-radius:10px;padding:10px 14px;min-height:44px;
-  font:700 13px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;letter-spacing:.2px;cursor:pointer;
-  color:#fff;background:rgba(4,20,10,.92);box-shadow:0 0 18px rgba(93,206,122,.35);
-  -webkit-tap-highlight-color:transparent;white-space:nowrap
-}}
-.po-gd.is-open .po-gd-fs{{display:block}}
-.po-gd.is-fs .po-gd-fs{{opacity:.85;font-size:12px;padding:8px 12px;min-height:36px;border-color:#7fa88c;color:#9ec9ad;box-shadow:none}}
 .po-gd.is-open.is-land{{
   position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;height:100dvh;margin:0;
   background:#030605
@@ -213,7 +204,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Enter → choose biome · full-frame + FS (v56)</p>
+          <p class="po-gd-tip">Enter → choose biome · compact chrome (v57)</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">Africa</button>
             <button type="button" data-region="mountains">Mountains</button>
@@ -226,7 +217,6 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
       </div>
       <div class="po-gd-play" id="po-gd-play">
         <div class="po-gd-load" id="po-gd-load" aria-live="polite">Loading expedition…</div>
-        <button type="button" class="po-gd-fs" id="po-gd-fs" aria-pressed="false">Full screen</button>
         <iframe
           id="po-gd-frame"
           title="Primal Odyssey"
@@ -247,7 +237,6 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   var root=document.getElementById("po-gd");
   var btn=document.getElementById("po-gd-enter");
   var frame=document.getElementById("po-gd-frame");
-  var fsBtn=document.getElementById("po-gd-fs");
   if(!root||!btn||!frame)return;
   var playing=false;
   function phone(){{
@@ -260,16 +249,12 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   function isFs(){{
     return !!(document.fullscreenElement||document.webkitFullscreenElement);
   }}
-  function syncFsBtn(){{
-    if(!fsBtn)return;
-    var on=isFs();
-    root.classList.toggle("is-fs",on);
-    fsBtn.setAttribute("aria-pressed",on?"true":"false");
-    fsBtn.textContent=on?"Exit full screen":"Full screen";
+  function syncFsClass(){{
+    root.classList.toggle("is-fs",isFs());
   }}
   function syncLand(){{
     root.classList.toggle("is-land", root.classList.contains("is-open") && playing && phone() && land());
-    syncFsBtn();
+    syncFsClass();
   }}
   function enterFs(){{
     if(isFs())return;
@@ -336,15 +321,6 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     root.classList.remove("is-loading");
   }});
   setTimeout(function(){{root.classList.remove("is-loading");}},8000);
-  if(fsBtn){{
-    fsBtn.addEventListener("click",function(e){{
-      e.preventDefault();
-      e.stopPropagation();
-      if(isFs())exitFs();
-      else enterFs();
-      setTimeout(syncFsBtn,200);
-    }});
-  }}
   root.addEventListener("touchstart",function(){{
     if(!root.classList.contains("is-land")||isFs())return;
     enterFs();
@@ -352,7 +328,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   window.addEventListener("message",function(e){{
     if(!e.data)return;
     if(e.data.type==="po-chrome"){{
-      /* Stay fullscreen until EXIT FULL SCREEN — dossiers are still in-game */
+      /* Stay fullscreen until EXIT FS from in-game button — dossiers are still in-game */
       if(typeof e.data.inGame==="boolean")playing=!!e.data.inGame;
       else playing=!!e.data.explore;
       syncLand();
@@ -360,7 +336,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(e.data.type==="po-fs")enterFs();
     if(e.data.type==="po-fs-exit")exitFs();
   }});
-  function onFsChange(){{syncFsBtn();syncLand();}}
+  function onFsChange(){{syncFsClass();syncLand();}}
   document.addEventListener("fullscreenchange",onFsChange);
   document.addEventListener("webkitfullscreenchange",onFsChange);
   window.addEventListener("resize",syncLand);

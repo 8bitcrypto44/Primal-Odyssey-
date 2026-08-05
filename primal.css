@@ -30,36 +30,36 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
   pointer-events:none;z-index:4;image-rendering:auto;
   width:auto;height:auto;max-width:none
 }
-/* Unified bottom chrome — Regions / Journal / Tools / Photo / chips / Sound
-   Position is synced to the canvas content box in JS (bottom of player view). */
+/* Unified bottom chrome — compact single strip above frame edge */
 .po-bottom-bar{
   position:absolute;left:0;right:0;bottom:0;z-index:9;
-  display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
-  gap:8px;padding:8px 8px 10px;pointer-events:none;box-sizing:border-box;
-  background:linear-gradient(180deg,transparent 0%,rgba(2,10,6,.42) 55%,rgba(2,10,6,.78) 100%)
+  display:flex;flex-wrap:nowrap;align-items:center;justify-content:space-between;
+  gap:4px;padding:3px 5px 5px;pointer-events:none;box-sizing:border-box;
+  background:linear-gradient(180deg,transparent 0%,rgba(2,10,6,.35) 40%,rgba(2,10,6,.82) 100%)
 }
 .po-bottom-actions{
-  display:flex;flex-wrap:wrap;align-items:center;gap:6px;pointer-events:none;position:relative;max-width:100%
+  display:flex;flex-wrap:nowrap;align-items:center;gap:3px;pointer-events:none;position:relative;
+  flex:1 1 auto;min-width:0;overflow:hidden
 }
-.po-tools-wrap{position:relative;display:inline-flex;pointer-events:none}
+.po-tools-wrap{position:relative;display:inline-flex;pointer-events:none;flex:0 0 auto}
 .po-bottom-actions > .chip,
-.po-tools-wrap > .chip{pointer-events:auto}
+.po-tools-wrap > .chip{pointer-events:auto;flex:0 0 auto}
 .po-hud{
   position:relative;left:auto;right:auto;top:auto;bottom:auto;transform:none;
-  display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;
-  pointer-events:none;z-index:auto;max-width:min(100%,420px);width:max-content;flex:1 1 auto
+  display:flex;flex-wrap:nowrap;gap:3px;align-items:center;justify-content:center;
+  pointer-events:none;z-index:auto;max-width:38%;width:auto;flex:0 1 auto;min-width:0;overflow:hidden
 }
-.po-hud-l{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;max-width:100%}
+.po-hud-l{display:flex;flex-wrap:nowrap;gap:3px;align-items:center;justify-content:center;max-width:100%;min-width:0}
 .po-hud[hidden],.po-hint[hidden],.po-menu-dock[hidden],.po-obj[hidden],.po-paused[hidden]{display:none!important}
 .po-hud .chip,.po-audio-bar .chip,.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn,.po-fs-btn,.po-tools-tray .chip{
-  pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);
-  font-family:var(--font-ui);font-size:13px;padding:8px 11px;border-radius:10px;font-weight:700;
-  letter-spacing:.2px;text-shadow:0 1px 0 rgba(0,0,0,.55);box-shadow:0 2px 8px rgba(0,0,0,.35);
+  pointer-events:auto;background:var(--panel);border:1px solid var(--line);color:var(--text);
+  font-family:var(--font-ui);font-size:11px;padding:3px 7px;border-radius:6px;font-weight:700;
+  letter-spacing:.15px;text-shadow:0 1px 0 rgba(0,0,0,.55);box-shadow:0 1px 4px rgba(0,0,0,.3);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
-  position:relative;left:auto;right:auto;top:auto;bottom:auto;min-height:40px;cursor:pointer;
-  transform:none
+  position:relative;left:auto;right:auto;top:auto;bottom:auto;min-height:26px;height:26px;
+  line-height:1;cursor:pointer;transform:none;white-space:nowrap
 }
-.po-hud .chip.pulse{border-color:var(--line-hi);box-shadow:0 0 12px rgba(93,206,122,.25)}
+.po-hud .chip.pulse{border-color:var(--line-hi);box-shadow:0 0 8px rgba(93,206,122,.2)}
 .po-hud .chip.done{border-color:#e8c86a;color:#e8c86a}
 .po-hud button.chip:hover,.po-audio-bar .chip:hover,.po-menu-dock:hover,
 .po-journal-btn:hover,.po-photo-btn:hover,.po-tools-btn:hover,.po-fs-btn:hover{background:#0d2416;border-color:var(--line-hi);color:#fff}
@@ -69,15 +69,24 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
   -webkit-tap-highlight-color:transparent;white-space:nowrap
 }
 .po-fs-btn:not([hidden]){display:inline-flex;align-items:center}
-.po-fs-btn[aria-pressed="true"]{border-color:#7fa88c;color:var(--muted);box-shadow:none;font-size:12px;padding:7px 10px;min-height:36px}
+.po-fs-btn[aria-pressed="true"]{border-color:#7fa88c;color:var(--muted);box-shadow:none;font-size:10px;padding:3px 6px;min-height:26px}
 .po-audio-bar{
   position:relative;left:auto;right:auto;top:auto;bottom:auto;z-index:auto;
-  display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--line);
-  border-radius:10px;padding:6px 9px;max-width:100%;pointer-events:auto;flex:0 0 auto
+  display:flex;align-items:center;gap:4px;background:var(--panel);border:1px solid var(--line);
+  border-radius:6px;padding:2px 6px;max-width:none;pointer-events:auto;flex:0 0 auto;height:26px
 }
-.po-vol-lab{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);font-weight:700;white-space:nowrap}
-.po-vol{width:72px;max-width:28vw;accent-color:var(--line-hi);cursor:pointer}
+.po-vol-lab{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap}
+.po-vol{width:52px;max-width:18vw;accent-color:var(--line-hi);cursor:pointer;height:14px}
 .po-mute[aria-pressed="true"]{border-color:#8a3a3a;color:#ffb4b4;background:#1a0a0a}
+.po-pos-chip{display:none}
+/* Roomier chips only while native fullscreen */
+html.po-fs .po-bottom-bar{padding:6px 8px 8px;gap:6px}
+html.po-fs .po-hud .chip,html.po-fs .po-audio-bar .chip,html.po-fs .po-menu-dock,
+html.po-fs .po-journal-btn,html.po-fs .po-photo-btn,html.po-fs .po-tools-btn,html.po-fs .po-fs-btn{
+  font-size:12px;padding:5px 9px;min-height:30px;height:30px;border-radius:8px
+}
+html.po-fs .po-audio-bar{height:30px;padding:3px 8px}
+html.po-fs .po-vol{width:64px}
 .po-hint{
   position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:5;
   background:rgba(4,16,10,.96);border:2px solid var(--line);padding:9px 16px;
@@ -102,7 +111,7 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 
 /* Touch: stick pads stay at canvas bottom; chrome lift is applied in JS */
 html.po-touch-on .po-bottom-bar{
-  padding:6px 8px;background:linear-gradient(180deg,transparent,rgba(2,10,6,.5));
+  padding:3px 5px;background:linear-gradient(180deg,transparent,rgba(2,10,6,.5));
   z-index:10
 }
 html.po-touch-on .po-hint{font-size:13px}
@@ -132,12 +141,12 @@ html.po-land.po-touch-on .po-look-btn{width:44px;height:40px;font-size:15px}
 html.po-land.po-touch-on .po-look-u,
 html.po-land.po-touch-on .po-look-d{width:96px;height:34px}
 html.po-land.po-touch-on .po-bottom-bar{
-  padding:4px 8px 6px;gap:6px
+  padding:3px 5px 4px;gap:3px
 }
 html.po-land.po-touch-on .po-bottom-bar .chip,
-html.po-land.po-touch-on .po-audio-bar .chip{padding:6px 9px;font-size:12px;min-height:34px}
-html.po-land.po-touch-on .po-audio-bar{padding:4px 6px}
-html.po-land.po-touch-on .po-vol{width:44px}
+html.po-land.po-touch-on .po-audio-bar .chip{padding:2px 6px;font-size:10px;min-height:24px;height:24px}
+html.po-land.po-touch-on .po-audio-bar{padding:1px 5px;height:24px}
+html.po-land.po-touch-on .po-vol{width:40px}
 html.po-land.po-touch-on .po-hint{display:none}
 html.po-land .po-pos-chip{display:none}
 html.po-land.po-touch-on .po-quest-chip{
@@ -337,12 +346,12 @@ html.po-land.po-touch-on:has(#po-help.show) .po-obj{visibility:hidden;pointer-ev
 .po-journal-btn[hidden],.po-photo-btn[hidden],.po-bestiary-btn[hidden],.po-binocs-btn[hidden],.po-focus-btn[hidden],.po-spotter-btn[hidden],.po-auto-btn[hidden],.po-tools-btn[hidden]{display:none!important}
 .po-tools-btn[aria-pressed="true"]{border-color:var(--line-hi);color:var(--line-hi)}
 .po-tools-tray{
-  position:absolute;z-index:11;left:0;bottom:calc(100% + 6px);display:flex;flex-direction:column;gap:6px;
-  pointer-events:auto;padding:8px;background:rgba(4,20,10,.94);border:2px solid #2d6b45;border-radius:10px;
-  min-width:110px
+  position:absolute;z-index:11;left:0;bottom:calc(100% + 4px);display:flex;flex-direction:column;gap:4px;
+  pointer-events:auto;padding:6px;background:rgba(4,20,10,.94);border:1px solid #2d6b45;border-radius:8px;
+  min-width:96px
 }
 .po-tools-tray[hidden]{display:none!important}
-.po-tools-tray .chip{display:block;width:100%;min-height:40px;font-size:13px;padding:8px 10px}
+.po-tools-tray .chip{display:block;width:100%;min-height:26px;height:auto;font-size:11px;padding:5px 8px}
 .po-quest-chip{
   position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:8;
   pointer-events:none;background:rgba(4,20,10,.9);border:2px solid #e8c86a;color:#e8c86a;
@@ -480,10 +489,10 @@ html.po-embed .po-regions{gap:8px}
   .po-regions{grid-template-columns:1fr;gap:10px}
   .po-card .preview{height:110px}
   .po-wip{margin-bottom:12px}
-  .po-hud .chip,.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn,.po-fs-btn,.po-audio-bar .chip{padding:8px 10px;font-size:12px;min-height:38px}
-  .po-hint{font-size:13px;bottom:62px;padding:8px 10px}
-  .po-audio-bar{padding:5px 7px}
-  .po-vol{width:64px}
+  .po-hud .chip,.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn,.po-fs-btn,.po-audio-bar .chip{padding:3px 6px;font-size:10px;min-height:24px;height:24px}
+  .po-hint{font-size:12px;bottom:36px;padding:6px 8px}
+  .po-audio-bar{padding:1px 5px;height:24px}
+  .po-vol{width:44px}
   .po-dossier{padding:14px;max-height:min(85vh,720px);border-radius:10px}
   .po-dossier .panel-body{font-size:15px;line-height:1.6}
   .po-paper-dossier{max-height:min(85vh,680px)}
