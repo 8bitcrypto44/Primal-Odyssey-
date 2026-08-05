@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Build SNES Mode-1 worlds — full graphics upgrade (v43).
+"""Build SNES Mode-1 worlds — full graphics upgrade (v46).
 
 Implements: water/path/cliff autotiles, animated water frames, hand map chunks,
-biome-specific tiles, ground detail props, explorer walk sprites, landmarks.
+per-biome tile swaps, Agent Run walk, facing animal sheets, note/landmark props.
 """
 from pathlib import Path
 from PIL import Image, ImageDraw
@@ -233,114 +233,212 @@ def extract_idylwild():
 
 
 def make_player_sheet():
-    """Assemble CC0 Chasersgaming NES Agent walk (16x24, 4 dir x 3 frames), safari recolor."""
-    base = snes / "player" / "agent" / "Agent Free Version" / "Walk"
-    sheet = Image.new("RGBA", (16 * 3, 24 * 4), (0, 0, 0, 0))
+    """Assemble CC0 Agent Run walk + Idle still (16x24, 4 dir x 3 frames + idle)."""
+    run_dir = snes / "player" / "agent" / "Agent Free Version" / "Run"
+    idle_dir = snes / "player" / "agent" / "Agent Free Version" / "Idle"
+    # 3 run frames + 1 idle column
+    sheet = Image.new("RGBA", (16 * 4, 24 * 4), (0, 0, 0, 0))
     frames = {}
     dirs = [("down", "SOUTH"), ("left", "WEST"), ("right", "EAST"), ("up", "NORTH")]
+
+    def khaki(fr):
+        px = fr.load()
+        for y in range(fr.height):
+            for x in range(fr.width):
+                r, g, b, a = px[x, y]
+                if a < 8:
+                    continue
+                if b > r + 20 and b > g and b > 80:
+                    px[x, y] = (
+                        min(255, int(r * 0.55 + 45)),
+                        min(255, int(g * 0.85 + 55)),
+                        min(255, int(b * 0.3 + 20)),
+                        a,
+                    )
+        return fr
+
     for di, (dname, dkey) in enumerate(dirs):
-        strip = Image.open(base / f"C_Idle_{dkey}_strip4.png").convert("RGBA")
+        run = Image.open(run_dir / f"C_Run_{dkey}_strip4.png").convert("RGBA")
+        idle_path = idle_dir / f"C_Idle_{dkey}_strip4.png"
+        if not idle_path.exists():
+            idle_path = snes / "player" / "agent" / "Agent Free Version" / "Walk" / f"C_Idle_{dkey}_strip4.png"
+        idle = Image.open(idle_path).convert("RGBA")
         for fi in range(3):
-            fr = strip.crop((fi * 16, 0, fi * 16 + 16, 24))
-            px = fr.load()
-            for y in range(24):
-                for x in range(16):
-                    r, g, b, a = px[x, y]
-                    if a < 8:
-                        continue
-                    # blue suit → khaki / field green
-                    if b > r + 20 and b > g and b > 80:
-                        px[x, y] = (
-                            min(255, int(r * 0.55 + 45)),
-                            min(255, int(g * 0.85 + 55)),
-                            min(255, int(b * 0.3 + 20)),
-                            a,
-                        )
+            fr = khaki(run.crop((fi * 16, 0, fi * 16 + 16, 24)))
             sheet.paste(fr, (fi * 16, di * 24), fr)
             frames[f"player_{dname}_{fi}"] = {
                 "x": fi * 16, "y": di * 24, "w": 16, "h": 24, "solid": False
             }
+        ifr = khaki(idle.crop((0, 0, 16, 24)))
+        sheet.paste(ifr, (3 * 16, di * 24), ifr)
+        frames[f"player_{dname}_idle"] = {
+            "x": 3 * 16, "y": di * 24, "w": 16, "h": 24, "solid": False
+        }
     sheet.save(out / "player.png")
     return frames
 
 
-def make_topdown_animals():
-    """Bake simple 3/4 top-down animal stamps from palette silhouettes."""
-    # id -> (body RGB, accent RGB, shape)
-    specs = {
-        "lion": ((180, 140, 60), (90, 60, 30), "quad"),
-        "lioness": ((170, 130, 55), (80, 55, 28), "quad"),
-        "tiger": ((200, 110, 40), (30, 20, 10), "quad"),
-        "leopard": ((190, 150, 70), (50, 35, 20), "quad"),
-        "jaguar": ((160, 120, 50), (40, 28, 15), "quad"),
-        "snowleopard": ((190, 200, 210), (80, 90, 100), "quad"),
-        "cougar": ((180, 140, 70), (70, 50, 30), "quad"),
-        "wolf": ((140, 140, 150), (60, 60, 70), "quad"),
-        "buffalo": ((70, 50, 30), (40, 30, 20), "heavy"),
-        "rhino": ((150, 150, 150), (90, 90, 90), "heavy"),
-        "hippo": ((80, 110, 160), (40, 60, 100), "heavy"),
-        "gorilla": ((50, 48, 48), (30, 28, 28), "ape"),
-        "grizzly": ((100, 70, 40), (50, 35, 20), "heavy"),
-        "eagle": ((180, 160, 130), (90, 50, 20), "bird"),
-        "croc": ((50, 100, 55), (25, 55, 30), "long"),
-        "anaconda": ((30, 140, 70), (20, 80, 40), "long"),
-        "honeybadger": ((160, 155, 150), (40, 40, 40), "quad"),
-    }
-    sheet = Image.new("RGBA", (32 * 4, 24 * ((len(specs) + 3) // 4)), (0, 0, 0, 0))
-    frames = {}
-    for i, (aid, (body, accent, shape)) in enumerate(specs.items()):
-        im = Image.new("RGBA", (28, 20), (0, 0, 0, 0))
-        px = im.load()
-        cx, cy = 14, 12
+def make_marker_props():
+    """Field note parchment + landmark cairn/flag for SNES world."""
+    note = Image.new("RGBA", (14, 16), (0, 0, 0, 0))
+    d = ImageDraw.Draw(note)
+    d.rectangle((1, 1, 12, 14), fill=(232, 214, 170, 255), outline=(90, 60, 30, 255))
+    d.line((3, 4, 10, 4), fill=(120, 80, 40, 255))
+    d.line((3, 7, 10, 7), fill=(120, 80, 40, 255))
+    d.line((3, 10, 8, 10), fill=(120, 80, 40, 255))
+    d.polygon([(9, 1), (12, 1), (12, 5)], fill=(200, 170, 110, 255))
 
-        def dot(x, y, c, r=0):
+    cairn = Image.new("RGBA", (16, 18), (0, 0, 0, 0))
+    d = ImageDraw.Draw(cairn)
+    d.ellipse((2, 10, 14, 17), fill=(110, 110, 105, 255), outline=(60, 60, 55, 255))
+    d.ellipse((4, 6, 12, 13), fill=(130, 125, 118, 255), outline=(70, 68, 60, 255))
+    d.ellipse((5, 2, 11, 8), fill=(145, 140, 130, 255), outline=(70, 68, 60, 255))
+    d.rectangle((7, 0, 8, 4), fill=(180, 60, 40, 255))
+
+    flag = Image.new("RGBA", (14, 18), (0, 0, 0, 0))
+    d = ImageDraw.Draw(flag)
+    d.rectangle((2, 0, 3, 17), fill=(90, 70, 40, 255))
+    d.polygon([(3, 1), (12, 4), (3, 7)], fill=(61, 155, 95, 255), outline=(20, 80, 40, 255))
+    return {"field_note": note, "cairn": cairn, "trail_flag": flag}
+
+
+def make_topdown_animals():
+    """Bake 32x24 top-down animals with left/right facing + 2 walk frames."""
+    specs = {
+        "lion": ((180, 140, 60), (90, 60, 30), (40, 30, 20), "quad"),
+        "lioness": ((170, 130, 55), (80, 55, 28), (40, 30, 20), "quad"),
+        "tiger": ((200, 110, 40), (30, 20, 10), (20, 12, 8), "quad"),
+        "leopard": ((190, 150, 70), (50, 35, 20), (30, 22, 12), "quad"),
+        "jaguar": ((160, 120, 50), (40, 28, 15), (25, 18, 10), "quad"),
+        "snowleopard": ((190, 200, 210), (80, 90, 100), (50, 55, 60), "quad"),
+        "cougar": ((180, 140, 70), (70, 50, 30), (40, 28, 16), "quad"),
+        "wolf": ((140, 140, 150), (60, 60, 70), (40, 40, 45), "quad"),
+        "lynx": ((170, 145, 100), (90, 70, 45), (50, 40, 30), "quad"),
+        "ocelot": ((200, 160, 90), (60, 40, 25), (35, 25, 15), "quad"),
+        "honeybadger": ((160, 155, 150), (40, 40, 40), (25, 25, 25), "quad"),
+        "buffalo": ((70, 50, 30), (40, 30, 20), (25, 18, 12), "heavy"),
+        "rhino": ((150, 150, 150), (90, 90, 90), (60, 60, 60), "heavy"),
+        "hippo": ((80, 110, 160), (40, 60, 100), (30, 45, 70), "heavy"),
+        "grizzly": ((100, 70, 40), (50, 35, 20), (30, 20, 12), "heavy"),
+        "manatee": ((90, 130, 140), (50, 80, 90), (35, 55, 60), "heavy"),
+        "gorilla": ((50, 48, 48), (30, 28, 28), (20, 18, 18), "ape"),
+        "eagle": ((180, 160, 130), (90, 50, 20), (40, 30, 20), "bird"),
+        "croc": ((50, 100, 55), (25, 55, 30), (15, 35, 20), "long"),
+        "anaconda": ((30, 140, 70), (20, 80, 40), (12, 50, 25), "long"),
+    }
+    # 4 cols x faces: each animal gets row with L0 L1 R0 R1 (and base td_id = L0)
+    cols_per = 4
+    n = len(specs)
+    sheet = Image.new("RGBA", (32 * cols_per, 24 * n), (0, 0, 0, 0))
+    frames = {}
+
+    def paint_animal(body, accent, outline, shape, face_right, walk):
+        im = Image.new("RGBA", (32, 24), (0, 0, 0, 0))
+        px = im.load()
+        cx, cy = 16, 14
+        leg = 1 if walk else 0
+
+        def put(x, y, c, r=0):
             for yy in range(y - r, y + r + 1):
                 for xx in range(x - r, x + r + 1):
-                    if 0 <= xx < 28 and 0 <= yy < 20 and (xx - x) ** 2 + (yy - y) ** 2 <= r * r + 0.5:
+                    if 0 <= xx < 32 and 0 <= yy < 24 and (xx - x) ** 2 + (yy - y) ** 2 <= r * r + 0.6:
                         px[xx, yy] = (*c, 255)
 
+        def outline_ring(x, y, r, c=outline):
+            for yy in range(y - r - 1, y + r + 2):
+                for xx in range(x - r - 1, x + r + 2):
+                    dist = (xx - x) ** 2 + (yy - y) ** 2
+                    if 0 <= xx < 32 and 0 <= yy < 24 and r * r <= dist <= (r + 1) ** 2 + 0.5:
+                        if px[xx, yy][3] < 8:
+                            px[xx, yy] = (*c, 220)
+
+        hx = 5 if face_right else -5
         if shape == "bird":
-            for dx in range(-10, 11):
-                for dy in range(-2, 3):
-                    if abs(dx) + abs(dy) * 3 < 12:
-                        dot(cx + dx, cy + dy, body)
-            dot(cx, cy - 4, accent, 2)
-            dot(cx - 8, cy, accent, 1)
-            dot(cx + 8, cy, accent, 1)
+            for dx in range(-11, 12):
+                for dy in range(-3, 4):
+                    if abs(dx) + abs(dy) * 3 < 13:
+                        put(cx + dx, cy + dy, body)
+            put(cx + hx, cy - 3, accent, 2)
+            put(cx - 9, cy + leg, accent, 1)
+            put(cx + 9, cy - leg, accent, 1)
+            outline_ring(cx, cy, 4)
         elif shape == "long":
-            for t in range(-10, 11):
-                dot(cx + t, cy + (t // 5), body, 2 if abs(t) < 7 else 1)
-            dot(cx + 9, cy - 1, accent, 2)
+            for t in range(-11, 12):
+                put(cx + t, cy + (t // 6) + (leg if t % 3 == 0 else 0), body, 2 if abs(t) < 8 else 1)
+            put(cx + (10 if face_right else -10), cy - 1, accent, 2)
+            put(cx + (12 if face_right else -12), cy - 2, outline, 1)
         elif shape == "ape":
-            dot(cx, cy + 2, body, 5)
-            dot(cx, cy - 4, body, 3)
-            dot(cx - 5, cy + 1, accent, 2)
-            dot(cx + 5, cy + 1, accent, 2)
+            put(cx, cy + 2, body, 6)
+            put(cx + hx // 2, cy - 5, body, 3)
+            put(cx - 6, cy + 1 + leg, accent, 2)
+            put(cx + 6, cy + 1 - leg, accent, 2)
+            outline_ring(cx, cy + 1, 6)
         elif shape == "heavy":
-            dot(cx, cy + 1, body, 6)
-            dot(cx + 5, cy - 2, body, 4)
-            dot(cx - 5, cy + 3, accent, 2)
-            dot(cx + 6, cy + 3, accent, 2)
+            put(cx, cy + 1, body, 7)
+            put(cx + hx, cy - 2, body, 4)
+            put(cx - 6, cy + 5 + leg, accent, 2)
+            put(cx + 5, cy + 5 - leg, accent, 2)
+            put(cx + hx + 3, cy - 4, outline, 1)
+            outline_ring(cx, cy + 1, 7)
         else:
-            dot(cx, cy + 1, body, 5)
-            dot(cx + 4, cy - 3, body, 3)
-            # legs
-            dot(cx - 3, cy + 5, accent, 1)
-            dot(cx + 2, cy + 5, accent, 1)
-            dot(cx + 5, cy + 4, accent, 1)
-            # ear
-            dot(cx + 2, cy - 6, accent, 1)
-            if aid == "tiger":
-                for sx in range(8, 18, 3):
-                    dot(sx, cy, (20, 15, 10), 0)
-        col = i % 4
-        row = i // 4
-        sheet.paste(im, (col * 32 + 2, row * 24 + 2), im)
-        frames[f"td_{aid}"] = {
-            "x": col * 32 + 2, "y": row * 24 + 2, "w": 28, "h": 20, "solid": False
-        }
+            put(cx, cy + 1, body, 5)
+            put(cx + hx, cy - 3, body, 3)
+            put(cx - 4, cy + 6 + leg, accent, 1)
+            put(cx + 1, cy + 6 - leg, accent, 1)
+            put(cx + 4, cy + 5 + leg, accent, 1)
+            put(cx + hx, cy - 6, accent, 1)
+            # eye
+            put(cx + hx + (2 if face_right else -2), cy - 3, (20, 20, 20), 0)
+            outline_ring(cx, cy + 1, 5)
+            if body[0] > 190 and body[1] < 120:  # tiger stripes
+                for sx in range(cx - 4, cx + 5, 3):
+                    put(sx, cy, outline, 0)
+        return im
+
+    for i, (aid, (body, accent, outline, shape)) in enumerate(specs.items()):
+        variants = [
+            ("l", 0, False, 0),
+            ("l", 1, False, 1),
+            ("r", 0, True, 0),
+            ("r", 1, True, 1),
+        ]
+        for vi, (side, wi, face_right, walk) in enumerate(variants):
+            im = paint_animal(body, accent, outline, shape, face_right, walk)
+            x = vi * 32
+            y = i * 24
+            sheet.paste(im, (x, y), im)
+            key = f"td_{aid}_{side}_{wi}"
+            frames[key] = {"x": x, "y": y, "w": 32, "h": 24, "solid": False}
+            if vi == 0:
+                frames[f"td_{aid}"] = {"x": x, "y": y, "w": 32, "h": 24, "solid": False}
     sheet.save(out / "animals_td.png")
     return frames
+
+
+# Per-biome ground tile remaps (same frame IDs, different Puny art)
+BIOME_TILE_SWAP = {
+    "africa": {},
+    "mountains": {
+        "grass": (20, 0), "grass2": (22, 0), "grass3": (20, 0),
+        "grass4": (22, 0), "grass5": (20, 0), "grass6": (22, 0),
+        "dark_grass": (8, 0), "dark_grass2": (8, 1),
+        "sand": (20, 0), "sand2": (22, 0),
+        "mud": (8, 0), "mud2": (8, 1),
+    },
+    "jungle": {
+        "grass": (0, 2), "grass2": (1, 2), "grass3": (0, 2),
+        "grass4": (1, 2), "grass5": (0, 2), "grass6": (1, 2),
+        "sand": (12, 2), "sand2": (13, 2),
+        "dirt": (12, 2), "dirt2": (13, 2),
+    },
+    "wetlands": {
+        "grass": (12, 2), "grass2": (13, 2), "grass3": (0, 2),
+        "grass4": (1, 2), "grass5": (12, 2), "grass6": (13, 2),
+        "sand": (12, 2), "sand2": (13, 2),
+        "dirt": (12, 2), "dirt2": (13, 2),
+        "dark_grass": (0, 2), "dark_grass2": (1, 2),
+    },
+}
 
 
 def build_atlas(objs, player_frames):
@@ -374,7 +472,7 @@ def build_atlas(objs, player_frames):
         atlas.paste(im, (x, y), im)
         solid = (
             name.startswith("tree") or name.startswith("ptree") or name.startswith("rock")
-            or name in ("cave", "sign")
+            or name in ("cave", "sign", "cairn")
         )
         feet = max(6, min(12, h // 5))
         canopy = name.startswith("tree") or name.startswith("ptree")
@@ -706,12 +804,24 @@ def gen_map(region, frames, seed=42):
     landmarks = [
         {"id": "camp", "x": sx + 0.5, "y": sy + 0.5, "label": "Base Camp"},
     ]
+    if "trail_flag" in frames:
+        objects.append({"id": "trail_flag", "x": sx * TW + 8, "y": (sy - 2) * TW + 8})
+    if "cairn" in frames:
+        objects.append({"id": "cairn", "x": (sx + 3) * TW + 8, "y": (sy + 2) * TW + 8})
+        landmarks.append({"id": "cairn", "x": sx + 3.5, "y": sy + 2.5, "label": "Trail Cairn"})
     for o in objects:
         if o["id"] in ("cave", "sign"):
             landmarks.append({
                 "id": o["id"], "x": o["x"] / TW, "y": o["y"] / TW,
                 "label": "Cave Mouth" if o["id"] == "cave" else "Trail Sign",
             })
+    # Extra lookout cairns
+    if "cairn" in frames:
+        for _ in range(2):
+            tx, ty = rnd.randint(8, W - 9), rnd.randint(8, H - 9)
+            if walkable(tx, ty):
+                objects.append({"id": "cairn", "x": tx * TW + 8, "y": ty * TW + 8})
+                landmarks.append({"id": "cairn_" + str(len(landmarks)), "x": tx + 0.5, "y": ty + 0.5, "label": "Stone Cairn"})
 
     return {
         "w": W, "h": H, "tile": TW,
@@ -729,20 +839,29 @@ def main():
     objs = {}
     objs.update(extract_puny_trees())
     objs.update(extract_idylwild())
+    objs.update(make_marker_props())
     print("objects", len(objs), sorted(objs.keys())[:20], "...")
     player_frames = make_player_sheet()
     animal_frames = make_topdown_animals()
     frames = build_atlas(objs, player_frames)
     frames.update(animal_frames)
-    base = Image.open(out / "atlas.png")
+    base = Image.open(out / "atlas.png").convert("RGBA")
     tints = {
-        "africa": (0.2, 1.06, 1.04),
-        "mountains": (-0.16, 0.92, 1.06),
-        "jungle": (-0.05, 1.14, 0.93),
-        "wetlands": (-0.3, 1.0, 0.96),
+        "africa": (0.22, 1.1, 1.05),
+        "mountains": (-0.22, 0.88, 1.1),
+        "jungle": (-0.08, 1.22, 0.9),
+        "wetlands": (-0.38, 1.05, 0.94),
     }
     for rid, (hue, sat, bri) in tints.items():
-        recolor(base, hue, sat, bri).save(out / f"atlas_{rid}.png")
+        atlas = base.copy()
+        swaps = BIOME_TILE_SWAP.get(rid, {})
+        for k, (col, row) in swaps.items():
+            fr = frames.get(k)
+            if not fr:
+                continue
+            t = tile(puny, col, row)
+            atlas.paste(t, (fr["x"], fr["y"]))
+        recolor(atlas, hue, sat, bri).save(out / f"atlas_{rid}.png")
 
     maps = {}
     for i, rid in enumerate(("africa", "mountains", "jungle", "wetlands")):
@@ -750,17 +869,17 @@ def main():
         print(rid, "objs", len(maps[rid]["objects"]), "details", len(maps[rid]["details"]))
 
     js = []
-    js.append("// Auto-built SNES tilemap data v44 — Puny World + Idylwild + Agent")
+    js.append("// Auto-built SNES tilemap data v46 — Puny World + Idylwild + Agent Run + biome tiles")
     js.append("window.PO_SNES = window.PO_SNES || {};")
     js.append("PO_SNES.TILE = 16;")
     js.append("PO_SNES.frames = " + json.dumps(frames) + ";")
     js.append("PO_SNES.maps = " + json.dumps(maps) + ";")
     js.append("PO_SNES.atlas = {")
     for rid in ("africa", "mountains", "jungle", "wetlands"):
-        js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png",')
+        js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png?v=46",')
     js.append("};")
-    js.append('PO_SNES.playerSheet = "assets/snes/built/player.png";')
-    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png";')
+    js.append('PO_SNES.playerSheet = "assets/snes/built/player.png?v=46";')
+    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png?v=46";')
     js.append("PO_SNES.waterAnim = [\"water\",\"water2\",\"water3\",\"water_a\"];")
     (root / "primal_snes_data.js").write_text("\n".join(js), encoding="utf-8")
 

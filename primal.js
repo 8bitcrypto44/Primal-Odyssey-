@@ -3187,14 +3187,15 @@
     const snesMap = (window.PO_SNES && PO_SNES.enabled && PO_SNES.current && PO_SNES.current()) || null;
     const mapCells = snesMap ? snesMap.w : MAP;
     const ms = snesMap ? 1 : 2, msz = mapCells * ms;
-    const ox = W - Math.min(msz, 72) - 6, oy = 6;
-    const drawSz = Math.min(msz, 72);
+    const miniCap = snesMap ? 40 : 48;
+    const ox = W - Math.min(msz, miniCap) - 5, oy = 5;
+    const drawSz = Math.min(msz, miniCap);
     const scale = drawSz / msz;
     ctx.fillStyle = "rgba(2,12,6,0.85)";
-    ctx.fillRect(ox - 3, oy - 3, drawSz + 6, drawSz + 6);
+    ctx.fillRect(ox - 2, oy - 2, drawSz + 4, drawSz + 4);
     ctx.strokeStyle = "#2d6b45";
     ctx.lineWidth = 1;
-    ctx.strokeRect(ox - 3.5, oy - 3.5, drawSz + 6, drawSz + 6);
+    ctx.strokeRect(ox - 2.5, oy - 2.5, drawSz + 4, drawSz + 4);
     if (miniBase) {
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(miniBase, ox, oy, drawSz, drawSz);
@@ -3219,17 +3220,17 @@
     const ppx = ox + player.x * mm, ppy = oy + player.y * mm;
     ctx.fillStyle = "#5dce7a";
     ctx.beginPath();
-    ctx.moveTo(ppx + Math.cos(player.dir) * 4, ppy + Math.sin(player.dir) * 4);
-    ctx.lineTo(ppx + Math.cos(player.dir + 2.4) * 2.5, ppy + Math.sin(player.dir + 2.4) * 2.5);
-    ctx.lineTo(ppx + Math.cos(player.dir - 2.4) * 2.5, ppy + Math.sin(player.dir - 2.4) * 2.5);
+    ctx.moveTo(ppx + Math.cos(player.dir) * 3, ppy + Math.sin(player.dir) * 3);
+    ctx.lineTo(ppx + Math.cos(player.dir + 2.4) * 1.8, ppy + Math.sin(player.dir + 2.4) * 1.8);
+    ctx.lineTo(ppx + Math.cos(player.dir - 2.4) * 1.8, ppy + Math.sin(player.dir - 2.4) * 1.8);
     ctx.fill();
     const phaseCol = phase.name === "night" ? "#5a7ab0"
       : (phase.name === "dusk" ? "#c97820"
         : (phase.name === "dawn" ? "#e8a060" : "#e8c86a"));
     ctx.fillStyle = "rgba(4,20,10,0.85)";
-    ctx.fillRect(ox - 3, oy + drawSz + 4, drawSz + 6, 6);
+    ctx.fillRect(ox - 2, oy + drawSz + 3, drawSz + 4, 4);
     ctx.fillStyle = phaseCol;
-    ctx.fillRect(ox - 1, oy + drawSz + 5, drawSz + 2, 3);
+    ctx.fillRect(ox, oy + drawSz + 4, drawSz, 2);
     drawPhotoAssist();
     if (binocsOn) {
       ctx.fillStyle = "rgba(0,10,5,0.55)";
@@ -3406,21 +3407,21 @@
     else if (rare && !rareFound) { tx = rare.x; ty = rare.y; col = "#e8a050"; tag = "RARE"; }
     if (tx == null) return;
     const ang = Math.atan2(ty - player.y, tx - player.x) - player.dir;
-    const cx = 36, cy = H - 36;
+    const cx = 22, cy = H - 22;
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.fillStyle = "rgba(4,20,10,0.75)";
-    ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#2d6b45"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = "rgba(4,20,10,0.78)";
+    ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#2d6b45"; ctx.lineWidth = 1; ctx.stroke();
     ctx.rotate(ang);
     ctx.fillStyle = col;
     ctx.beginPath();
-    ctx.moveTo(0, -16); ctx.lineTo(8, 10); ctx.lineTo(0, 5); ctx.lineTo(-8, 10);
+    ctx.moveTo(0, -8); ctx.lineTo(4, 5); ctx.lineTo(0, 2); ctx.lineTo(-4, 5);
     ctx.closePath(); ctx.fill();
     ctx.restore();
     ctx.fillStyle = col;
     ctx.beginPath();
-    ctx.arc(cx, cy + 28, 3, 0, Math.PI * 2);
+    ctx.arc(cx, cy + 14, 2, 0, Math.PI * 2);
     ctx.fill();
   }
 
