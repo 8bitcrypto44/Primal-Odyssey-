@@ -40,22 +40,28 @@
   }
   const canvas = document.getElementById("po-canvas");
   const ctx = canvas.getContext("2d", { alpha: false });
-  // Higher internal res for fullscreen / Digistracts 16:9 hosts
-  const W = 720, H = 405;
+  // Balanced res — 720×405 + 1px floor fillRect was tanking phones
+  const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
+    (window.matchMedia && matchMedia("(pointer:coarse)").matches);
+  const W = IS_MOBILE ? 480 : 640;
+  const H = IS_MOBILE ? 270 : 360;
   canvas.width = W;
   canvas.height = H;
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
+  ctx.imageSmoothingQuality = "medium";
   const MAP = 36;
   const FOV = Math.PI / 3;
-  const TEX = 128;
+  const TEX = 64;
+  const FLOOR_STEP_X = IS_MOBILE ? 3 : 2;
+  const FLOOR_STEP_Y = IS_MOBILE ? 2 : 2;
   const UNIT_FT = 11;
   const HT_FT = {
     acacia: 30, baobab: 50, pine: 75, tree: 100,
     rock: 5, snowrock: 5, grass: 3, fern: 3.5, bush: 3.2,
+    wallrock: 9,
     lion: 4.8, tiger: 4.5, leopard: 3, jaguar: 3.2, snowleopard: 2.8,
     cougar: 3.2, wolf: 3, grizzly: 5.5, gorilla: 5.6, hippo: 5.5,
-    rhino: 6.2, buffalo: 5.5, croc: 1.8, anaconda: 2.5, eagle: 2.8, honeybadger: 2.2
+    rhino: 6.2, buffalo: 5.5, croc: 1.8, anaconda: 2.5, eagle: 2.8, honeybadger: 3.4
   };
   function worldScale(id) { return (HT_FT[id] || 6) / UNIT_FT; }
 
@@ -333,8 +339,11 @@
 
     for (let y = 2; y < 7; y++) for (let x = 2; x < 7; x++) { wall[y][x] = 0; floor[y][x] = 0; }
 
-    // Rock kopjes / cliff knobs (blocked cells + props)
-    const kopjeN = regionId === "mountains" ? 7 : (regionId === "africa" ? 5 : 4);
+    // Visible kopjes — wall textures + rocks as billboards (no invisible wall cells)
+    const kopjeN = regionId === "mountains" ? 5 : (regionId === "africa" ? 4 : 3);
+    const kopjeRock = regionId === "mountains" ? "snowrock" : "rock";
+    const wallProp = regionId === "mountains" ? "wallmountains"
+      : (regionId === "jungle" ? "walljungle" : "wallafrica");
     for (let k = 0; k < kopjeN; k++) {
       const cx = 8 + rnd(MAP - 16), cy = 8 + rnd(MAP - 16);
       if (Math.hypot(cx - 4.5, cy - 4.5) < 6) continue;
@@ -343,8 +352,21 @@
         if (dx * dx + dy * dy > rad * rad + 0.5) continue;
         const x = cx + dx, y = cy + dy;
         if (x < 2 || y < 2 || x >= MAP - 2 || y >= MAP - 2) continue;
-        wall[y][x] = 1;
+        wall[y][x] = 0;
         floor[y][x] = regionId === "mountains" ? 2 : 1;
+        if (dx === 0 && dy === 0) {
+          sprites.push({
+            x: x + 0.5, y: y + 0.5, kind: "prop", prop: wallProp,
+            scale: worldScale("wallrock") * (0.95 + Math.random() * 0.35), bob: 0
+          });
+        } else if (!rnd(2)) {
+          sprites.push({
+            x: x + 0.35 + Math.random() * 0.3,
+            y: y + 0.35 + Math.random() * 0.3,
+            kind: "prop", prop: kopjeRock,
+            scale: worldScale(kopjeRock) * (0.9 + Math.random() * 0.4), bob: 0
+          });
+        }
       }
     }
 
@@ -379,26 +401,26 @@
 
     const trees = regionId === "africa" ? ["acacia", "baobab", "acacia", "acacia"]
       : regionId === "mountains" ? ["pine", "pine"] : ["tree", "tree", "tree"];
-    const treeN = regionId === "mountains" ? 40 : (regionId === "jungle" ? 36 : 28);
+    const treeN = regionId === "mountains" ? 22 : (regionId === "jungle" ? 20 : 16);
     for (let i = 0; i < treeN; i++) placeProp(trees[rnd(trees.length)]);
     const rocks = regionId === "mountains" ? ["snowrock"] : ["rock"];
-    const rockN = regionId === "mountains" ? 30 : 22;
+    const rockN = regionId === "mountains" ? 16 : 12;
     for (let i = 0; i < rockN; i++) placeProp(rocks[0]);
     if (regionId === "mountains") {
-      for (let i = 0; i < 55; i++) placeProp("grass");
-      for (let i = 0; i < 34; i++) placeProp("bush");
+      for (let i = 0; i < 28; i++) placeProp("grass");
+      for (let i = 0; i < 16; i++) placeProp("bush");
     } else if (regionId === "africa") {
-      for (let i = 0; i < 70; i++) placeProp("grass");
-      for (let i = 0; i < 24; i++) placeProp("bush");
+      for (let i = 0; i < 36; i++) placeProp("grass");
+      for (let i = 0; i < 12; i++) placeProp("bush");
     } else {
-      for (let i = 0; i < 50; i++) placeProp("fern");
-      for (let i = 0; i < 40; i++) placeProp("bush");
-      for (let i = 0; i < 30; i++) placeProp("grass");
+      for (let i = 0; i < 26; i++) placeProp("fern");
+      for (let i = 0; i < 18; i++) placeProp("bush");
+      for (let i = 0; i < 14; i++) placeProp("grass");
     }
 
     const rimRock = regionId === "mountains" ? "snowrock" : "rock";
     const rimTall = regionId === "africa" ? "acacia" : (regionId === "mountains" ? "pine" : "tree");
-    for (let i = 1; i < MAP - 1; i += 2) {
+    for (let i = 1; i < MAP - 1; i += 3) {
       const j = i + 0.5;
       placeEdgeProp(i % 4 === 1 ? rimTall : rimRock, j, 1.15);
       placeEdgeProp(i % 4 === 1 ? rimTall : rimRock, j, MAP - 1.15);
@@ -733,7 +755,7 @@
     tryPickupNotes();
   }
 
-  function floorColorAt(fx, fy, fog) {
+  function floorRgbAt(fx, fy, fog) {
     const R = region;
     const phase = dayPhase();
     const mx = fx | 0, my = fy | 0;
@@ -751,10 +773,11 @@
       let r = tex.data[i], g = tex.data[i + 1], b = tex.data[i + 2];
       if (cell === 2 || cell === 0) { r = (r * 0.75) | 0; g = (g * 0.7) | 0; b = (b * 0.55) | 0; }
       if (R.id === "jungle" && cell === 2) { r = (r * 0.55) | 0; g = (g * 0.7) | 0; b = (b * 0.55) | 0; }
-      r = (r * fog * phase.tint[0]) | 0;
-      g = (g * fog * phase.tint[1]) | 0;
-      b = (b * fog * phase.tint[2]) | 0;
-      return "rgb(" + r + "," + g + "," + b + ")";
+      return [
+        (r * fog * phase.tint[0]) | 0,
+        (g * fog * phase.tint[1]) | 0,
+        (b * fog * phase.tint[2]) | 0
+      ];
     }
     let hex;
     if (cell === 3) hex = R.water || "#2a6a7a";
@@ -767,22 +790,23 @@
     }
     const grit = 0.9 + (n / 7) * 0.14;
     const c = hexRgb(hex);
-    return "rgb(" +
-      ((c[0] * fog * grit * phase.tint[0]) | 0) + "," +
-      ((c[1] * fog * grit * phase.tint[1]) | 0) + "," +
-      ((c[2] * fog * grit * phase.tint[2]) | 0) + ")";
+    return [
+      (c[0] * fog * grit * phase.tint[0]) | 0,
+      (c[1] * fog * grit * phase.tint[1]) | 0,
+      (c[2] * fog * grit * phase.tint[2]) | 0
+    ];
   }
 
+  let floorID = null;
   function drawSkyFloor() {
     const R = region;
     const phase = dayPhase();
     const bobY = Math.sin(player.bob) * 6;
-    const horizon = (H / 2 + bobY) | 0;
+    const horizon = Math.max(1, Math.min(H - 2, (H / 2 + bobY) | 0));
     const skyImg = remoteSky[R.id];
     if (skyImg) {
       const scroll = ((player.dir * 120) % skyImg.width + skyImg.width) % skyImg.width;
       ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
       ctx.drawImage(skyImg, -scroll, 0, skyImg.width, horizon);
       ctx.drawImage(skyImg, -scroll + skyImg.width, 0, skyImg.width, horizon);
       ctx.fillStyle = "rgba(" +
@@ -802,9 +826,14 @@
     }
     const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
     const planeX = -dirY * 0.66, planeY = dirX * 0.66;
-    const stepY = 1, stepX = 1;
-    for (let y = horizon + 1; y < H; y += stepY) {
-      const rowDist = (0.5 * H) / (y - horizon);
+    const fh = H - horizon;
+    if (!floorID || floorID.width !== W || floorID.height !== fh) {
+      floorID = new ImageData(W, fh);
+    }
+    const data = floorID.data;
+    const stepX = FLOOR_STEP_X, stepY = FLOOR_STEP_Y;
+    for (let y = 0; y < fh; y += stepY) {
+      const rowDist = (0.5 * H) / (y + 1);
       const fog = clamp(1 - rowDist / 16, 0.2, 1);
       const Lx = player.x + rowDist * (dirX - planeX);
       const Ly = player.y + rowDist * (dirY - planeY);
@@ -812,16 +841,24 @@
       const Ry = player.y + rowDist * (dirY + planeY);
       for (let x = 0; x < W; x += stepX) {
         const u = x / W;
-        ctx.fillStyle = floorColorAt(Lx + (Rx - Lx) * u, Ly + (Ry - Ly) * u, fog);
-        ctx.fillRect(x, y, stepX, stepY);
+        const rgb = floorRgbAt(Lx + (Rx - Lx) * u, Ly + (Ry - Ly) * u, fog);
+        const r = rgb[0], g = rgb[1], b = rgb[2];
+        for (let dy = 0; dy < stepY && y + dy < fh; dy++) {
+          const row = (y + dy) * W;
+          for (let dx = 0; dx < stepX && x + dx < W; dx++) {
+            const i = (row + x + dx) * 4;
+            data[i] = r; data[i + 1] = g; data[i + 2] = b; data[i + 3] = 255;
+          }
+        }
       }
     }
+    ctx.putImageData(floorID, 0, horizon);
   }
 
   function updateParticles(dt) {
     const R = region;
     if (!R) return;
-    const want = R.id === "mountains" ? 48 : (R.id === "jungle" ? 36 : 28);
+    const want = R.id === "mountains" ? 22 : (R.id === "jungle" ? 16 : 12);
     while (particles.length < want) {
       particles.push({
         x: Math.random() * W,
@@ -906,7 +943,9 @@
     leopard: "https://i.postimg.cc/7P3YkKQM/leopard.jpg",
     snowleopard: "https://i.postimg.cc/SQ6NhgtL/snowleopard.jpg",
     tiger: "https://i.postimg.cc/PfWrjSFQ/tiger.jpg",
-    wolf: "https://i.postimg.cc/h4LPB230/wolf.jpg"
+    wolf: "https://i.postimg.cc/h4LPB230/wolf.jpg",
+    // Direct Kenney animal-pack link used for honey badger (no PostImg body art provided)
+    honeybadger: "https://res.cloudinary.com/dol86wsz1/image/upload/v1770151649/summer_art/kenney/2d/animal-pack-redux/dog.png"
   };
   const REMOTE_PROPS = {
     acacia: "https://i.postimg.cc/m24tWq34/acacia.jpg",
@@ -917,7 +956,10 @@
     grass: "https://i.postimg.cc/02vb13G5/grass.jpg",
     bush: "https://i.postimg.cc/02vb13G5/grass.jpg",
     fern: "https://i.postimg.cc/X7Wp6hKY/fern.jpg",
-    snowrock: "https://i.postimg.cc/vHvDYzX8/snowrock.jpg"
+    snowrock: "https://i.postimg.cc/vHvDYzX8/snowrock.jpg",
+    wallafrica: "https://i.postimg.cc/kXyDJcw5/wall-africa.jpg",
+    walljungle: "https://i.postimg.cc/CL4dhNJR/wall-jungle.jpg",
+    wallmountains: "https://i.postimg.cc/15K4mHMg/wall-mountains.jpg"
   };
   const REMOTE_GROUND = {
     africa: "https://i.postimg.cc/DZcRJ8N1/ground-africa.jpg",
@@ -936,7 +978,7 @@
 
   function fitRemoteToCanvas(img) {
     // Keep more source detail; smooth downsample (photos look soft, not blocky)
-    const max = 192;
+    const max = 128;
     const scale = Math.min(1, max / Math.max(img.width, img.height));
     const w = Math.max(16, (img.width * scale) | 0);
     const h = Math.max(16, (img.height * scale) | 0);
@@ -1034,7 +1076,6 @@
         c.width = c.height = TEX;
         const g = c.getContext("2d");
         g.imageSmoothingEnabled = true;
-        g.imageSmoothingQuality = "high";
         g.drawImage(img, 0, 0, TEX, TEX);
         remoteGround[rid] = g.getImageData(0, 0, TEX, TEX);
       });
@@ -1046,7 +1087,6 @@
         c.height = Math.ceil(H * 0.55);
         const g = c.getContext("2d");
         g.imageSmoothingEnabled = true;
-        g.imageSmoothingQuality = "high";
         g.drawImage(img, 0, 0, c.width, c.height);
         remoteSky[rid] = c;
       });
@@ -1104,7 +1144,7 @@
       const invDet = 1 / (planeX * dirY - dirX * planeY);
       const transformX = invDet * (dirY * spriteX - dirX * spriteY);
       const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
-      if (transformY <= 0.15 || transformY > 26) continue;
+      if (transformY <= 0.15 || transformY > 18) continue;
       const spriteScreenX = ((W / 2) * (1 + transformX / transformY)) | 0;
       let sc = sp.scale || worldScale(sp.id || sp.prop);
       if (sp.kind === "note") sc = 0.45;
@@ -1144,7 +1184,7 @@
       ctx.save();
       ctx.globalAlpha = fogA;
       ctx.imageSmoothingEnabled = !!(img._photo);
-      ctx.imageSmoothingQuality = "high";
+      ctx.imageSmoothingQuality = "medium";
       if (flip) {
         ctx.translate(drawStartX + spriteW, drawStartY);
         ctx.scale(-1, 1);
