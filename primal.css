@@ -498,3 +498,9 @@ html.po-embed .po-regions{gap:8px}
   mix-blend-mode:overlay;
 }
 html.po-kids .po-shell::after{opacity:.02}
+
+.po-dossier .art, #po-d-art{
+  border:3px solid #8a6a38 !important;
+  box-shadow:inset 0 0 0 1px #c9a227,0 2px 8px rgba(0,0,0,.25);
+  background:#e8d9b0;
+}

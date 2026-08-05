@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "36"
+ASSET_VER = "37"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -204,12 +204,12 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
           <button type="button" data-region="africa" title="Play Africa"><img src="https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg" alt="Africa" width="320" height="180" loading="lazy"></button>
           <button type="button" data-region="mountains" title="Play Mountains"><img src="https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg" alt="Mountains" width="320" height="180" loading="lazy"></button>
           <button type="button" data-region="jungle" title="Play Jungle"><img src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="Jungle" width="320" height="180" loading="lazy"></button>
-          <button type="button" data-region="wetlands" title="Play Wetlands"><img class="po-wet" src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="Wetlands" width="320" height="180" loading="lazy"></button>
+          <button type="button" data-region="wetlands" title="Play Wetlands"><img class="po-wet" src="https://8bitcrypto44.github.io/Primal-Odyssey-/assets/covers/wetlands.png" alt="Wetlands" width="320" height="180" loading="lazy"></button>
         </div>
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Tap a biome — cinematic biomes, lightning, herd silhouettes, field cards</p>
+          <p class="po-gd-tip">Tap a biome — local walk sheets, wall casting, landmark art, wetlands cover</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">AFRICA</button>
             <button type="button" data-region="mountains">MOUNTAINS</button>

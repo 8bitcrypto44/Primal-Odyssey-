@@ -59,7 +59,8 @@
   const HT_FT = {
     acacia: 30, baobab: 50, pine: 75, tree: 100,
     rock: 5, snowrock: 5, grass: 3, fern: 3.5, bush: 3.2,
-    wallrock: 14, reed: 4,
+    wallrock: 14, reed: 4, africa_thorn: 3.2, jungle_vine: 12, wet_lily: 1.2, mtn_fir: 40,
+    lm_watering_hole: 10, lm_cairn: 8, lm_boardwalk: 7, lm_reed_blind: 8, lm_ranger_post: 9, lm_canopy_gap: 14, bird: 1.2,
     lion: 4.8, tiger: 4.5, leopard: 3, jaguar: 3.2, snowleopard: 2.8,
     cougar: 3.2, wolf: 3, grizzly: 5.5, gorilla: 5.6, hippo: 5.5,
     rhino: 6.2, buffalo: 5.5, croc: 1.8, anaconda: 2.5, eagle: 2.8, honeybadger: 3.4, lynx: 2.6, ocelot: 2.5, manatee: 4.2
@@ -167,6 +168,14 @@
   let photoShots = [];
   let photoFlashT = 0;
   let worldFade = 0;
+  let zBuf = null;
+  let remoteWall = {};
+  let remoteParallax = {};
+  let remoteDecal = {};
+  let remoteLandmark = {};
+  let remoteTitle = {};
+  let playerKit = {};
+  let localCover = {};
   let lightningT = 0;
   let introCard = null;
   let reduceMotion = false;
@@ -998,20 +1007,15 @@
         if (dx * dx + dy * dy > rad * rad + 0.5) continue;
         const x = cx + dx, y = cy + dy;
         if (x < 2 || y < 2 || x >= MAP - 2 || y >= MAP - 2) continue;
-        wall[y][x] = 0;
+        wall[y][x] = 1; // solid for wall raycast
         floor[y][x] = regionId === "mountains" ? 2 : 1;
         if (dx === 0 && dy === 0) {
-          const wsc = worldScale("wallrock") * (1.15 + Math.random() * 0.4);
+          // Decorative crest rocks only — faces come from wall caster
           sprites.push({
-            x: x + 0.5, y: y + 0.5, kind: "prop", prop: wallProp,
-            scale: wsc, bob: 0, wallFace: true
+            x: x + 0.5, y: y + 0.35, kind: "prop", prop: kopjeRock,
+            scale: worldScale(kopjeRock) * 0.7, bob: 0
           });
-          // Stacked face strip for cliff height
-          sprites.push({
-            x: x + 0.55, y: y + 0.45, kind: "prop", prop: wallProp,
-            scale: wsc * 0.72, bob: 0, wallFace: true, wallStack: true
-          });
-        } else if (!rnd(2)) {
+        } else if (!rnd(3)) {
           sprites.push({
             x: x + 0.35 + Math.random() * 0.3,
             y: y + 0.35 + Math.random() * 0.3,
@@ -1059,15 +1063,22 @@
     const rockN = regionId === "mountains" ? 16 : 12;
     for (let i = 0; i < rockN; i++) placeProp(rocks[0]);
     if (regionId === "mountains") {
-      for (let i = 0; i < 28; i++) placeProp("grass");
-      for (let i = 0; i < 16; i++) placeProp("bush");
-    } else if (regionId === "africa") {
-      for (let i = 0; i < 36; i++) placeProp("grass");
+      for (let i = 0; i < 20; i++) placeProp("grass");
       for (let i = 0; i < 12; i++) placeProp("bush");
+      for (let i = 0; i < 10; i++) placeProp("mtn_fir");
+    } else if (regionId === "africa") {
+      for (let i = 0; i < 28; i++) placeProp("grass");
+      for (let i = 0; i < 10; i++) placeProp("bush");
+      for (let i = 0; i < 14; i++) placeProp("africa_thorn");
+    } else if (regionId === "wetlands") {
+      for (let i = 0; i < 16; i++) placeProp("reed");
+      for (let i = 0; i < 12; i++) placeProp("fern");
+      for (let i = 0; i < 10; i++) placeProp("wet_lily");
     } else {
-      for (let i = 0; i < 26; i++) placeProp("fern");
-      for (let i = 0; i < 18; i++) placeProp("bush");
-      for (let i = 0; i < 14; i++) placeProp("grass");
+      for (let i = 0; i < 20; i++) placeProp("fern");
+      for (let i = 0; i < 14; i++) placeProp("bush");
+      for (let i = 0; i < 10; i++) placeProp("jungle_vine");
+      for (let i = 0; i < 10; i++) placeProp("grass");
     }
 
     const rimRock = regionId === "mountains" ? "snowrock" : "rock";
@@ -1109,21 +1120,31 @@
       }
     }
     if (regionId === "africa") {
-      addLandmark("WATERING HOLE", 18.5, 12.5, "baobab");
+      addLandmark("WATERING HOLE", 18.5, 12.5, "lm_watering_hole");
       addLandmark("KOPJE LOOKOUT", 26.5, 24.5, "rock");
-      addLandmark("RANGER POST", 8.5, 18.5, "rock");
+      addLandmark("RANGER POST", 8.5, 18.5, "lm_ranger_post");
     } else if (regionId === "mountains") {
       addLandmark("SNOW OVERLOOK", 22.5, 10.5, "pine");
       addLandmark("RIDGE TRAIL", 12.5, 22.5, "snowrock");
-      addLandmark("ICE CAIRN", 28.5, 18.5, "snowrock");
+      addLandmark("ICE CAIRN", 28.5, 18.5, "lm_cairn");
     } else if (regionId === "wetlands") {
-      addLandmark("BOARDWALK", 10.5, 10.5, "tree");
-      addLandmark("REED BLIND", 22.5, 18.5, "fern");
-      addLandmark("OXBOW LAKE", 26.5, 12.5, "baobab");
+      addLandmark("BOARDWALK", 10.5, 10.5, "lm_boardwalk");
+      addLandmark("REED BLIND", 22.5, 18.5, "lm_reed_blind");
+      addLandmark("OXBOW LAKE", 26.5, 12.5, "reed");
     } else {
-      addLandmark("CANOPY GAP", 16.5, 16.5, "tree");
+      addLandmark("CANOPY GAP", 16.5, 16.5, "lm_canopy_gap");
       addLandmark("FERN THICKET", 27.5, 20.5, "fern");
       addLandmark("RIVER LOOKOUT", 8.5, 12.5, "tree");
+    }
+    // Scale anchors — tiny birds
+    for (let b = 0; b < 8; b++) {
+      const bx = 4 + seededRand(300 + b) * (MAP - 8);
+      const by = 4 + seededRand(310 + b) * (MAP - 8);
+      sprites.push({
+        x: bx, y: by, kind: "prop", prop: "bird",
+        scale: 0.22 + seededRand(320 + b) * 0.12, bob: seededRand(330 + b),
+        bird: true
+      });
     }
 
     const spotJitter = function (arr) {
@@ -1403,8 +1424,9 @@
   function solidPropRadius(sp) {
     if (!sp || sp.kind !== "prop") return 0;
     const p = sp.prop || "";
-    if (p === "grass" || p === "fern" || p === "bush" || p === "reed" || sp.track || sp.binocs || sp.den || sp.herd) return 0;
-    if (p === "acacia" || p === "baobab" || p === "pine" || p === "tree") return 0.42;
+    if (p === "grass" || p === "fern" || p === "bush" || p === "reed" || p === "africa_thorn" || p === "wet_lily" || p === "bird" || p === "bug" || sp.track || sp.binocs || sp.den || sp.herd || sp.bird) return 0;
+    if (p.indexOf("lm_") === 0) return 0.5;
+    if (p === "acacia" || p === "baobab" || p === "pine" || p === "tree" || p === "jungle_vine" || p === "mtn_fir") return 0.42;
     if (p === "wallafrica" || p === "walljungle" || p === "wallmountains") return 0.55;
     if (p === "rock" || p === "snowrock") return 0.38;
     return 0.28;
@@ -1921,6 +1943,25 @@
       if (R.id === "jungle" && cell === 2) { r = (r * 0.55) | 0; g = (g * 0.7) | 0; b = (b * 0.55) | 0; }
       if (wetShore) { r = (r * 0.55) | 0; g = (g * 0.65) | 0; b = Math.min(255, (b * 0.9 + 40) | 0); }
       if (R.id === "wetlands") { r = (r * 0.7) | 0; g = (g * 0.85) | 0; b = Math.min(255, (b * 0.95 + 18) | 0); }
+      // Floor decals (mud / leaf / crack / lily)
+      const dk = ((mx * 17 + my * 31) & 15);
+      if (dk === 3 && remoteDecal.mud) {
+        const du = ((fx * 32) % 32 + 32) % 32 | 0, dv = ((fy * 32) % 32 + 32) % 32 | 0;
+        const di = (dv * 32 + du) * 4, dd = remoteDecal.mud.data;
+        if (dd[di + 3] > 40) { r = (r * 0.55 + dd[di] * 0.45) | 0; g = (g * 0.55 + dd[di + 1] * 0.45) | 0; b = (b * 0.55 + dd[di + 2] * 0.45) | 0; }
+      } else if (dk === 7 && R.id === "jungle" && remoteDecal.leaf) {
+        const du = ((fx * 32) % 32 + 32) % 32 | 0, dv = ((fy * 32) % 32 + 32) % 32 | 0;
+        const di = (dv * 32 + du) * 4, dd = remoteDecal.leaf.data;
+        if (dd[di + 3] > 40) { r = (r * 0.5 + dd[di] * 0.5) | 0; g = (g * 0.5 + dd[di + 1] * 0.5) | 0; b = (b * 0.5 + dd[di + 2] * 0.5) | 0; }
+      } else if (dk === 11 && R.id === "wetlands" && remoteDecal.lily) {
+        const du = ((fx * 32) % 32 + 32) % 32 | 0, dv = ((fy * 32) % 32 + 32) % 32 | 0;
+        const di = (dv * 32 + du) * 4, dd = remoteDecal.lily.data;
+        if (dd[di + 3] > 40) { r = (r * 0.45 + dd[di] * 0.55) | 0; g = (g * 0.45 + dd[di + 1] * 0.55) | 0; b = (b * 0.45 + dd[di + 2] * 0.55) | 0; }
+      } else if (dk === 1 && R.id === "africa" && remoteDecal.crack) {
+        const du = ((fx * 32) % 32 + 32) % 32 | 0, dv = ((fy * 32) % 32 + 32) % 32 | 0;
+        const di = (dv * 32 + du) * 4, dd = remoteDecal.crack.data;
+        if (dd[di + 3] > 40) { r = (r * 0.65) | 0; g = (g * 0.65) | 0; b = (b * 0.65) | 0; }
+      }
       return [
         (r * fog * ao * phase.tint[0]) | 0,
         (g * fog * ao * phase.tint[1]) | 0,
@@ -2010,6 +2051,15 @@
         const x = ((i * 53 + scroll2 * 0.4) % (W + 20)) - 10;
         ctx.fillRect(x | 0, horizon - 28 - (i % 3) * 6, 3, 28 + (i % 3) * 6);
       }
+    }
+    const para = remoteParallax[R.id];
+    if (para) {
+      const pscroll = ((player.dir * 80) % para.width + para.width) % para.width;
+      const ph = Math.min(horizon * 0.55, para.height);
+      ctx.globalAlpha = 0.85;
+      ctx.drawImage(para, -pscroll, horizon - ph, para.width, ph);
+      ctx.drawImage(para, -pscroll + para.width, horizon - ph, para.width, ph);
+      ctx.globalAlpha = 1;
     }
     const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
     const planeX = -dirY * 0.66, planeY = dirX * 0.66;
@@ -2249,9 +2299,38 @@
     rhino: "assets/walk/rhino.png",
     anaconda: "assets/walk/anaconda.png",
     eagle: "assets/walk/eagle.png",
-    lynx: "assets/walk/snowleopard.png",
-    ocelot: "assets/walk/leopard.png",
-    manatee: "assets/walk/hippo.png"
+    lynx: "assets/walk/lynx.png",
+    ocelot: "assets/walk/ocelot.png",
+    manatee: "assets/walk/manatee.png"
+  };
+  const LOCAL_PROPS = {
+    acacia: "assets/props/acacia.png", baobab: "assets/props/baobab.png", pine: "assets/props/pine.png",
+    tree: "assets/props/tree.png", reed: "assets/props/reed.png", fern: "assets/props/fern.png",
+    grass: "assets/props/grass.png", bush: "assets/props/bush.png", rock: "assets/props/rock.png",
+    snowrock: "assets/props/snowrock.png", africa_thorn: "assets/props/africa_thorn.png",
+    jungle_vine: "assets/props/jungle_vine.png", wet_lily: "assets/props/wet_lily.png",
+    mtn_fir: "assets/props/mtn_fir.png", bird: "assets/props/bird.png", bug: "assets/props/bug.png"
+  };
+  const LOCAL_WALLS = {
+    africa: "assets/walls/africa.png", mountains: "assets/walls/mountains.png",
+    jungle: "assets/walls/jungle.png", wetlands: "assets/walls/wetlands.png"
+  };
+  const LOCAL_LANDMARKS = {
+    watering_hole: "assets/landmarks/watering_hole.png", cairn: "assets/landmarks/cairn.png",
+    boardwalk: "assets/landmarks/boardwalk.png", reed_blind: "assets/landmarks/reed_blind.png",
+    ranger_post: "assets/landmarks/ranger_post.png", canopy_gap: "assets/landmarks/canopy_gap.png"
+  };
+  const LOCAL_DECALS = {
+    mud: "assets/decals/mud.png", leaf: "assets/decals/leaf.png",
+    crack: "assets/decals/crack.png", lily: "assets/decals/lily.png"
+  };
+  const LOCAL_PARALLAX = {
+    africa: "assets/parallax/africa.png", mountains: "assets/parallax/mountains.png",
+    jungle: "assets/parallax/jungle.png", wetlands: "assets/parallax/wetlands.png"
+  };
+  const LOCAL_TITLES = {
+    africa: "assets/titles/africa.png", mountains: "assets/titles/mountains.png",
+    jungle: "assets/titles/jungle.png", wetlands: "assets/titles/wetlands.png"
   };
 
   function makeGaitFrames(src) {
@@ -2402,13 +2481,55 @@
         delete propCache["a:" + id];
       });
     });
-    Object.keys(REMOTE_PROPS).forEach(function (kind) {
-      loadImg(REMOTE_PROPS[kind], function (img) {
+    Object.keys(LOCAL_PROPS).forEach(function (kind) {
+      loadImg(LOCAL_PROPS[kind], function (img) {
         remoteProps[kind] = fitRemoteToCanvas(img, "prop");
         delete propCache[kind];
       });
     });
+    Object.keys(REMOTE_PROPS).forEach(function (kind) {
+      if (remoteProps[kind]) return;
+      loadImg(REMOTE_PROPS[kind], function (img) {
+        if (remoteProps[kind]) return;
+        remoteProps[kind] = fitRemoteToCanvas(img, "prop");
+        delete propCache[kind];
+      });
+    });
+    Object.keys(LOCAL_WALLS).forEach(function (rid) {
+      loadImg(LOCAL_WALLS[rid], function (img) {
+        remoteWall[rid] = img;
+      });
+    });
+    Object.keys(LOCAL_LANDMARKS).forEach(function (k) {
+      loadImg(LOCAL_LANDMARKS[k], function (img) {
+        remoteLandmark[k] = fitRemoteToCanvas(img, "prop");
+      });
+    });
+    Object.keys(LOCAL_DECALS).forEach(function (k) {
+      loadImg(LOCAL_DECALS[k], function (img) {
+        const c = document.createElement("canvas");
+        c.width = c.height = 32;
+        const g = c.getContext("2d");
+        g.drawImage(img, 0, 0, 32, 32);
+        remoteDecal[k] = g.getImageData(0, 0, 32, 32);
+      });
+    });
+    Object.keys(LOCAL_PARALLAX).forEach(function (rid) {
+      loadImg(LOCAL_PARALLAX[rid], function (img) {
+        remoteParallax[rid] = img;
+      });
+    });
+    Object.keys(LOCAL_TITLES).forEach(function (rid) {
+      loadImg(LOCAL_TITLES[rid], function (img) {
+        remoteTitle[rid] = img;
+      });
+    });
+    loadImg("assets/player/hands.png", function (img) { playerKit.hands = img; });
+    loadImg("assets/player/binocs.png", function (img) { playerKit.binocs = img; });
+    loadImg("assets/player/journal.png", function (img) { playerKit.journal = img; });
+    loadImg("assets/covers/wetlands.png", function (img) { localCover.wetlands = img; });
     Object.keys(REMOTE_GROUND).forEach(function (rid) {
+      if (rid === "wetlands") return; // keep unique procedural / local wetlands ground
       loadImg(REMOTE_GROUND[rid], function (img) {
         const c = document.createElement("canvas");
         c.width = c.height = TEX;
@@ -2494,6 +2615,10 @@
   }
 
   function getPropCanvas(prop) {
+    if (prop.indexOf("lm_") === 0) {
+      const key = prop.slice(3);
+      if (remoteLandmark[key]) return remoteLandmark[key];
+    }
     if (remoteProps[prop]) return remoteProps[prop];
     if (propCache[prop]) return propCache[prop];
     const off = document.createElement("canvas");
@@ -2626,7 +2751,8 @@
       let spriteW = Math.max(4, (spriteH * (img.width / img.height)) | 0);
       if (sp.kind === "animal" && sp.lean) spriteW = Math.max(4, (spriteW * (1 + Math.abs(sp.lean) * 0.35)) | 0);
       const floorY = (H / 2 + bobY + pitch + (H * 0.5) / transformY) | 0;
-      const floatY = sp.kind === "note" ? ((Math.sin(t * 3 + sp.bob) * 4) | 0) : 0;
+      const floatY = sp.kind === "note" ? ((Math.sin(t * 3 + sp.bob) * 4) | 0)
+        : (sp.bird ? ((Math.sin(t * 4 + (sp.bob || 0)) * 10 - 18) | 0) : 0);
       const leanX = sp.kind === "animal" ? ((sp.lean || 0) * spriteW * 0.35) | 0 : 0;
       const drawStartY = floorY - spriteH - (bobOff | 0) + floatY;
       const drawStartX = (-spriteW / 2 + spriteScreenX + leanX) | 0;
@@ -2709,20 +2835,44 @@
         // Vertical cliff strip shading
         ctx.globalAlpha = fogA * (sp.wallStack ? 0.75 : 0.95);
       }
+      // Day/night lit vs silhouette feel
+      if (sp.kind === "animal" && !sp.herdSil) {
+        if (phase.name === "night") ctx.filter = "brightness(0.55) saturate(0.7) hue-rotate(12deg)";
+        else if (phase.name === "dusk") ctx.filter = "brightness(0.85) sepia(0.15) saturate(1.1)";
+        else if (phase.name === "dawn") ctx.filter = "brightness(0.9) sepia(0.1)";
+      }
+      // Z-buffer column occlusion against walls
+      const zHit = transformY;
+      const drawSpriteCols = function (dx0, dy0, dw, dh, sx, sy, sw, sh) {
+        if (!zBuf) {
+          ctx.drawImage(img, sx, sy, sw, sh, dx0, dy0, dw, dh);
+          return;
+        }
+        const step = IS_MOBILE ? 2 : 1;
+        for (let cx = 0; cx < dw; cx += step) {
+          const sxScreen = dx0 + cx;
+          if (sxScreen < 0 || sxScreen >= W) continue;
+          if (zBuf[sxScreen | 0] < zHit - 0.05) continue;
+          const u0 = sx + (cx / dw) * sw;
+          const uw = Math.max(1, (step / dw) * sw);
+          ctx.drawImage(img, u0, sy, uw, sh, sxScreen, dy0, step, dh);
+        }
+      };
       if (flip) {
         ctx.translate(drawStartX + spriteW, drawStartY);
         ctx.scale(-1, 1);
         if (sp.kind === "animal" && sp.lean) ctx.transform(1, 0, sp.lean * 0.5, 1, 0, 0);
-        ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, spriteW, spriteH);
+        drawSpriteCols(0, 0, spriteW, spriteH, 0, 0, img.width, img.height);
       } else {
         if (sp.kind === "animal" && sp.lean) {
           ctx.translate(drawStartX + spriteW / 2, drawStartY + spriteH);
           ctx.transform(1, 0, sp.lean * 0.5, 1, 0, 0);
-          ctx.drawImage(img, 0, 0, img.width, img.height, -spriteW / 2, -spriteH, spriteW, spriteH);
+          drawSpriteCols(-spriteW / 2, -spriteH, spriteW, spriteH, 0, 0, img.width, img.height);
         } else {
-          ctx.drawImage(img, 0, 0, img.width, img.height, drawStartX, drawStartY, spriteW, spriteH);
+          drawSpriteCols(drawStartX, drawStartY, spriteW, spriteH, 0, 0, img.width, img.height);
         }
       }
+      if (sp.kind === "animal") ctx.filter = "none";
       if (sp.herdSil || sp.wallFace) { ctx.filter = "none"; }
       if (sp.kind === "animal" && transformY < 4.5 && !sp.herdSil) {
         // Close-up rim / fill light
@@ -2906,26 +3056,36 @@
   }
 
   function drawExplorerHands() {
-    if (mode !== "explore" || binocsOn) return;
+    if (mode !== "explore") return;
     const bob = viewBob() * 0.35;
     const run = Math.abs(pad.fwd) > 0.2 || keys["w"] || keys["ArrowUp"];
     const sway = run ? Math.sin(t * 10) * 6 : Math.sin(t * 2) * 2;
     ctx.save();
     ctx.globalAlpha = 0.92;
-    // left hand
-    ctx.fillStyle = "#c4a070";
-    ctx.beginPath();
-    ctx.ellipse(W * 0.18 + sway, H - 8 + bob, 48, 28, -0.25, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#2a5a8a";
-    ctx.fillRect(W * 0.08 + sway, H - 36 + bob, 55, 22);
-    // right hand / journal corner
-    ctx.fillStyle = "#c4a070";
-    ctx.beginPath();
-    ctx.ellipse(W * 0.82 - sway, H - 10 + bob, 46, 26, 0.25, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#2a5a8a";
-    ctx.fillRect(W * 0.72 - sway, H - 34 + bob, 55, 20);
+    if (binocsOn && playerKit.binocs) {
+      ctx.drawImage(playerKit.binocs, W / 2 - 60, H / 2 - 30 + bob * 0.2, 120, 60);
+      ctx.restore();
+      return;
+    }
+    if (playerKit.hands) {
+      ctx.drawImage(playerKit.hands, sway * 0.5, H - 58 + bob, W, 60);
+      if (playerKit.journal) {
+        ctx.drawImage(playerKit.journal, W * 0.78 - sway, H - 70 + bob, 42, 56);
+      }
+    } else {
+      ctx.fillStyle = "#c4a070";
+      ctx.beginPath();
+      ctx.ellipse(W * 0.18 + sway, H - 8 + bob, 48, 28, -0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#2a5a8a";
+      ctx.fillRect(W * 0.08 + sway, H - 36 + bob, 55, 22);
+      ctx.fillStyle = "#c4a070";
+      ctx.beginPath();
+      ctx.ellipse(W * 0.82 - sway, H - 10 + bob, 46, 26, 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#2a5a8a";
+      ctx.fillRect(W * 0.72 - sway, H - 34 + bob, 55, 20);
+    }
     ctx.restore();
   }
 
@@ -3384,8 +3544,72 @@
     }
   }
 
+  function drawWalls() {
+    if (!zBuf || zBuf.length !== W) zBuf = new Float32Array(W);
+    for (let i = 0; i < W; i++) zBuf[i] = 1e9;
+    const phase = dayPhase();
+    const bobY = viewBob();
+    const pitch = pitchPx();
+    const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
+    const planeX = -dirY * 0.66, planeY = dirX * 0.66;
+    const texImg = remoteWall[region ? region.id : "africa"];
+    const tex = texImg || null;
+    const tw = tex ? tex.width : 64, th = tex ? tex.height : 64;
+    for (let x = 0; x < W; x++) {
+      const cameraX = 2 * x / W - 1;
+      let rayDirX = dirX + planeX * cameraX;
+      let rayDirY = dirY + planeY * cameraX;
+      let mapX = player.x | 0, mapY = player.y | 0;
+      const deltaDistX = Math.abs(1 / (rayDirX || 1e-8));
+      const deltaDistY = Math.abs(1 / (rayDirY || 1e-8));
+      let stepX, stepY, sideDistX, sideDistY;
+      if (rayDirX < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; }
+      else { stepX = 1; sideDistX = (mapX + 1 - player.x) * deltaDistX; }
+      if (rayDirY < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; }
+      else { stepY = 1; sideDistY = (mapY + 1 - player.y) * deltaDistY; }
+      let hit = 0, side = 0, guard = 0;
+      while (hit === 0 && guard++ < 48) {
+        if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; }
+        else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+        if (mapX < 0 || mapY < 0 || mapX >= MAP || mapY >= MAP) { break; }
+        if (wall[mapY][mapX]) hit = 1;
+      }
+      if (!hit) continue;
+      let perp = side === 0
+        ? (mapX - player.x + (1 - stepX) / 2) / (rayDirX || 1e-8)
+        : (mapY - player.y + (1 - stepY) / 2) / (rayDirY || 1e-8);
+      perp = Math.max(0.15, Math.abs(perp));
+      zBuf[x] = perp;
+      const lineH = Math.min(H * 2.5, Math.abs(H / perp)) | 0;
+      let drawStart = ((-lineH / 2 + H / 2 + bobY + pitch) | 0);
+      let drawEnd = ((lineH / 2 + H / 2 + bobY + pitch) | 0);
+      if (drawStart < 0) drawStart = 0;
+      if (drawEnd >= H) drawEnd = H - 1;
+      let wallX = side === 0 ? player.y + perp * rayDirY : player.x + perp * rayDirX;
+      wallX -= Math.floor(wallX);
+      let texX = (wallX * tw) | 0;
+      if ((side === 0 && rayDirX > 0) || (side === 1 && rayDirY < 0)) texX = tw - texX - 1;
+      const fog = clamp(1.15 - perp / 18, 0.25, 1) * phase.light * (side ? 0.75 : 1);
+      const stripH = Math.max(1, drawEnd - drawStart);
+      if (tex) {
+        ctx.globalAlpha = fog;
+        ctx.drawImage(tex, Math.max(0, Math.min(tw - 1, texX)), 0, 1, th, x, drawStart, 1, stripH);
+        ctx.globalAlpha = 1;
+        if (side) {
+          ctx.fillStyle = "rgba(0,0,0,0.22)";
+          ctx.fillRect(x, drawStart, 1, stripH);
+        }
+      } else {
+        const base = region.id === "mountains" ? [120, 130, 145] : (region.id === "jungle" ? [40, 70, 45] : (region.id === "wetlands" ? [45, 80, 78] : [110, 95, 65]));
+        ctx.fillStyle = "rgb(" + ((base[0] * fog) | 0) + "," + ((base[1] * fog) | 0) + "," + ((base[2] * fog) | 0) + ")";
+        ctx.fillRect(x, drawStart, 1, stripH);
+      }
+    }
+  }
+
   function drawWorld() {
     drawSkyFloor();
+    drawWalls();
     drawSprites();
     drawParticles();
     drawWeather();
@@ -3396,26 +3620,30 @@
     }
     if (worldFade > 0) {
       const f = clamp(worldFade, 0, 1);
-      // Parchment plate
       ctx.fillStyle = "rgba(8,16,10," + (f * 0.94) + ")";
       ctx.fillRect(0, 0, W, H);
-      ctx.fillStyle = "rgba(232,210,150," + (f * 0.12) + ")";
-      ctx.fillRect(W * 0.08, H * 0.28, W * 0.84, H * 0.34);
-      ctx.strokeStyle = "rgba(93,206,122," + (f * 0.7) + ")";
-      ctx.lineWidth = 2;
-      ctx.strokeRect(W * 0.08 + 4, H * 0.28 + 4, W * 0.84 - 8, H * 0.34 - 8);
-      ctx.fillStyle = "rgba(93,206,122," + f + ")";
-      ctx.font = "bold 16px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText((region && region.name ? region.name.toUpperCase() : "EXPEDITION"), W / 2, H * 0.42);
-      ctx.fillStyle = "rgba(200,180,120," + (f * 0.9) + ")";
-      ctx.font = "11px monospace";
-      ctx.fillText("EXPEDITION LOG — ENTERING BIOME", W / 2, H * 0.5);
-      if (introCard) {
-        ctx.fillStyle = "rgba(158,201,173," + (f * 0.85) + ")";
-        ctx.font = "10px monospace";
-        ctx.fillText(introCard, W / 2, H * 0.56);
+      const card = region && remoteTitle[region.id];
+      if (card) {
+        ctx.globalAlpha = f;
+        const cw = Math.min(W * 0.88, card.width);
+        const ch = cw * (card.height / card.width);
+        ctx.drawImage(card, (W - cw) / 2, (H - ch) / 2 - 10, cw, ch);
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = "rgba(232,210,150," + (f * 0.12) + ")";
+        ctx.fillRect(W * 0.08, H * 0.28, W * 0.84, H * 0.34);
+        ctx.strokeStyle = "rgba(93,206,122," + (f * 0.7) + ")";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(W * 0.08 + 4, H * 0.28 + 4, W * 0.84 - 8, H * 0.34 - 8);
+        ctx.fillStyle = "rgba(93,206,122," + f + ")";
+        ctx.font = "bold 16px monospace";
+        ctx.textAlign = "center";
+        ctx.fillText((region && region.name ? region.name.toUpperCase() : "EXPEDITION"), W / 2, H * 0.42);
       }
+      ctx.fillStyle = "rgba(200,180,120," + (f * 0.95) + ")";
+      ctx.font = "11px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(introCard || "EXPEDITION LOG — ENTERING BIOME", W / 2, H * 0.78);
       ctx.textAlign = "left";
     }
     if (photoFlashT > 0 && ui.photoFlash) {
@@ -3572,8 +3800,16 @@
     blip(440, 0.08, "sine");
     const dctx = ui.dArt.getContext("2d");
     dctx.imageSmoothingEnabled = false;
-    dctx.fillStyle = "#f3e6c4";
+    dctx.fillStyle = "#e8d9b0";
     dctx.fillRect(0, 0, 96, 96);
+    dctx.strokeStyle = "#8a6a38";
+    dctx.lineWidth = 3;
+    dctx.strokeRect(2, 2, 92, 92);
+    dctx.strokeStyle = "#c9a227";
+    dctx.lineWidth = 1;
+    dctx.strokeRect(6, 6, 84, 84);
+    dctx.fillStyle = "rgba(90,60,30,0.08)";
+    for (let y = 12; y < 88; y += 6) dctx.fillRect(10, y, 76, 1);
     const remote = remoteArt[animal.id];
     if (remote) {
       const sc = Math.min(88 / remote.width, 88 / remote.height);
