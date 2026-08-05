@@ -10,6 +10,8 @@ import json
 import random
 import collections
 
+from snes_gfx_v47 import make_topdown_animals, load_biome_props, copy_parallax
+
 root = Path(__file__).resolve().parent
 snes = root / "assets" / "snes"
 out = snes / "built"
@@ -302,119 +304,6 @@ def make_marker_props():
     return {"field_note": note, "cairn": cairn, "trail_flag": flag}
 
 
-def make_topdown_animals():
-    """Bake 32x24 top-down animals with left/right facing + 2 walk frames."""
-    specs = {
-        "lion": ((180, 140, 60), (90, 60, 30), (40, 30, 20), "quad"),
-        "lioness": ((170, 130, 55), (80, 55, 28), (40, 30, 20), "quad"),
-        "tiger": ((200, 110, 40), (30, 20, 10), (20, 12, 8), "quad"),
-        "leopard": ((190, 150, 70), (50, 35, 20), (30, 22, 12), "quad"),
-        "jaguar": ((160, 120, 50), (40, 28, 15), (25, 18, 10), "quad"),
-        "snowleopard": ((190, 200, 210), (80, 90, 100), (50, 55, 60), "quad"),
-        "cougar": ((180, 140, 70), (70, 50, 30), (40, 28, 16), "quad"),
-        "wolf": ((140, 140, 150), (60, 60, 70), (40, 40, 45), "quad"),
-        "lynx": ((170, 145, 100), (90, 70, 45), (50, 40, 30), "quad"),
-        "ocelot": ((200, 160, 90), (60, 40, 25), (35, 25, 15), "quad"),
-        "honeybadger": ((160, 155, 150), (40, 40, 40), (25, 25, 25), "quad"),
-        "buffalo": ((70, 50, 30), (40, 30, 20), (25, 18, 12), "heavy"),
-        "rhino": ((150, 150, 150), (90, 90, 90), (60, 60, 60), "heavy"),
-        "hippo": ((80, 110, 160), (40, 60, 100), (30, 45, 70), "heavy"),
-        "grizzly": ((100, 70, 40), (50, 35, 20), (30, 20, 12), "heavy"),
-        "manatee": ((90, 130, 140), (50, 80, 90), (35, 55, 60), "heavy"),
-        "gorilla": ((50, 48, 48), (30, 28, 28), (20, 18, 18), "ape"),
-        "eagle": ((180, 160, 130), (90, 50, 20), (40, 30, 20), "bird"),
-        "croc": ((50, 100, 55), (25, 55, 30), (15, 35, 20), "long"),
-        "anaconda": ((30, 140, 70), (20, 80, 40), (12, 50, 25), "long"),
-    }
-    # 4 cols x faces: each animal gets row with L0 L1 R0 R1 (and base td_id = L0)
-    cols_per = 4
-    n = len(specs)
-    sheet = Image.new("RGBA", (32 * cols_per, 24 * n), (0, 0, 0, 0))
-    frames = {}
-
-    def paint_animal(body, accent, outline, shape, face_right, walk):
-        im = Image.new("RGBA", (32, 24), (0, 0, 0, 0))
-        px = im.load()
-        cx, cy = 16, 14
-        leg = 1 if walk else 0
-
-        def put(x, y, c, r=0):
-            for yy in range(y - r, y + r + 1):
-                for xx in range(x - r, x + r + 1):
-                    if 0 <= xx < 32 and 0 <= yy < 24 and (xx - x) ** 2 + (yy - y) ** 2 <= r * r + 0.6:
-                        px[xx, yy] = (*c, 255)
-
-        def outline_ring(x, y, r, c=outline):
-            for yy in range(y - r - 1, y + r + 2):
-                for xx in range(x - r - 1, x + r + 2):
-                    dist = (xx - x) ** 2 + (yy - y) ** 2
-                    if 0 <= xx < 32 and 0 <= yy < 24 and r * r <= dist <= (r + 1) ** 2 + 0.5:
-                        if px[xx, yy][3] < 8:
-                            px[xx, yy] = (*c, 220)
-
-        hx = 5 if face_right else -5
-        if shape == "bird":
-            for dx in range(-11, 12):
-                for dy in range(-3, 4):
-                    if abs(dx) + abs(dy) * 3 < 13:
-                        put(cx + dx, cy + dy, body)
-            put(cx + hx, cy - 3, accent, 2)
-            put(cx - 9, cy + leg, accent, 1)
-            put(cx + 9, cy - leg, accent, 1)
-            outline_ring(cx, cy, 4)
-        elif shape == "long":
-            for t in range(-11, 12):
-                put(cx + t, cy + (t // 6) + (leg if t % 3 == 0 else 0), body, 2 if abs(t) < 8 else 1)
-            put(cx + (10 if face_right else -10), cy - 1, accent, 2)
-            put(cx + (12 if face_right else -12), cy - 2, outline, 1)
-        elif shape == "ape":
-            put(cx, cy + 2, body, 6)
-            put(cx + hx // 2, cy - 5, body, 3)
-            put(cx - 6, cy + 1 + leg, accent, 2)
-            put(cx + 6, cy + 1 - leg, accent, 2)
-            outline_ring(cx, cy + 1, 6)
-        elif shape == "heavy":
-            put(cx, cy + 1, body, 7)
-            put(cx + hx, cy - 2, body, 4)
-            put(cx - 6, cy + 5 + leg, accent, 2)
-            put(cx + 5, cy + 5 - leg, accent, 2)
-            put(cx + hx + 3, cy - 4, outline, 1)
-            outline_ring(cx, cy + 1, 7)
-        else:
-            put(cx, cy + 1, body, 5)
-            put(cx + hx, cy - 3, body, 3)
-            put(cx - 4, cy + 6 + leg, accent, 1)
-            put(cx + 1, cy + 6 - leg, accent, 1)
-            put(cx + 4, cy + 5 + leg, accent, 1)
-            put(cx + hx, cy - 6, accent, 1)
-            # eye
-            put(cx + hx + (2 if face_right else -2), cy - 3, (20, 20, 20), 0)
-            outline_ring(cx, cy + 1, 5)
-            if body[0] > 190 and body[1] < 120:  # tiger stripes
-                for sx in range(cx - 4, cx + 5, 3):
-                    put(sx, cy, outline, 0)
-        return im
-
-    for i, (aid, (body, accent, outline, shape)) in enumerate(specs.items()):
-        variants = [
-            ("l", 0, False, 0),
-            ("l", 1, False, 1),
-            ("r", 0, True, 0),
-            ("r", 1, True, 1),
-        ]
-        for vi, (side, wi, face_right, walk) in enumerate(variants):
-            im = paint_animal(body, accent, outline, shape, face_right, walk)
-            x = vi * 32
-            y = i * 24
-            sheet.paste(im, (x, y), im)
-            key = f"td_{aid}_{side}_{wi}"
-            frames[key] = {"x": x, "y": y, "w": 32, "h": 24, "solid": False}
-            if vi == 0:
-                frames[f"td_{aid}"] = {"x": x, "y": y, "w": 32, "h": 24, "solid": False}
-    sheet.save(out / "animals_td.png")
-    return frames
-
-
 # Per-biome ground tile remaps (same frame IDs, different Puny art)
 BIOME_TILE_SWAP = {
     "africa": {},
@@ -443,7 +332,7 @@ BIOME_TILE_SWAP = {
 
 def build_atlas(objs, player_frames):
     frames = {}
-    atlas_w, atlas_h = 512, 1024
+    atlas_w, atlas_h = 640, 1600
     atlas = Image.new("RGBA", (atlas_w, atlas_h), (0, 0, 0, 0))
     x = y = 0
     row_h = TW
@@ -472,17 +361,24 @@ def build_atlas(objs, player_frames):
         atlas.paste(im, (x, y), im)
         solid = (
             name.startswith("tree") or name.startswith("ptree") or name.startswith("rock")
-            or name in ("cave", "sign", "cairn")
+            or (name.startswith("bp_") and ("tree" in name or "rock" in name or "baobab" in name or "pine" in name or "fir" in name))
+            or name in ("cave", "sign", "cairn", "camp_tent", "camp_crate")
         )
-        feet = max(6, min(12, h // 5))
-        canopy = name.startswith("tree") or name.startswith("ptree")
+        feet = max(6, min(14, h // 5))
+        canopy = (
+            name.startswith("tree") or name.startswith("ptree")
+            or (name.startswith("bp_") and ("tree" in name or "baobab" in name or "pine" in name or "fir" in name))
+        )
         frames[name] = {
             "x": x, "y": y, "w": w, "h": h, "solid": solid,
             "feet": feet, "anchor": h - feet // 2,
             "canopy": canopy, "canopyH": int(h * 0.55) if canopy else 0,
-            "anim": name.startswith("bush") or name.startswith("detail"),
+            "anim": name.startswith("bush") or name.startswith("detail") or "bush" in name or "grass" in name or name == "camp_fire",
             "biome": (
-                "mountains" if "pine" in name or name.startswith("ptree") else
+                "mountains" if "pine" in name or "mountains" in name or name.startswith("ptree") else
+                "africa" if "africa" in name or "baobab" in name or "acacia" in name else
+                "jungle" if "jungle" in name else
+                "wetlands" if "wetlands" in name or "wet_" in name else
                 "any"
             ),
         }
@@ -623,18 +519,29 @@ def chunk_grove(ground, objects, frames, cx, cy, rnd, region):
 
 
 def chunk_camp(ground, objects, frames, cx, cy, rnd, region):
-    stamp_rect(ground, cx - 2, cy - 2, cx + 2, cy + 2, "dirt")
-    for oid in ("sign",):
+    stamp_rect(ground, cx - 3, cy - 3, cx + 3, cy + 3, "dirt")
+    stamp_rect(ground, cx - 1, cy - 1, cx + 1, cy + 1, "path")
+    # Tent / fire / crates / flag
+    for oid, dx, dy in (
+        ("camp_tent", -2, -1),
+        ("camp_fire", 0, 0),
+        ("camp_crate", 2, -1),
+        ("camp_crate", 2, 1),
+        ("trail_flag", -1, 2),
+        ("sign", 2, -2),
+    ):
         if oid in frames:
-            objects.append({"id": oid, "x": (cx + 2) * TW + 8, "y": (cy - 1) * TW + 8})
-    rock_ids = [k for k in frames if k.startswith("rock")]
-    detail_ids = [k for k in frames if k.startswith("detail") or k.startswith("bush")]
-    for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1)):
-        if rock_ids and rnd.random() < 0.7:
-            objects.append({"id": rock_ids[rnd.randint(0, len(rock_ids) - 1)],
+            objects.append({"id": oid, "x": (cx + dx) * TW + 8, "y": (cy + dy) * TW + 10})
+    # seating rocks / biome bushes
+    rock_ids = [k for k in frames if k.startswith("rock") or k.startswith(f"bp_{region}_") and "rock" in k]
+    bush_ids = [k for k in frames if k.startswith(f"bp_{region}_") and ("bush" in k or "grass" in k)]
+    if not bush_ids:
+        bush_ids = [k for k in frames if k.startswith("bush") or k.startswith("detail")]
+    for dx, dy in ((-2, 2), (1, 2), (-3, 0), (3, 0)):
+        pool = rock_ids if rnd.random() < 0.55 and rock_ids else bush_ids
+        if pool:
+            objects.append({"id": pool[rnd.randint(0, len(pool) - 1)],
                             "x": (cx + dx) * TW + 8, "y": (cy + dy) * TW + 12})
-    if detail_ids:
-        objects.append({"id": detail_ids[0], "x": cx * TW + 8, "y": cy * TW + 10})
 
 
 def chunk_ridge(ground, objects, frames, cx, cy, rnd, region):
@@ -759,12 +666,16 @@ def gen_map(region, frames, seed=42):
         return t not in SOLID_GROUND and not is_waterish(t) and not str(t).startswith("cliff")
 
     # scatter bushes/rocks/details (avoid spawn)
-    bush_ids = [k for k in frames if k.startswith("bush")]
-    rock_ids = [k for k in frames if k.startswith("rock")]
-    detail_ids = [k for k in frames if k.startswith("detail")]
-    tree_ids = [k for k in frames if k.startswith("ptree") or k.startswith("tree")]
+    bush_ids = [k for k in frames if k.startswith(f"bp_{region}_") and ("bush" in k or "grass" in k or "thorn" in k or "fern" in k or "vine" in k or "lily" in k)]
+    rock_ids = [k for k in frames if (k.startswith(f"bp_{region}_") and "rock" in k) or k.startswith("rock")]
+    detail_ids = [k for k in frames if k.startswith("detail") or (k.startswith(f"bp_{region}_") and "grass" in k)]
+    tree_ids = [k for k in frames if (k.startswith(f"bp_{region}_") and ("tree" in k or "baobab" in k or "pine" in k or "fir" in k or "acacia" in k)) or k.startswith("ptree") or k.startswith("tree")]
+    if not bush_ids:
+        bush_ids = [k for k in frames if k.startswith("bush")]
+    if not tree_ids:
+        tree_ids = [k for k in frames if k.startswith("ptree") or k.startswith("tree")]
 
-    dens = {"africa": 180, "mountains": 160, "jungle": 260, "wetlands": 200}[region]
+    dens = {"africa": 200, "mountains": 180, "jungle": 280, "wetlands": 220}[region]
     for _ in range(dens):
         tx, ty = rnd.randint(2, W - 3), rnd.randint(2, H - 3)
         if abs(tx - sx) < 4 and abs(ty - sy) < 4:
@@ -772,10 +683,8 @@ def gen_map(region, frames, seed=42):
         if not walkable(tx, ty):
             continue
         r = rnd.random()
-        if r < 0.22 and tree_ids and region != "africa":
+        if r < 0.28 and tree_ids:
             oid = tree_ids[rnd.randint(0, len(tree_ids) - 1)]
-        elif r < 0.35 and tree_ids and region == "africa":
-            oid = tree_ids[rnd.randint(0, min(4, len(tree_ids) - 1))]
         elif r < 0.55 and bush_ids:
             oid = bush_ids[rnd.randint(0, len(bush_ids) - 1)]
         elif r < 0.75 and rock_ids:
@@ -784,13 +693,13 @@ def gen_map(region, frames, seed=42):
             oid = detail_ids[rnd.randint(0, len(detail_ids) - 1)]
         else:
             continue
-        objects.append({"id": oid, "x": tx * TW + 8, "y": ty * TW + (14 if oid.startswith("detail") or oid.startswith("bush") else 8)})
+        objects.append({"id": oid, "x": tx * TW + 8, "y": ty * TW + (14 if "grass" in oid or "detail" in oid or "bush" in oid else 8)})
 
-    # detail ground layer (non-solid flower/tuft stamps as objects already)
+    # denser ground detail layer
     details = []
-    for _ in range(120):
+    for _ in range(180):
         tx, ty = rnd.randint(2, W - 3), rnd.randint(2, H - 3)
-        if walkable(tx, ty) and detail_ids and rnd.random() < 0.7:
+        if walkable(tx, ty) and detail_ids and rnd.random() < 0.75:
             details.append({"id": detail_ids[rnd.randint(0, len(detail_ids) - 1)], "x": tx * TW + 8, "y": ty * TW + 14})
 
     spawns = []
@@ -840,17 +749,18 @@ def main():
     objs.update(extract_puny_trees())
     objs.update(extract_idylwild())
     objs.update(make_marker_props())
-    print("objects", len(objs), sorted(objs.keys())[:20], "...")
+    objs.update(load_biome_props())
+    print("objects", len(objs), sorted(objs.keys())[:24], "...")
     player_frames = make_player_sheet()
     animal_frames = make_topdown_animals()
     frames = build_atlas(objs, player_frames)
     frames.update(animal_frames)
     base = Image.open(out / "atlas.png").convert("RGBA")
     tints = {
-        "africa": (0.22, 1.1, 1.05),
-        "mountains": (-0.22, 0.88, 1.1),
-        "jungle": (-0.08, 1.22, 0.9),
-        "wetlands": (-0.38, 1.05, 0.94),
+        "africa": (0.18, 1.08, 1.04),
+        "mountains": (-0.18, 0.9, 1.08),
+        "jungle": (-0.06, 1.18, 0.92),
+        "wetlands": (-0.32, 1.04, 0.95),
     }
     for rid, (hue, sat, bri) in tints.items():
         atlas = base.copy()
@@ -868,18 +778,21 @@ def main():
         maps[rid] = gen_map(rid, frames, 5200 + i * 31)
         print(rid, "objs", len(maps[rid]["objects"]), "details", len(maps[rid]["details"]))
 
+    parallax = copy_parallax()
+
     js = []
-    js.append("// Auto-built SNES tilemap data v46 — Puny World + Idylwild + Agent Run + biome tiles")
+    js.append("// Auto-built SNES tilemap data v47 — LPC animals + biome props + parallax")
     js.append("window.PO_SNES = window.PO_SNES || {};")
     js.append("PO_SNES.TILE = 16;")
     js.append("PO_SNES.frames = " + json.dumps(frames) + ";")
     js.append("PO_SNES.maps = " + json.dumps(maps) + ";")
     js.append("PO_SNES.atlas = {")
     for rid in ("africa", "mountains", "jungle", "wetlands"):
-        js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png?v=46",')
+        js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png?v=47",')
     js.append("};")
-    js.append('PO_SNES.playerSheet = "assets/snes/built/player.png?v=46";')
-    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png?v=46";')
+    js.append("PO_SNES.parallax = " + json.dumps(parallax) + ";")
+    js.append('PO_SNES.playerSheet = "assets/snes/built/player.png?v=47";')
+    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png?v=47";')
     js.append("PO_SNES.waterAnim = [\"water\",\"water2\",\"water3\",\"water_a\"];")
     (root / "primal_snes_data.js").write_text("\n".join(js), encoding="utf-8")
 
@@ -889,10 +802,13 @@ def main():
         "Idylwild Foliage Pack — free for any use (attribution appreciated)\n"
         "https://opengameart.org/content/idylwilds-foliage-pack\n\n"
         "RPG Character 'Agent' NES by Chasersgaming — CC0\n"
-        "https://opengameart.org/content/rpg-character-agent-nes\n",
+        "https://opengameart.org/content/rpg-character-agent-nes\n\n"
+        "[LPC] bears, deer, lions and more — CC-BY 4.0 / GPL 3.0 / OGA-BY 3.0\n"
+        "https://opengameart.org/content/lpc-bears-deer-lions-and-more\n"
+        "Derived recolors used for additional wildlife silhouettes.\n",
         encoding="utf-8",
     )
-    print("Wrote atlases + player + animals + primal_snes_data.js")
+    print("Wrote atlases + LPC animals + biome props + parallax + primal_snes_data.js")
 
 
 if __name__ == "__main__":

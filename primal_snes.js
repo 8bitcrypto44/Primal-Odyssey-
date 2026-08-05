@@ -1,4 +1,4 @@
-/* Primal Odyssey — SNES tilemap explore v46 */
+/* Primal Odyssey — SNES tilemap explore v47 */
 (function () {
   "use strict";
   if (!window.PO_SNES) window.PO_SNES = {};
@@ -7,6 +7,7 @@
   S.atlasImg = {};
   S.playerImg = null;
   S.animalImg = null;
+  S.parallaxImg = {};
   S.ready = false;
   S.camX = 0;
   S.camY = 0;
@@ -22,7 +23,8 @@
   S.preload = function () {
     if (!S.atlas || !S.maps) return;
     var keys = Object.keys(S.atlas);
-    var left = keys.length + 2;
+    var pkeys = S.parallax ? Object.keys(S.parallax) : [];
+    var left = keys.length + pkeys.length + 2;
     function done() {
       left--;
       if (left <= 0) S.ready = true;
@@ -30,6 +32,12 @@
     keys.forEach(function (rid) {
       loadImg(S.atlas[rid], function (im) {
         if (im) S.atlasImg[rid] = im;
+        done();
+      });
+    });
+    pkeys.forEach(function (rid) {
+      loadImg(S.parallax[rid], function (im) {
+        if (im) S.parallaxImg[rid] = im;
         done();
       });
     });
@@ -106,12 +114,20 @@
     return "up";
   }
 
-  function animalSide(sp) {
-    var vx = sp.vx || 0;
-    if (Math.abs(vx) < 0.02 && typeof sp._face === "string") return sp._face;
-    var side = vx >= 0 ? "r" : "l";
-    sp._face = side;
-    return side;
+  function animalFacing(sp) {
+    var vx = sp.vx || 0, vy = sp.vy || 0;
+    if (Math.hypot(vx, vy) < 0.03) {
+      return sp._faceDir || "down";
+    }
+    var a = Math.atan2(vy, vx);
+    var deg = ((a * 180 / Math.PI) % 360 + 360) % 360;
+    var dir = "right";
+    if (deg >= 315 || deg < 45) dir = "right";
+    else if (deg < 135) dir = "down";
+    else if (deg < 225) dir = "left";
+    else dir = "up";
+    sp._faceDir = dir;
+    return dir;
   }
 
   function todMultiply(ctx, W, H, phase) {
@@ -148,16 +164,17 @@
     var objs = m.objects || [];
     for (var i = 0; i < objs.length; i++) {
       var o = objs[i];
-      if (o.id !== "trail_flag" && o.id !== "sign" && o.id.indexOf("camp") < 0) continue;
+      if (o.id !== "trail_flag" && o.id !== "sign" && o.id !== "camp_fire" && o.id.indexOf("camp") < 0) continue;
       var lx = o.x - S.camX;
       var ly = o.y - S.camY - 6;
       if (lx < -40 || ly < -40 || lx > W + 40 || ly > H + 40) continue;
-      var g = ctx.createRadialGradient(lx, ly, 2, lx, ly, 38);
-      g.addColorStop(0, "rgba(255,200,90,0.35)");
+      var rad = o.id === "camp_fire" ? 48 : 38;
+      var g = ctx.createRadialGradient(lx, ly, 2, lx, ly, rad);
+      g.addColorStop(0, o.id === "camp_fire" ? "rgba(255,180,60,0.45)" : "rgba(255,200,90,0.35)");
       g.addColorStop(0.45, "rgba(255,140,40,0.12)");
       g.addColorStop(1, "rgba(255,100,20,0)");
       ctx.fillStyle = g;
-      ctx.fillRect(lx - 40, ly - 40, 80, 80);
+      ctx.fillRect(lx - rad, ly - rad, rad * 2, rad * 2);
     }
     // soft lantern around explorer at night
     if (phase.name === "night") {
@@ -202,6 +219,19 @@
 
     ctx.fillStyle = rid === "mountains" ? "#6a9ad0" : (rid === "jungle" ? "#1a3a28" : (rid === "wetlands" ? "#3a6a78" : "#4a8ac8"));
     ctx.fillRect(0, 0, W, H);
+
+    // Parallax distant band
+    var para = S.parallaxImg[rid];
+    if (para) {
+      var ph = Math.min(56, para.height);
+      var scroll = ((S.camX * 0.28) % para.width + para.width) % para.width;
+      ctx.globalAlpha = 0.92;
+      ctx.drawImage(para, scroll, 0, para.width - scroll, ph, 0, 0, W * ((para.width - scroll) / para.width), ph);
+      if (scroll > 0) {
+        ctx.drawImage(para, 0, 0, scroll, ph, W * ((para.width - scroll) / para.width), 0, W * (scroll / para.width), ph);
+      }
+      ctx.globalAlpha = 1;
+    }
 
     var anim = S.waterAnim || m.waterAnim || ["water", "water2", "water3", "water_a"];
     var animI = (performance.now() / 280 | 0) % anim.length;
@@ -324,41 +354,43 @@
         ctx.arc(it.ax, it.ay - 6, 8 + (now / 200 % 4), 0, Math.PI * 2);
         ctx.stroke();
       } else if (it.kind === "animal") {
-        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.fillStyle = "rgba(0,0,0,0.32)";
         ctx.beginPath();
-        ctx.ellipse(it.ax, it.ay + 2, 8, 3.2, 0, 0, Math.PI * 2);
+        ctx.ellipse(it.ax, it.ay + 2, 10, 3.5, 0, 0, Math.PI * 2);
         ctx.fill();
-        var side = animalSide(it.sp);
+        var dir = animalFacing(it.sp);
         var movingA = Math.hypot(it.sp.vx || 0, it.sp.vy || 0) > 0.04;
-        var aFrame = movingA ? ((now / 140 | 0) % 2) : 0;
-        var td = S.frames["td_" + it.sp.id + "_" + side + "_" + aFrame]
+        var aFrame = movingA ? ((now / 120 | 0) % 3) : 1;
+        var td = S.frames["td_" + it.sp.id + "_" + dir + "_" + aFrame]
+          || S.frames["td_" + it.sp.id + "_" + dir + "_0"]
+          || S.frames["td_" + it.sp.id + "_l_" + (aFrame % 2)]
           || S.frames["td_" + it.sp.id]
           || S.frames["td_" + (it.sp.id === "lion" ? "lioness" : it.sp.id)];
         if (S.animalImg && td) {
-          ctx.drawImage(S.animalImg, td.x, td.y, td.w, td.h, (it.ax - 16) | 0, (it.ay - 20) | 0, 32, 24);
+          var dw = Math.min(48, td.w), dh = Math.min(40, td.h);
+          ctx.drawImage(S.animalImg, td.x, td.y, td.w, td.h, (it.ax - dw / 2) | 0, (it.ay - dh + 2) | 0, dw, dh);
         } else if (getAnimalCanvas) {
           var img = getAnimalCanvas(it.sp.id, it.sp.frame | 0);
           if (img) {
-            var aw = 28, ah = 20;
-            ctx.drawImage(img, it.ax - aw / 2, it.ay - ah, aw, ah);
+            ctx.drawImage(img, it.ax - 16, it.ay - 24, 32, 24);
           }
         }
         if (it.sp.rare) {
           ctx.fillStyle = "#e8c86a";
           ctx.beginPath();
-          ctx.moveTo(it.ax, it.ay - 24);
-          ctx.lineTo(it.ax + 3, it.ay - 20);
-          ctx.lineTo(it.ax, it.ay - 16);
-          ctx.lineTo(it.ax - 3, it.ay - 20);
+          ctx.moveTo(it.ax, it.ay - 30);
+          ctx.lineTo(it.ax + 3, it.ay - 26);
+          ctx.lineTo(it.ax, it.ay - 22);
+          ctx.lineTo(it.ax - 3, it.ay - 26);
           ctx.closePath();
           ctx.fill();
         }
         if (it.sp.alertT > 0) {
           ctx.fillStyle = "rgba(255,220,80," + Math.min(1, it.sp.alertT) + ")";
           ctx.beginPath();
-          ctx.moveTo(it.ax, it.ay - 28);
-          ctx.lineTo(it.ax + 3, it.ay - 22);
-          ctx.lineTo(it.ax - 3, it.ay - 22);
+          ctx.moveTo(it.ax, it.ay - 34);
+          ctx.lineTo(it.ax + 3, it.ay - 28);
+          ctx.lineTo(it.ax - 3, it.ay - 28);
           ctx.closePath();
           ctx.fill();
         }

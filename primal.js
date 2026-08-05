@@ -3549,7 +3549,7 @@
       ctx.fillStyle = "rgba(180,140,70," + (0.12 + a * 0.25) + ")";
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "rgba(210,170,90,0.35)";
-      for (let i = 0; i < 55; i++) {
+      for (let i = 0; i < 120; i++) {
         const x = ((t * 110 + i * 47) % (W + 40)) - 20;
         const y = (i * 53 + t * 35 + Math.sin(t + i) * 8) % H;
         ctx.fillRect(x | 0, y | 0, 4, 1);
@@ -3558,7 +3558,7 @@
       ctx.fillStyle = "rgba(200,220,255," + (0.1 + a * 0.2) + ")";
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "rgba(240,248,255,0.85)";
-      for (let i = 0; i < 70; i++) {
+      for (let i = 0; i < 140; i++) {
         const x = (i * 41 + t * 40 + Math.sin(i + t) * 6) % W;
         const y = (i * 73 + t * 70) % H;
         const sz = 1 + (i % 3);
@@ -3572,14 +3572,14 @@
       ctx.fillRect(0, 0, W, H);
       ctx.strokeStyle = "rgba(160,200,180,0.4)";
       ctx.lineWidth = 1;
-      for (let i = 0; i < 70; i++) {
+      for (let i = 0; i < 140; i++) {
         const x = (i * 37 + t * 220) % W;
         const y = (i * 59 + t * 300) % H;
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 14); ctx.stroke();
       }
       // splash dots near bottom
       ctx.fillStyle = "rgba(180,220,200,0.35)";
-      for (let i = 0; i < 24; i++) {
+      for (let i = 0; i < 40; i++) {
         const x = (i * 61 + t * 40) % W;
         const y = H - 8 - (i % 5) * 3;
         ctx.fillRect(x | 0, y | 0, 2, 2);
