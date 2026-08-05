@@ -44,9 +44,9 @@
   // ImageData floor stays cheap — keep readable res for Digistracts / fullscreen
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
     (window.matchMedia && matchMedia("(pointer:coarse)").matches);
-  // SMB3 / NES pixel mode: 256x240 screen, nearest-neighbor only
-  const W = 256;
-  const H = 240;
+  // SNES Mode 5 hi-res: 512x224, nearest-neighbor only
+  const W = 512;
+  const H = 224;
   canvas.width = W;
   canvas.height = H;
   canvas.style.imageRendering = "pixelated";
@@ -54,9 +54,9 @@
   ctx.imageSmoothingEnabled = false;
   const MAP = 36;
   const FOV = Math.PI / 3;
-  const TEX = 64;
-  const FLOOR_STEP_X = 2;
-  const FLOOR_STEP_Y = 2;
+  const TEX = 128;
+  const FLOOR_STEP_X = 1;
+  const FLOOR_STEP_Y = 1;
   const UNIT_FT = 11;
   const HT_FT = {
     acacia: 36, baobab: 58, pine: 85, tree: 110,
@@ -2042,15 +2042,15 @@
     const celY = horizon * (0.18 + Math.sin(Math.min(1, dayU * 1.15) * Math.PI) * 0.42);
     if (phase.name === "night") {
       ctx.fillStyle = "rgba(220,230,255," + (0.55 + phase.light * 0.2) + ")";
-      ctx.beginPath(); ctx.arc(celX, celY, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(celX, celY, 10, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "rgba(200,220,255,0.12)";
-      ctx.beginPath(); ctx.arc(celX, celY, 16, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(celX, celY, 22, 0, Math.PI * 2); ctx.fill();
     } else {
       const sunA = phase.name === "dawn" || phase.name === "dusk" ? 0.95 : 0.75;
       ctx.fillStyle = phase.name === "dusk" ? ("rgba(255,140,60," + sunA + ")") : ("rgba(255,230,150," + sunA + ")");
-      ctx.beginPath(); ctx.arc(celX, Math.max(8, celY), phase.name === "day" ? 9 : 11, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(celX, Math.max(8, celY), phase.name === "day" ? 12 : 14, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = "rgba(255,200,100,0.12)";
-      ctx.beginPath(); ctx.arc(celX, Math.max(8, celY), 22, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(celX, Math.max(8, celY), 28, 0, Math.PI * 2); ctx.fill();
     }
     // Mid-horizon parallax silhouette
     const scroll2 = ((player.dir * 55) % 200 + 200) % 200;
@@ -2489,6 +2489,17 @@
     africa: "assets/parallax/africa.png", mountains: "assets/parallax/mountains.png",
     jungle: "assets/parallax/jungle.png", wetlands: "assets/parallax/wetlands.png"
   };
+  const LOCAL_GROUND = {
+    africa: "assets/ground/africa.png", mountains: "assets/ground/mountains.png",
+    jungle: "assets/ground/jungle.png", wetlands: "assets/ground/wetlands.png"
+  };
+  const LOCAL_SKY = {
+    africa: "assets/sky/africa.png", mountains: "assets/sky/mountains.png",
+    jungle: "assets/sky/jungle.png", wetlands: "assets/sky/wetlands.png"
+  };
+  const LOCAL_WATER = [
+    "assets/ground/water0.png", "assets/ground/water1.png", "assets/ground/water2.png"
+  ];
   const LOCAL_TITLES = {
     africa: "assets/titles/africa.png", mountains: "assets/titles/mountains.png",
     jungle: "assets/titles/jungle.png", wetlands: "assets/titles/wetlands.png"
@@ -2543,8 +2554,8 @@
   }
 
   function fitRemoteToCanvas(img, mode) {
-    // SMB3 nearest-neighbor: props stay crisp; animals get chunky pixel downsample
-    const max = mode === "prop" ? 64 : 48;
+    // SNES nearest-neighbor: props keep detail; animals chunky downsample
+    const max = mode === "prop" ? 192 : 64;
     let tw = img.width, th = img.height;
     const scale = Math.min(1, max / Math.max(tw, th));
     let w = Math.max(8, (tw * scale) | 0);
@@ -2694,9 +2705,8 @@
     loadImg("assets/player/binocs.png", function (img) { playerKit.binocs = img; });
     loadImg("assets/player/journal.png", function (img) { playerKit.journal = img; });
     loadImg("assets/covers/wetlands.png", function (img) { localCover.wetlands = img; });
-    Object.keys(REMOTE_GROUND).forEach(function (rid) {
-      if (rid === "wetlands") return; // keep unique procedural / local wetlands ground
-      loadImg(REMOTE_GROUND[rid], function (img) {
+    Object.keys(LOCAL_GROUND).forEach(function (rid) {
+      loadImg(LOCAL_GROUND[rid], function (img) {
         const c = document.createElement("canvas");
         c.width = c.height = TEX;
         const g = c.getContext("2d");
@@ -2705,11 +2715,12 @@
         remoteGround[rid] = g.getImageData(0, 0, TEX, TEX);
       });
     });
-    Object.keys(REMOTE_SKY).forEach(function (rid) {
-      loadImg(REMOTE_SKY[rid], function (img) {
+    // Soft photo grounds/skies disabled — SNES pixel tiles only
+    Object.keys(LOCAL_SKY).forEach(function (rid) {
+      loadImg(LOCAL_SKY[rid], function (img) {
         const c = document.createElement("canvas");
         c.width = W;
-        c.height = Math.ceil(H * 0.55);
+        c.height = Math.ceil(H * 0.5);
         const g = c.getContext("2d");
         g.imageSmoothingEnabled = false;
         g.drawImage(img, 0, 0, c.width, c.height);
@@ -2718,66 +2729,27 @@
     });
     // Animated water tiles (3 frames)
     (function () {
-      remoteGround._waterFrames = [];
-      for (let f = 0; f < 3; f++) {
-        const c = document.createElement("canvas");
-        c.width = c.height = TEX;
-        const g = c.getContext("2d");
-        const id = g.createImageData(TEX, TEX);
-        const ph = f * 2.1;
-        for (let y = 0; y < TEX; y++) for (let x = 0; x < TEX; x++) {
-          const i = (y * TEX + x) * 4;
-          const w = 0.5 + 0.5 * Math.sin(x * 0.18 + ph) * Math.cos(y * 0.15 + ph * 0.7)
-            + 0.25 * Math.sin((x + y) * 0.09 + ph);
-          id.data[i] = (28 + w * 48) | 0;
-          id.data[i + 1] = (68 + w * 78) | 0;
-          id.data[i + 2] = (88 + w * 100) | 0;
-          id.data[i + 3] = 255;
-        }
-        g.putImageData(id, 0, 0);
-        remoteGround._waterFrames.push(g.getImageData(0, 0, TEX, TEX));
-      }
-      remoteGround._water = remoteGround._waterFrames[0];
+      const c0 = document.createElement("canvas");
+      c0.width = c0.height = TEX;
+      const g0 = c0.getContext("2d");
+      g0.fillStyle = "#1a5a78";
+      g0.fillRect(0, 0, TEX, TEX);
+      const fallback = g0.getImageData(0, 0, TEX, TEX);
+      remoteGround._waterFrames = [fallback, fallback, fallback];
+      remoteGround._water = fallback;
+      LOCAL_WATER.forEach(function (url, fi) {
+        loadImg(url, function (img) {
+          const c = document.createElement("canvas");
+          c.width = c.height = TEX;
+          const g = c.getContext("2d");
+          g.imageSmoothingEnabled = false;
+          g.drawImage(img, 0, 0, TEX, TEX);
+          remoteGround._waterFrames[fi] = g.getImageData(0, 0, TEX, TEX);
+          remoteGround._water = remoteGround._waterFrames[0] || remoteGround._waterFrames[fi];
+        });
+      });
     })();
-    // Unique wetlands ground + sky (no jungle hue copy)
-    (function () {
-      const c = document.createElement("canvas");
-      c.width = c.height = TEX;
-      const g = c.getContext("2d");
-      const grd = g.createLinearGradient(0, 0, TEX, TEX);
-      grd.addColorStop(0, "#1a4a38");
-      grd.addColorStop(0.45, "#2a6a50");
-      grd.addColorStop(1, "#0e3028");
-      g.fillStyle = grd;
-      g.fillRect(0, 0, TEX, TEX);
-      for (let i = 0; i < 900; i++) {
-        g.fillStyle = i % 3 ? "rgba(40,90,70,0.35)" : "rgba(20,50,40,0.4)";
-        g.fillRect((Math.random() * TEX) | 0, (Math.random() * TEX) | 0, 2 + (Math.random() * 4) | 0, 1);
-      }
-      for (let i = 0; i < 40; i++) {
-        g.fillStyle = "rgba(60,120,90,0.5)";
-        const x = Math.random() * TEX, y = Math.random() * TEX;
-        g.fillRect(x, y, 1, 6 + Math.random() * 10);
-      }
-      remoteGround.wetlands = g.getImageData(0, 0, TEX, TEX);
-      const sky = document.createElement("canvas");
-      sky.width = W;
-      sky.height = Math.ceil(H * 0.55);
-      const sg = sky.getContext("2d");
-      const sg2 = sg.createLinearGradient(0, 0, 0, sky.height);
-      sg2.addColorStop(0, "#6a9aaa");
-      sg2.addColorStop(0.5, "#3a7a88");
-      sg2.addColorStop(1, "#1a4a58");
-      sg.fillStyle = sg2;
-      sg.fillRect(0, 0, sky.width, sky.height);
-      sg.fillStyle = "rgba(200,230,220,0.35)";
-      for (let i = 0; i < 8; i++) {
-        sg.beginPath();
-        sg.ellipse((i * 90 + 40) % sky.width, 20 + (i % 3) * 18, 50, 12, 0, 0, Math.PI * 2);
-        sg.fill();
-      }
-      remoteSky.wetlands = sky;
-    })();
+    /* wetlands SNES local */
   }
 
   function getPropCanvas(prop) {
@@ -2788,10 +2760,10 @@
     if (remoteProps[prop]) return remoteProps[prop];
     if (propCache[prop]) return propCache[prop];
     const off = document.createElement("canvas");
-    off.width = off.height = 64;
+    off.width = off.height = 96;
     const octx = off.getContext("2d");
     octx.imageSmoothingEnabled = false;
-    drawPropBillboard(octx, prop, 64);
+    drawPropBillboard(octx, prop, 96);
     propCache[prop] = off;
     return off;
   }
