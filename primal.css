@@ -21,6 +21,11 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 @keyframes poGo{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 .po-shell{position:relative;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #0a1f12,0 0 28px rgba(61,155,95,.18),0 16px 36px rgba(0,0,0,.6);touch-action:none;display:flex;align-items:center;justify-content:center;min-height:min(70vh,520px)}
 #po-canvas{display:block;width:auto;height:auto;max-width:100%;margin:0 auto;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor;cursor:crosshair;background:#050a06;touch-action:none;vertical-align:top}
+.po-hud-canvas{
+  position:absolute;left:0;top:0;transform:none;
+  pointer-events:none;z-index:4;image-rendering:auto;
+  width:auto;height:auto;max-width:none
+}
 .po-hud{
   position:absolute;left:50%;right:auto;top:auto;bottom:10px;
   transform:translateX(-50%);
@@ -31,8 +36,9 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-hud[hidden],.po-hint[hidden],.po-menu-dock[hidden],.po-obj[hidden],.po-paused[hidden]{display:none!important}
 .po-hud .chip,.po-audio-bar .chip,.po-menu-dock{
   pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);
-  font-family:var(--font-ui);font-size:13px;padding:9px 12px;border-radius:10px;font-weight:700;
-  letter-spacing:.2px;text-shadow:0 1px 0 rgba(0,0,0,.55);box-shadow:0 2px 8px rgba(0,0,0,.35)
+  font-family:var(--font-ui);font-size:14px;padding:9px 13px;border-radius:10px;font-weight:700;
+  letter-spacing:.2px;text-shadow:0 1px 0 rgba(0,0,0,.55);box-shadow:0 2px 8px rgba(0,0,0,.35);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility
 }
 .po-hud .chip.pulse{border-color:var(--line-hi);box-shadow:0 0 12px rgba(93,206,122,.25)}
 .po-hud .chip.done{border-color:#e8c86a;color:#e8c86a}
@@ -54,10 +60,11 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-mute[aria-pressed="true"]{border-color:#8a3a3a;color:#ffb4b4;background:#1a0a0a}
 .po-hint{
   position:absolute;left:50%;bottom:52px;transform:translateX(-50%);z-index:5;
-  background:rgba(4,16,10,.96);border:2px solid var(--line);padding:8px 14px;
-  font-size:14px;border-radius:10px;pointer-events:none;max-width:min(92%,440px);
-  text-align:center;color:var(--text);line-height:1.4;font-weight:400;
-  box-shadow:0 4px 14px rgba(0,0,0,.4)
+  background:rgba(4,16,10,.96);border:2px solid var(--line);padding:9px 16px;
+  font-size:15px;border-radius:10px;pointer-events:none;max-width:min(92%,480px);
+  text-align:center;color:var(--text);line-height:1.45;font-weight:400;
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility
 }
 
 /* Mobile touch controls — stick + look (Digistracts-style) */

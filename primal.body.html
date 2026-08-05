@@ -1,6 +1,8 @@
 <div id="po-root">
   <div class="po-shell">
-    <canvas id="po-canvas" width="256" height="224" aria-label="Primal Odyssey world"></canvas>
+    <canvas id="po-canvas" width="320" height="240" aria-label="Primal Odyssey world"></canvas>
+    <!-- Hi-res HUD layer (minimap / compass / nav) — not pixel-scaled with the world -->
+    <canvas id="po-hud-canvas" class="po-hud-canvas" width="1" height="1" aria-hidden="true"></canvas>
     <div class="po-audio po-audio-bar" id="po-audio-bar">
       <button type="button" class="chip po-mute" id="po-mute" aria-pressed="false" title="Mute">Sound</button>
       <label class="po-vol-lab">Vol <input type="range" class="po-vol" id="po-vol" min="0" max="100" value="55" aria-label="Music volume"></label>

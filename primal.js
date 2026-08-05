@@ -41,12 +41,15 @@
   }
   const canvas = document.getElementById("po-canvas");
   const ctx = canvas.getContext("2d", { alpha: false });
+  const hudCanvas = document.getElementById("po-hud-canvas");
+  const hctx = hudCanvas ? hudCanvas.getContext("2d", { alpha: true }) : null;
   // ImageData floor stays cheap — keep readable res for Digistracts / fullscreen
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
     (window.matchMedia && matchMedia("(pointer:coarse)").matches);
-  // Higher internal res (still integer-scaled nearest-neighbor). v49: 320x240.
+  // World stays SNES-scale; HUD overlay is hi-DPI on top.
   const W = 320;
   const H = 240;
+  let hudCssW = W, hudCssH = H;
   canvas.width = W;
   canvas.height = H;
   canvas.style.imageSmoothingEnabled = false;
@@ -56,6 +59,30 @@
   const TEX = 256;
   const FLOOR_STEP_X = 1;
   const FLOOR_STEP_Y = 1;
+  function syncHudOverlay() {
+    if (!hudCanvas || !hctx) return;
+    const shell = canvas.parentElement;
+    const rect = canvas.getBoundingClientRect();
+    const srect = shell ? shell.getBoundingClientRect() : rect;
+    const cssW = Math.max(1, rect.width || W);
+    const cssH = Math.max(1, rect.height || H);
+    hudCssW = cssW;
+    hudCssH = cssH;
+    hudCanvas.style.left = Math.round(rect.left - srect.left) + "px";
+    hudCanvas.style.top = Math.round(rect.top - srect.top) + "px";
+    const dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    const bw = Math.round(cssW * dpr);
+    const bh = Math.round(cssH * dpr);
+    if (hudCanvas.width !== bw || hudCanvas.height !== bh) {
+      hudCanvas.width = bw;
+      hudCanvas.height = bh;
+    }
+    hudCanvas.style.width = cssW + "px";
+    hudCanvas.style.height = cssH + "px";
+    hctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    hctx.imageSmoothingEnabled = true;
+    if (hctx.imageSmoothingQuality) hctx.imageSmoothingQuality = "high";
+  }
   function poIntegerScale() {
     const shell = canvas.parentElement;
     if (!shell) return;
@@ -67,6 +94,7 @@
     canvas.style.imageRendering = "pixelated";
     canvas.style.margin = "0 auto";
     canvas.style.display = "block";
+    syncHudOverlay();
   }
   poIntegerScale();
   window.addEventListener("resize", poIntegerScale);
@@ -3251,6 +3279,7 @@
       ctx.fillStyle = lg;
       ctx.fillRect(0, 0, W, H);
     }
+    beginHudFrame();
     drawWayPings();
     drawRangerMinimap(phase);
     drawPhotoAssist();
@@ -3358,33 +3387,52 @@
     }
   }
 
+  function beginHudFrame() {
+    if (!hctx || !hudCanvas) return;
+    syncHudOverlay();
+    hctx.clearRect(0, 0, hudCssW, hudCssH);
+    hudCanvas.style.visibility = (mode === "title" || mode === "help") ? "hidden" : "visible";
+  }
+
+  function g2h(gx, gy) {
+    return { x: (gx / W) * hudCssW, y: (gy / H) * hudCssH };
+  }
+
   function drawWayPings() {
-    const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
-    const fov = binocsOn ? 0.38 : 0.66;
-    const planeX = -dirY * fov, planeY = dirX * fov;
-    function ping(wx, wy, col, tag) {
+    if (!hctx) return;
+    const sx = hudCssW / W, sy = hudCssH / H;
+    function ping(wx, wy, col) {
+      const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
+      const fov = binocsOn ? 0.38 : 0.66;
+      const planeX = -dirY * fov, planeY = dirX * fov;
       const spriteX = wx - player.x, spriteY = wy - player.y;
       const invDet = 1 / (planeX * dirY - dirX * planeY);
       const transformX = invDet * (dirY * spriteX - dirX * spriteY);
       const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
-      let sx, sy;
+      let gx, gy;
       if (transformY > 0.2) {
-        sx = (W / 2) * (1 + transformX / transformY);
-        sy = H / 2 + pitchPx() - 18 / transformY;
-        if (sx > 24 && sx < W - 24 && sy > 24 && sy < H - 24) return;
+        gx = (W / 2) * (1 + transformX / transformY);
+        gy = H / 2 + pitchPx() - 18 / transformY;
+        if (gx > 24 && gx < W - 24 && gy > 24 && gy < H - 24) return;
       }
       const ang = Math.atan2(spriteY, spriteX) - player.dir;
       const edge = Math.min(W, H) * 0.42;
-      sx = W / 2 + Math.sin(ang) * edge;
-      sy = H / 2 - Math.cos(ang) * edge * 0.55 + pitchPx() * 0.25;
-      sx = clamp(sx, 18, W - 18);
-      sy = clamp(sy, 18, H - 18);
-      ctx.fillStyle = col;
-      ctx.beginPath();
-      ctx.moveTo(sx, sy - 7);
-      ctx.lineTo(sx + 6, sy + 5);
-      ctx.lineTo(sx - 6, sy + 5);
-      ctx.fill();
+      gx = W / 2 + Math.sin(ang) * edge;
+      gy = H / 2 - Math.cos(ang) * edge * 0.55 + pitchPx() * 0.25;
+      gx = clamp(gx, 18, W - 18);
+      gy = clamp(gy, 18, H - 18);
+      const p = g2h(gx, gy);
+      const sc = Math.min(sx, sy);
+      hctx.fillStyle = col;
+      hctx.beginPath();
+      hctx.moveTo(p.x, p.y - 8 * sc);
+      hctx.lineTo(p.x + 7 * sc, p.y + 6 * sc);
+      hctx.lineTo(p.x - 7 * sc, p.y + 6 * sc);
+      hctx.closePath();
+      hctx.fill();
+      hctx.strokeStyle = "rgba(4,16,10,0.55)";
+      hctx.lineWidth = Math.max(1, sc);
+      hctx.stroke();
     }
     let bestNote = null, bestNd = 1e9;
     sprites.forEach(function (sp) {
@@ -3392,25 +3440,26 @@
       const d = Math.hypot(sp.x - player.x, sp.y - player.y);
       if (d < bestNd) { bestNd = d; bestNote = sp; }
     });
-    if (bestNote) ping(bestNote.x, bestNote.y, "rgba(93,206,122,0.95)", "NOTE");
+    if (bestNote) ping(bestNote.x, bestNote.y, "rgba(93,206,122,0.95)");
     let bestLm = null, bestLd = 1e9;
     landmarks.forEach(function (lm) {
       if (landmarksVisited[lm.id || lm.label]) return;
       const d = Math.hypot(lm.x - player.x, lm.y - player.y);
       if (d < bestLd) { bestLd = d; bestLm = lm; }
     });
-    if (bestLm) ping(bestLm.x, bestLm.y, "rgba(232,200,106,0.95)", "SITE");
+    if (bestLm) ping(bestLm.x, bestLm.y, "rgba(232,200,106,0.95)");
     let bestRare = null, bestRd = 1e9;
     sprites.forEach(function (sp) {
       if (sp.kind !== "animal" || !sp.rare || animalsSeen[sp.id]) return;
       const d = Math.hypot(sp.x - player.x, sp.y - player.y);
       if (d < bestRd && d < 18) { bestRd = d; bestRare = sp; }
     });
-    if (bestRare && rareFound === false) ping(bestRare.x, bestRare.y, "rgba(232,160,80,0.9)", "RARE");
+    if (bestRare && rareFound === false) ping(bestRare.x, bestRare.y, "rgba(232,160,80,0.9)");
     drawSoftCompass(bestNote, bestLm, bestRare);
   }
 
   function drawSoftCompass(note, lm, rare) {
+    if (!hctx) return;
     let tx = null, ty = null, col = "#5dce7a", tag = "";
     if (tourStep === 1 && note) { tx = note.x; ty = note.y; tag = "NOTE"; }
     else if (tourStep === 2) {
@@ -3429,22 +3478,46 @@
     else if (rare && !rareFound) { tx = rare.x; ty = rare.y; col = "#e8a050"; tag = "RARE"; }
     if (tx == null) return;
     const ang = Math.atan2(ty - player.y, tx - player.x) - player.dir;
-    const cx = 22, cy = H - 22;
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.fillStyle = "rgba(4,20,10,0.78)";
-    ctx.beginPath(); ctx.arc(0, 0, 11, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#2d6b45"; ctx.lineWidth = 1; ctx.stroke();
-    ctx.rotate(ang);
-    ctx.fillStyle = col;
-    ctx.beginPath();
-    ctx.moveTo(0, -8); ctx.lineTo(4, 5); ctx.lineTo(0, 2); ctx.lineTo(-4, 5);
-    ctx.closePath(); ctx.fill();
-    ctx.restore();
-    ctx.fillStyle = col;
-    ctx.beginPath();
-    ctx.arc(cx, cy + 14, 2, 0, Math.PI * 2);
-    ctx.fill();
+    const sc = Math.min(hudCssW / W, hudCssH / H);
+    const cx = 28 * sc, cy = hudCssH - 28 * sc;
+    const r = 16 * sc;
+    hctx.save();
+    hctx.translate(cx, cy);
+    // soft glass dial
+    const g = hctx.createRadialGradient(0, 0, 2, 0, 0, r);
+    g.addColorStop(0, "rgba(20,50,30,0.92)");
+    g.addColorStop(1, "rgba(4,16,10,0.88)");
+    hctx.fillStyle = g;
+    hctx.beginPath(); hctx.arc(0, 0, r, 0, Math.PI * 2); hctx.fill();
+    hctx.strokeStyle = "rgba(93,206,122,0.85)";
+    hctx.lineWidth = Math.max(1.5, 1.5 * sc);
+    hctx.stroke();
+    hctx.fillStyle = "#e8c86a";
+    hctx.font = "700 " + Math.max(9, 10 * sc) + "px Atkinson Hyperlegible,Segoe UI,sans-serif";
+    hctx.textAlign = "center";
+    hctx.textBaseline = "middle";
+    hctx.fillText("N", 0, -r + 7 * sc);
+    hctx.rotate(ang);
+    hctx.fillStyle = col;
+    hctx.beginPath();
+    hctx.moveTo(0, -r + 5 * sc);
+    hctx.lineTo(5 * sc, 4 * sc);
+    hctx.lineTo(0, 1 * sc);
+    hctx.lineTo(-5 * sc, 4 * sc);
+    hctx.closePath();
+    hctx.fill();
+    hctx.restore();
+    if (tag) {
+      hctx.fillStyle = "rgba(4,20,10,0.85)";
+      const tw = hctx.measureText ? 0 : 0;
+      hctx.font = "600 " + Math.max(9, 10 * sc) + "px Atkinson Hyperlegible,Segoe UI,sans-serif";
+      const labelW = Math.max(28, hctx.measureText(tag).width + 10);
+      hctx.fillRect(cx - labelW / 2, cy + r + 3 * sc, labelW, 14 * sc);
+      hctx.fillStyle = col;
+      hctx.textAlign = "center";
+      hctx.textBaseline = "middle";
+      hctx.fillText(tag, cx, cy + r + 10 * sc);
+    }
   }
 
   function miniHash(x, y) {
@@ -3517,19 +3590,19 @@
         const isRock = id.indexOf("rock") >= 0 || id === "cairn";
         const isCamp = id.indexOf("camp") === 0 || id === "sign" || id === "trail_flag";
         if (isTree) {
-          m.fillStyle = rid === "africa" ? "#2e6a28" : (rid === "jungle" ? "#0e4020" : "#245828");
-          m.fillRect(px - 1, py - 2, ppt + 1, ppt + 1);
-          m.fillStyle = rid === "africa" ? "#4a9a38" : "#1a6840";
-          m.fillRect(px, py - 1, 2, 2);
+          m.fillStyle = rid === "africa" ? "rgba(46,106,40,0.9)" : (rid === "jungle" ? "rgba(14,64,32,0.95)" : "rgba(36,88,40,0.9)");
+          m.beginPath(); m.arc(px + ppt * 0.5, py + ppt * 0.35, ppt * 0.85, 0, Math.PI * 2); m.fill();
+          m.fillStyle = rid === "africa" ? "rgba(74,154,56,0.85)" : "rgba(26,104,64,0.85)";
+          m.beginPath(); m.arc(px + ppt * 0.5, py + ppt * 0.25, ppt * 0.45, 0, Math.PI * 2); m.fill();
         } else if (isRock) {
-          m.fillStyle = rid === "mountains" ? "#d0d8e0" : "#6a6860";
-          m.fillRect(px, py, 2, 2);
+          m.fillStyle = rid === "mountains" ? "rgba(208,216,224,0.95)" : "rgba(106,104,96,0.9)";
+          m.beginPath(); m.ellipse(px + ppt * 0.5, py + ppt * 0.55, ppt * 0.55, ppt * 0.35, 0, 0, Math.PI * 2); m.fill();
         } else if (isCamp) {
           m.fillStyle = "#c97820";
-          m.fillRect(px, py, 2, 2);
+          m.beginPath(); m.arc(px + ppt * 0.5, py + ppt * 0.5, ppt * 0.4, 0, Math.PI * 2); m.fill();
         } else if (id.indexOf("bush") >= 0 || id.indexOf("fern") >= 0) {
-          m.fillStyle = "#2a7a40";
-          m.fillRect(px, py, 2, 1);
+          m.fillStyle = "rgba(42,122,64,0.75)";
+          m.beginPath(); m.arc(px + ppt * 0.5, py + ppt * 0.6, ppt * 0.4, 0, Math.PI * 2); m.fill();
         }
       });
       // Chart parchment vignette
@@ -3586,56 +3659,53 @@
   }
 
   function drawRangerMinimap(phase) {
-    if (!miniBase || mode === "title") return;
+    if (!hctx || !miniBase || mode === "title") return;
     const ppt = miniMeta.ppt || miniPpt;
-    const drawSz = 76;
-    const pad = 5;
-    const frame = 4;
-    const ox = W - drawSz - pad - frame;
-    const oy = pad + frame;
-    const viewTiles = 24; // local zoom window (detail)
+    // Compact hi-res chart (CSS px) — world stays pixel, this layer is crisp
+    const drawSz = 46;
+    const pad = 10;
+    const frame = 3;
+    const ox = hudCssW - drawSz - pad - frame;
+    const oy = pad + frame + 4;
+    const viewTiles = 22;
     const src = viewTiles * ppt;
     let sx = player.x * ppt - src / 2;
     let sy = player.y * ppt - src / 2;
     sx = Math.max(0, Math.min(miniBase.width - src, sx));
     sy = Math.max(0, Math.min(miniBase.height - src, sy));
 
-    // Outer cartography frame
-    ctx.fillStyle = "rgba(6,14,8,0.92)";
-    ctx.fillRect(ox - frame - 1, oy - frame - 1, drawSz + frame * 2 + 2, drawSz + frame * 2 + 10);
-    ctx.strokeStyle = "#1a3d28";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ox - frame - 0.5, oy - frame - 0.5, drawSz + frame * 2 + 1, drawSz + frame * 2 + 9);
-    ctx.strokeStyle = "#5dce7a";
-    ctx.strokeRect(ox - frame + 1.5, oy - frame + 1.5, drawSz + frame * 2 - 3, drawSz + frame * 2 - 3);
-    // Corner ticks
-    ctx.fillStyle = "#e8c86a";
-    [[ox - frame + 2, oy - frame + 2], [ox + drawSz + frame - 5, oy - frame + 2],
-      [ox - frame + 2, oy + drawSz + frame - 5], [ox + drawSz + frame - 5, oy + drawSz + frame - 5]].forEach(function (p) {
-      ctx.fillRect(p[0], p[1], 3, 3);
-    });
+    // Soft parchment frame
+    hctx.fillStyle = "rgba(6,14,8,0.9)";
+    roundRect(hctx, ox - frame - 1, oy - frame - 1, drawSz + frame * 2 + 2, drawSz + frame * 2 + 8, 5);
+    hctx.fill();
+    hctx.strokeStyle = "rgba(93,206,122,0.75)";
+    hctx.lineWidth = 1.5;
+    roundRect(hctx, ox - frame + 0.5, oy - frame + 0.5, drawSz + frame * 2 - 1, drawSz + frame * 2 - 1, 4);
+    hctx.stroke();
 
-    // Chart face
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(ox, oy, drawSz, drawSz);
-    ctx.clip();
-    ctx.fillStyle = "#0a180e";
-    ctx.fillRect(ox, oy, drawSz, drawSz);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(miniBase, sx, sy, src, src, ox, oy, drawSz, drawSz);
+    hctx.save();
+    hctx.beginPath();
+    roundRect(hctx, ox, oy, drawSz, drawSz, 3);
+    hctx.clip();
+    hctx.fillStyle = "#0a180e";
+    hctx.fillRect(ox, oy, drawSz, drawSz);
+    hctx.imageSmoothingEnabled = true;
+    if (hctx.imageSmoothingQuality) hctx.imageSmoothingQuality = "high";
+    hctx.drawImage(miniBase, sx, sy, src, src, ox, oy, drawSz, drawSz);
 
-    // Fog of war over unexplored (in local window)
+    // Soft fog (not chunky tile blocks)
     if (miniExplored) {
       const tilePx = drawSz / viewTiles;
       const tx0 = (sx / ppt) | 0, ty0 = (sy / ppt) | 0;
-      ctx.fillStyle = "rgba(2,8,4,0.72)";
       for (let ty = 0; ty < viewTiles; ty++) {
         for (let tx = 0; tx < viewTiles; tx++) {
           const gx = tx0 + tx, gy = ty0 + ty;
           if (gy < 0 || gx < 0 || gy >= miniExplored.length || gx >= miniExplored[0].length) continue;
           if (miniExplored[gy][gx]) continue;
-          ctx.fillRect((ox + tx * tilePx) | 0, (oy + ty * tilePx) | 0, Math.ceil(tilePx), Math.ceil(tilePx));
+          hctx.fillStyle = "rgba(2,8,4,0.62)";
+          hctx.beginPath();
+          hctx.arc(ox + (tx + 0.5) * tilePx, oy + (ty + 0.5) * tilePx, tilePx * 0.72, 0, Math.PI * 2);
+          hctx.fill();
         }
       }
     }
@@ -3647,96 +3717,82 @@
       };
     }
 
-    // Landmarks
     landmarks.forEach(function (lm) {
       const p = worldToMini(lm.x, lm.y);
       if (p.x < ox - 2 || p.y < oy - 2 || p.x > ox + drawSz + 2 || p.y > oy + drawSz + 2) return;
       const visited = landmarksVisited[lm.id || lm.label];
-      ctx.fillStyle = visited ? "#7a9a6a" : "#e8c86a";
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y - 3);
-      ctx.lineTo(p.x + 2.5, p.y);
-      ctx.lineTo(p.x, p.y + 3);
-      ctx.lineTo(p.x - 2.5, p.y);
-      ctx.closePath();
-      ctx.fill();
+      hctx.fillStyle = visited ? "#7a9a6a" : "#e8c86a";
+      hctx.beginPath();
+      hctx.moveTo(p.x, p.y - 3.5);
+      hctx.lineTo(p.x + 2.8, p.y);
+      hctx.lineTo(p.x, p.y + 3.5);
+      hctx.lineTo(p.x - 2.8, p.y);
+      hctx.closePath();
+      hctx.fill();
     });
 
-    // Notes + animals
     const pulse = 0.55 + Math.sin(t * 5) * 0.35;
     sprites.forEach(function (sp) {
       if (sp.kind === "note" && !sp.taken) {
         const p = worldToMini(sp.x, sp.y);
         if (p.x < ox || p.y < oy || p.x > ox + drawSz || p.y > oy + drawSz) return;
-        ctx.fillStyle = "rgba(93,206,122," + pulse + ")";
-        ctx.fillRect((p.x - 1) | 0, (p.y - 1) | 0, 3, 3);
+        hctx.fillStyle = "rgba(93,206,122," + pulse + ")";
+        hctx.beginPath(); hctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2); hctx.fill();
         return;
       }
       if (sp.kind !== "animal" || sp.herdSil) return;
       const p = worldToMini(sp.x, sp.y);
       if (p.x < ox - 1 || p.y < oy - 1 || p.x > ox + drawSz + 1 || p.y > oy + drawSz + 1) return;
       if (sp.rare) {
-        ctx.strokeStyle = "#e8c86a";
-        ctx.lineWidth = 1;
-        ctx.strokeRect((p.x - 2) | 0, (p.y - 2) | 0, 4, 4);
+        hctx.strokeStyle = "#e8c86a";
+        hctx.lineWidth = 1.2;
+        hctx.beginPath(); hctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2); hctx.stroke();
       }
-      ctx.fillStyle = (sp.data && sp.data.color) || "#c9a227";
-      ctx.fillRect((p.x - 1) | 0, (p.y - 1) | 0, 2, 2);
+      hctx.fillStyle = (sp.data && sp.data.color) || "#c9a227";
+      hctx.beginPath(); hctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2); hctx.fill();
     });
 
-    // View cone + player
     const pp = worldToMini(player.x, player.y);
-    ctx.fillStyle = "rgba(93,206,122,0.18)";
-    ctx.beginPath();
-    ctx.moveTo(pp.x, pp.y);
-    ctx.arc(pp.x, pp.y, 14, player.dir - 0.55, player.dir + 0.55);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = "#e8f5ec";
-    ctx.beginPath();
-    ctx.moveTo(pp.x + Math.cos(player.dir) * 5, pp.y + Math.sin(player.dir) * 5);
-    ctx.lineTo(pp.x + Math.cos(player.dir + 2.5) * 3, pp.y + Math.sin(player.dir + 2.5) * 3);
-    ctx.lineTo(pp.x + Math.cos(player.dir - 2.5) * 3, pp.y + Math.sin(player.dir - 2.5) * 3);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = "#5dce7a";
-    ctx.fillRect((pp.x - 1) | 0, (pp.y - 1) | 0, 2, 2);
-    ctx.restore();
+    hctx.fillStyle = "rgba(93,206,122,0.2)";
+    hctx.beginPath();
+    hctx.moveTo(pp.x, pp.y);
+    hctx.arc(pp.x, pp.y, 11, player.dir - 0.5, player.dir + 0.5);
+    hctx.closePath();
+    hctx.fill();
+    hctx.fillStyle = "#e8f5ec";
+    hctx.beginPath();
+    hctx.moveTo(pp.x + Math.cos(player.dir) * 5, pp.y + Math.sin(player.dir) * 5);
+    hctx.lineTo(pp.x + Math.cos(player.dir + 2.5) * 3, pp.y + Math.sin(player.dir + 2.5) * 3);
+    hctx.lineTo(pp.x + Math.cos(player.dir - 2.5) * 3, pp.y + Math.sin(player.dir - 2.5) * 3);
+    hctx.closePath();
+    hctx.fill();
+    hctx.fillStyle = "#5dce7a";
+    hctx.beginPath(); hctx.arc(pp.x, pp.y, 1.6, 0, Math.PI * 2); hctx.fill();
+    hctx.restore();
 
-    // Tiny full-map radar (bottom-left inset of chart)
-    const radar = 18;
-    const rx = ox + 3, ry = oy + drawSz - radar - 3;
-    ctx.fillStyle = "rgba(4,12,8,0.85)";
-    ctx.fillRect(rx - 1, ry - 1, radar + 2, radar + 2);
-    ctx.strokeStyle = "#2d6b45";
-    ctx.strokeRect(rx - 0.5, ry - 0.5, radar + 1, radar + 1);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(miniBase, rx, ry, radar, radar);
-    // viewport rect on radar
-    const vw = (viewTiles / miniMeta.w) * radar;
-    const vh = (viewTiles / miniMeta.h) * radar;
-    const vx = rx + (sx / miniBase.width) * radar;
-    const vy = ry + (sy / miniBase.height) * radar;
-    ctx.strokeStyle = "#5dce7a";
-    ctx.strokeRect(vx, vy, Math.max(2, vw), Math.max(2, vh));
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(rx + (player.x / miniMeta.w) * radar - 0.5, ry + (player.y / miniMeta.h) * radar - 0.5, 1.5, 1.5);
-
-    // N badge + title strip
-    ctx.fillStyle = "rgba(4,20,10,0.92)";
-    ctx.fillRect(ox, oy - frame - 1, 16, 10);
-    ctx.fillStyle = "#e8c86a";
-    ctx.font = "bold 8px Atkinson Hyperlegible,sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("N", ox + 8, oy - frame + 7);
+    // Hi-res labels
+    hctx.fillStyle = "#e8c86a";
+    hctx.font = "700 10px Atkinson Hyperlegible,Segoe UI,sans-serif";
+    hctx.textAlign = "center";
+    hctx.textBaseline = "middle";
+    hctx.fillText("N", ox + drawSz / 2, oy - frame - 6);
 
     const phaseCol = phase.name === "night" ? "#5a7ab0"
       : (phase.name === "dusk" ? "#c97820"
         : (phase.name === "dawn" ? "#e8a060" : "#e8c86a"));
-    ctx.fillStyle = "rgba(4,20,10,0.9)";
-    ctx.fillRect(ox - frame, oy + drawSz + frame - 1, drawSz + frame * 2, 5);
-    ctx.fillStyle = phaseCol;
-    ctx.fillRect(ox - frame + 2, oy + drawSz + frame, drawSz + frame * 2 - 4, 2);
+    hctx.fillStyle = phaseCol;
+    hctx.fillRect(ox + 2, oy + drawSz + 3, drawSz - 4, 2);
+  }
+
+  function roundRect(c, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2);
+    c.beginPath();
+    c.moveTo(x + rr, y);
+    c.arcTo(x + w, y, x + w, y + h, rr);
+    c.arcTo(x + w, y + h, x, y + h, rr);
+    c.arcTo(x, y + h, x, y, rr);
+    c.arcTo(x, y, x + w, y, rr);
+    c.closePath();
   }
 
   function animalReact(sp) {
