@@ -3,6 +3,7 @@
     window !== window.top || /(?:\?|&)embed=1(?:&|$)/.test(location.search || "");
   if (isEmbed) {
     document.documentElement.classList.add("po-embed");
+    document.documentElement.classList.add("po-loading");
     function lockEmbedScroll() {
       if (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop) {
         window.scrollTo(0, 0);
@@ -61,7 +62,7 @@
     wallrock: 9,
     lion: 4.8, tiger: 4.5, leopard: 3, jaguar: 3.2, snowleopard: 2.8,
     cougar: 3.2, wolf: 3, grizzly: 5.5, gorilla: 5.6, hippo: 5.5,
-    rhino: 6.2, buffalo: 5.5, croc: 1.8, anaconda: 2.5, eagle: 2.8, honeybadger: 3.4
+    rhino: 6.2, buffalo: 5.5, croc: 1.8, anaconda: 2.5, eagle: 2.8, honeybadger: 3.4, lynx: 2.6, ocelot: 2.5
   };
   function worldScale(id) { return (HT_FT[id] || 6) / UNIT_FT; }
 
@@ -104,7 +105,18 @@
     continueBtn: document.getElementById("po-continue"),
     help: document.getElementById("po-help"),
     helpX: document.getElementById("po-help-x"),
-    helpGo: document.getElementById("po-help-go")
+    helpGo: document.getElementById("po-help-go"),
+    journal: document.getElementById("po-journal"),
+    journalX: document.getElementById("po-journal-x"),
+    journalBody: document.getElementById("po-journal-body"),
+    journalMeta: document.getElementById("po-journal-meta"),
+    journalBtn: document.getElementById("po-journal-btn"),
+    photoBtn: document.getElementById("po-photo-btn"),
+    photoFlash: document.getElementById("po-photo-flash"),
+    continueArt: document.getElementById("po-continue-art"),
+    continueLabel: document.getElementById("po-continue-label"),
+    bigLookBtn: document.getElementById("po-big-look"),
+    reduceMotionBtn: document.getElementById("po-reduce-motion")
   };
 
   const MUSIC_BASE = "https://incompetech.com/music/royalty-free/mp3-royaltyfree/";
@@ -126,6 +138,24 @@
   let landmarksVisited = {};
   let animalsSeen = {};
   let rareFound = false;
+  let weather = { kind: null, t: 0, next: 18 };
+  let photoShots = [];
+  let photoFlashT = 0;
+  let reduceMotion = false;
+  const RARE_IDS = { africa: "honeybadger", mountains: "lynx", jungle: "ocelot" };
+  const COVER = {
+    africa: "https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg",
+    mountains: "https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg",
+    jungle: "https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg"
+  };
+  const RADIO_LINES = {
+    "WATERING HOLE": "Ranger net: watering hole active — keep distance from pods.",
+    "KOPJE LOOKOUT": "Ranger net: kopje lookout clear — good scan for dust trails.",
+    "SNOW OVERLOOK": "Ranger net: ridge wind rising — watch footing on ice.",
+    "RIDGE TRAIL": "Ranger net: ridge trail open — lynx sign reported at dusk.",
+    "CANOPY GAP": "Ranger net: canopy gap — light shaft useful for note hunting.",
+    "FERN THICKET": "Ranger net: fern thicket dense — move slow, watch for ocelot."
+  };
   const SAVE_KEY = "po_expedition_v1";
 
   function ensureAudio() {
@@ -198,7 +228,7 @@
   }
 
   function emptySave() {
-    return { onboarded: false, lastRegion: null, regions: {} };
+    return { onboarded: false, lastRegion: null, regions: {}, shots: [], bigLook: false, reduceMotion: false };
   }
   function loadSave() {
     try {
@@ -222,26 +252,61 @@
     return b;
   }
   function persistProgress() {
-    if (!region) return;
     const s = loadSave();
-    s.lastRegion = region.id;
-    const b = regionBucket(s, region.id);
-    b.notes = notesFound.map(function (n) { return n.id; });
-    b.seen = Object.keys(animalsSeen);
-    b.landmarks = Object.keys(landmarksVisited);
-    b.rare = !!rareFound;
+    s.shots = photoShots.slice(0, 24);
+    s.bigLook = document.documentElement.classList.contains("po-big-look");
+    s.reduceMotion = !!reduceMotion;
+    if (region) {
+      s.lastRegion = region.id;
+      const b = regionBucket(s, region.id);
+      b.notes = notesFound.map(function (n) { return n.id; });
+      b.seen = Object.keys(animalsSeen);
+      b.landmarks = Object.keys(landmarksVisited);
+      b.rare = !!rareFound;
+      b.complete = regionObjectivesDone();
+    }
     writeSave(s);
     syncContinueBtn();
+    syncRegionStamps();
   }
   function syncContinueBtn() {
     if (!ui.continueBtn) return;
     const s = loadSave();
     const show = !!(s.lastRegion && PO_DATA[s.lastRegion]);
     ui.continueBtn.hidden = !show;
-    if (show) ui.continueBtn.textContent = "CONTINUE · " + (PO_DATA[s.lastRegion].name || s.lastRegion).toUpperCase();
+    const label = "CONTINUE · " + (show ? (PO_DATA[s.lastRegion].name || s.lastRegion).toUpperCase() : "");
+    if (ui.continueLabel) ui.continueLabel.textContent = label;
+    else ui.continueBtn.textContent = label;
+    if (ui.continueArt) {
+      if (show && COVER[s.lastRegion]) {
+        ui.continueArt.src = COVER[s.lastRegion];
+        ui.continueArt.hidden = false;
+      } else ui.continueArt.hidden = true;
+    }
+  }
+  function syncRegionStamps() {
+    const s = loadSave();
+    document.querySelectorAll(".po-stamp").forEach(function (el) {
+      const id = el.getAttribute("data-stamp");
+      const done = !!(s.regions[id] && s.regions[id].complete);
+      el.hidden = !done;
+    });
+  }
+  function applyA11yFromSave() {
+    const s = loadSave();
+    document.documentElement.classList.toggle("po-big-look", !!s.bigLook);
+    reduceMotion = !!s.reduceMotion;
+    document.documentElement.classList.toggle("po-reduce-motion", reduceMotion);
+    if (ui.bigLookBtn) ui.bigLookBtn.setAttribute("aria-pressed", s.bigLook ? "true" : "false");
+    if (ui.reduceMotionBtn) ui.reduceMotionBtn.setAttribute("aria-pressed", reduceMotion ? "true" : "false");
+  }
+  function regionObjectivesDone() {
+    if (!region) return false;
+    return objectiveState().every(function (o) { return o.done; });
   }
   function restoreRegionProgress(regionId) {
     const s = loadSave();
+    photoShots = Array.isArray(s.shots) ? s.shots.slice(0, 24) : [];
     const b = regionBucket(s, regionId);
     animalsSeen = {};
     landmarksVisited = {};
@@ -262,7 +327,7 @@
   function markAnimalSeen(id) {
     if (!id) return;
     animalsSeen[id] = true;
-    if (id === "honeybadger") rareFound = true;
+    if (id === "honeybadger" || id === "lynx" || id === "ocelot") rareFound = true;
     persistProgress();
     syncObjectives();
   }
@@ -270,12 +335,34 @@
     if (!id || landmarksVisited[id]) return;
     landmarksVisited[id] = true;
     blip(490, 0.1, "sine");
+    radioCall(RADIO_LINES[id] || ("Ranger net: " + id + " logged."));
     persistProgress();
     syncObjectives();
   }
+  function radioCall(line) {
+    const ctxA = ensureAudio();
+    if (ctxA && !muted) {
+      sfxGain();
+      const now = ctxA.currentTime;
+      for (let i = 0; i < 3; i++) {
+        const o = ctxA.createOscillator();
+        const g = ctxA.createGain();
+        o.type = i === 0 ? "sawtooth" : "sine";
+        o.frequency.value = i === 0 ? 180 : (700 + i * 120);
+        g.gain.value = 0.0001;
+        o.connect(g); g.connect(masterGain);
+        g.gain.exponentialRampToValueAtTime(0.03, now + 0.02 + i * 0.05);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.12 + i * 0.06);
+        o.start(now + i * 0.04); o.stop(now + 0.18 + i * 0.06);
+      }
+    }
+    if (ui.hint && mode === "explore") ui.hint.textContent = line;
+  }
   function objectiveState() {
-    const animalNeed = region && region.id === "africa" ? 5 : 4;
-    const seenN = Object.keys(animalsSeen).length;
+    const animalNeed = 4;
+    const seenN = Object.keys(animalsSeen).filter(function (id) {
+      return id !== "honeybadger" && id !== "lynx" && id !== "ocelot";
+    }).length;
     const lmNeed = 1;
     const lmN = Object.keys(landmarksVisited).length;
     const list = [
@@ -283,8 +370,10 @@
       { done: seenN >= animalNeed, label: "Open dossiers " + Math.min(seenN, animalNeed) + "/" + animalNeed },
       { done: lmN >= lmNeed, label: "Visit a landmark " + Math.min(lmN, lmNeed) + "/" + lmNeed }
     ];
-    if (region && region.id === "africa") {
-      list.push({ done: !!rareFound, label: "Find the honey badger" });
+    if (region) {
+      const rid = RARE_IDS[region.id];
+      const names = { honeybadger: "honey badger", lynx: "lynx", ocelot: "ocelot" };
+      if (rid) list.push({ done: !!rareFound || !!animalsSeen[rid], label: "Find the rare " + (names[rid] || rid) });
     }
     return list;
   }
@@ -469,7 +558,7 @@
   const GAIT_HZ = {
     lion: 3.4, tiger: 3.3, leopard: 3.6, jaguar: 3.5, snowleopard: 3.4, cougar: 3.5,
     wolf: 3.8, grizzly: 2.4, gorilla: 2.2, hippo: 1.8, rhino: 1.9, buffalo: 2.0,
-    croc: 1.5, anaconda: 1.2, eagle: 4.5, honeybadger: 3.6
+    croc: 1.5, anaconda: 1.2, eagle: 4.5, honeybadger: 3.6, lynx: 3.5, ocelot: 3.6
   };
   function hexRgb(h) {
     h = h.replace("#", "");
@@ -660,6 +749,12 @@
     if (regionId === "africa" && window.PO_BONUS && PO_BONUS.honeybadger) {
       spawnAnimal(PO_BONUS.honeybadger, 14.5, 22.5, true);
     }
+    if (regionId === "mountains" && window.PO_BONUS && PO_BONUS.lynx) {
+      spawnAnimal(PO_BONUS.lynx, 26.5, 14.5, true);
+    }
+    if (regionId === "jungle" && window.PO_BONUS && PO_BONUS.ocelot) {
+      spawnAnimal(PO_BONUS.ocelot, 12.5, 24.5, true);
+    }
     placeFieldNotes(regionId);
     // Track/scat props near animals
     sprites.filter(function (s) { return s.kind === "animal"; }).forEach(function (a) {
@@ -709,7 +804,9 @@
       aggroDist: a.aggroDist || 0,
       packId: a.packId || null,
       idleBob: a.idleBob || 0.2,
-      rare: !!rare
+      rare: !!rare,
+      alertT: 0,
+      alertCd: 1 + Math.random() * 2
     });
   }
 
@@ -773,6 +870,21 @@
       }
     }
     notesTotal = placed;
+    // Print trails from camp toward each note
+    sprites.filter(function (s) { return s.kind === "note"; }).forEach(function (note) {
+      const steps = 5 + rnd(3);
+      for (let s = 1; s <= steps; s++) {
+        const u = s / (steps + 1);
+        const tx = 4.5 + (note.x - 4.5) * u + (Math.random() - 0.5) * 0.35;
+        const ty = 4.5 + (note.y - 4.5) * u + (Math.random() - 0.5) * 0.35;
+        if (wall[ty | 0] && wall[ty | 0][tx | 0]) continue;
+        if (floor[ty | 0] && floor[ty | 0][tx | 0] === 3) continue;
+        sprites.push({
+          x: tx, y: ty, kind: "prop", prop: "grass",
+          scale: worldScale("grass") * 0.35, bob: 0, track: true
+        });
+      }
+    });
   }
 
   function blocked(x, y) {
@@ -805,7 +917,8 @@
     return false;
   }
   function playerBlocked(x, y) {
-    return blocked(x, y) || wet(x, y) || propBlocked(x, y);
+    // Water is wadeable (slowed in movePlayer); only walls/props block hard
+    return blocked(x, y) || propBlocked(x, y);
   }
 
   function animalBlocked(x, y, sp) {
@@ -886,6 +999,14 @@
         sp.squash = moving ? (0.94 + plant * 0.1) : 1;
       }
       sp.walkFrame = moving ? ((sp.gait / (Math.PI / 2)) | 0) : 0;
+      const pdist = Math.hypot(player.x - sp.x, player.y - sp.y);
+      if (sp.alertT > 0) sp.alertT -= dt;
+      sp.alertCd = (sp.alertCd || 0) - dt;
+      if (pdist < 4.2 && sp.alertCd <= 0 && mode === "explore") {
+        sp.alertT = 1.4;
+        sp.alertCd = 5 + Math.random() * 4;
+        animalReact(sp);
+      }
       const nx = sp.x + sp.vx * dt;
       const ny = sp.y + sp.vy * dt;
       if (!animalBlocked(nx, sp.y, sp)) sp.x = nx;
@@ -1002,7 +1123,10 @@
     player.dir += turn * 2.4 * dt;
     player.pitch = clamp(player.pitch + pitchIn * 1.35 * dt, -0.58, 0.58);
     const c = Math.cos(player.dir), s = Math.sin(player.dir);
-    const sp = 2.6 * dt;
+    let spMul = 1;
+    if (wet(player.x, player.y)) spMul *= 0.48;
+    if (weather.kind) spMul *= 0.78;
+    const sp = 2.6 * spMul * dt;
     const mx = (c * fwd + -s * strafe) * sp;
     const my = (s * fwd + c * strafe) * sp;
     if (!playerBlocked(player.x + mx * 3.2, player.y)) player.x += mx;
@@ -1215,7 +1339,9 @@
     tiger: "https://i.postimg.cc/PfWrjSFQ/tiger.jpg",
     wolf: "https://i.postimg.cc/h4LPB230/wolf.jpg",
     // Direct Kenney animal-pack link used for honey badger (no PostImg body art provided)
-    honeybadger: "https://res.cloudinary.com/dol86wsz1/image/upload/v1770151649/summer_art/kenney/2d/animal-pack-redux/dog.png"
+    honeybadger: "https://res.cloudinary.com/dol86wsz1/image/upload/v1770151649/summer_art/kenney/2d/animal-pack-redux/dog.png",
+    lynx: "https://i.postimg.cc/SQ6NhgtL/snowleopard.jpg",
+    ocelot: "https://i.postimg.cc/7P3YkKQM/leopard.jpg"
   };
   const REMOTE_PROPS = {
     acacia: "https://i.postimg.cc/m24tWq34/acacia.jpg",
@@ -1263,7 +1389,9 @@
     hippo: "assets/walk/hippo.png",
     rhino: "assets/walk/rhino.png",
     anaconda: "assets/walk/anaconda.png",
-    eagle: "assets/walk/eagle.png"
+    eagle: "assets/walk/eagle.png",
+    lynx: "assets/walk/snowleopard.png",
+    ocelot: "assets/walk/leopard.png"
   };
 
   function makeGaitFrames(src) {
@@ -1577,6 +1705,17 @@
         ctx.ellipse(spriteScreenX, floorY - 2, spriteW * 0.55, 5, 0, 0, Math.PI * 2);
         ctx.fill();
       }
+      if (sp.track) {
+        const tw = Math.max(4, spriteW * 0.45);
+        const th = Math.max(2, spriteH * 0.12);
+        ctx.fillStyle = "rgba(40,28,12,0.55)";
+        ctx.beginPath();
+        ctx.ellipse(spriteScreenX - tw * 0.35, floorY - 1, tw * 0.45, th, -0.25, 0, Math.PI * 2);
+        ctx.ellipse(spriteScreenX + tw * 0.35, floorY - 1, tw * 0.45, th, 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        continue;
+      }
       ctx.imageSmoothingEnabled = !!(img._photo) || sp.kind === "note" || (sp.kind === "animal" && transformY < 6);
       ctx.imageSmoothingQuality = (sp.kind === "animal" && transformY < 5.5) ? "high" : "medium";
       if (flip) {
@@ -1626,6 +1765,13 @@
           ctx.font = "11px monospace";
           ctx.textAlign = "center";
           ctx.fillText(label, spriteScreenX, drawStartY - 6);
+          ctx.textAlign = "left";
+        }
+        if (sp.alertT > 0) {
+          ctx.fillStyle = "rgba(255,220,80," + clamp(sp.alertT, 0, 1) + ")";
+          ctx.font = "bold 18px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("!", spriteScreenX, drawStartY - 18);
           ctx.textAlign = "left";
         }
       }
@@ -1794,14 +1940,145 @@
     });
   }
 
+  function animalReact(sp) {
+    const ctxA = ensureAudio();
+    if (!ctxA || muted) return;
+    sfxGain();
+    const o = ctxA.createOscillator();
+    const g = ctxA.createGain();
+    o.type = sp.behavior === "soar" ? "sine" : "sawtooth";
+    o.frequency.value = sp.behavior === "soar" ? 900 : (120 + Math.random() * 80);
+    g.gain.value = 0.0001;
+    o.connect(g); g.connect(masterGain);
+    const now = ctxA.currentTime;
+    g.gain.exponentialRampToValueAtTime(0.06, now + 0.02);
+    o.frequency.exponentialRampToValueAtTime(o.frequency.value * 0.7, now + 0.2);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+    o.start(now); o.stop(now + 0.3);
+  }
+
+  function updateWeather(dt) {
+    if (!region || reduceMotion) {
+      weather.kind = null; weather.t = 0; return;
+    }
+    if (weather.t > 0) {
+      weather.t -= dt;
+      if (weather.t <= 0) { weather.kind = null; weather.next = 28 + Math.random() * 35; }
+      return;
+    }
+    weather.next -= dt;
+    if (weather.next > 0) return;
+    weather.kind = region.id === "africa" ? "dust" : (region.id === "mountains" ? "snow" : "rain");
+    weather.t = 7 + Math.random() * 7;
+    if (ui.hint && mode === "explore") {
+      ui.hint.textContent = weather.kind === "dust" ? "Dust storm rolling in…"
+        : (weather.kind === "snow" ? "Snow squall on the ridge…" : "Canopy rain starting…");
+    }
+  }
+
+  function drawWeather() {
+    if (!weather.kind || reduceMotion) return;
+    const a = clamp(weather.t / 2, 0, 1) * 0.35;
+    if (weather.kind === "dust") {
+      ctx.fillStyle = "rgba(180,140,70," + (0.12 + a * 0.25) + ")";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(210,170,90,0.35)";
+      for (let i = 0; i < 40; i++) {
+        const x = ((t * 90 + i * 47) % (W + 40)) - 20;
+        const y = (i * 53 + t * 30) % H;
+        ctx.fillRect(x | 0, y | 0, 3, 1);
+      }
+    } else if (weather.kind === "snow") {
+      ctx.fillStyle = "rgba(200,220,255," + (0.1 + a * 0.2) + ")";
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(240,248,255,0.85)";
+      for (let i = 0; i < 55; i++) {
+        const x = (i * 41 + t * 40) % W;
+        const y = (i * 73 + t * 70) % H;
+        ctx.fillRect(x | 0, y | 0, 2, 2);
+      }
+    } else {
+      ctx.fillStyle = "rgba(30,50,40," + (0.12 + a * 0.2) + ")";
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = "rgba(160,200,180,0.35)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < 50; i++) {
+        const x = (i * 37 + t * 180) % W;
+        const y = (i * 59 + t * 260) % H;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 2, y + 10); ctx.stroke();
+      }
+    }
+  }
+
+  function openJournal() {
+    if (!ui.journal) return;
+    if (mode === "dossier") closeDossier();
+    if (mode === "note") { notePendingLog = false; if (ui.note) ui.note.classList.remove("show"); }
+    const s = loadSave();
+    if (ui.journalMeta) ui.journalMeta.textContent = (region ? region.name : "EXPEDITION") + " · field journal";
+    let html = "";
+    html += "<h3>NOTES</h3><ul>";
+    if (!notesFound.length) html += "<li>No field notes yet — follow the print trails.</li>";
+    notesFound.forEach(function (n, i) { html += "<li>✓ " + (i + 1) + ". " + n.text + "</li>"; });
+    html += "</ul><h3>LANDMARKS</h3><ul>";
+    const lms = Object.keys(landmarksVisited);
+    if (!lms.length) html += "<li>No landmarks logged yet.</li>";
+    lms.forEach(function (id) { html += "<li>✓ " + id + "</li>"; });
+    html += "</ul><h3>SIGHTINGS</h3><ul>";
+    const seen = Object.keys(animalsSeen);
+    if (!seen.length) html += "<li>No dossiers opened yet.</li>";
+    seen.forEach(function (id) { html += "<li>✓ " + id + "</li>"; });
+    html += "</ul><h3>PHOTOS</h3>";
+    if (!photoShots.length) html += "<p>Press PHOTO or P to snap a sighting.</p>";
+    else {
+      photoShots.forEach(function (src) {
+        html += "<img class=\"shot\" src=\"" + src + "\" alt=\"sighting\">";
+      });
+    }
+    const stamp = s.regions[region ? region.id : ""] && s.regions[region.id].complete;
+    if (stamp) html += "<p><b>REGION CLEARED</b> — stamp earned on the title map.</p>";
+    if (ui.journalBody) ui.journalBody.innerHTML = html;
+    ui.journal.classList.add("show");
+    mode = "journal";
+    clearInput();
+    syncTouchUI();
+    blip(500, 0.1, "sine");
+  }
+  function closeJournal() {
+    if (ui.journal) ui.journal.classList.remove("show");
+    if (mode === "journal") mode = "explore";
+    clearInput();
+    syncTouchUI();
+  }
+  function takePhoto() {
+    if (mode !== "explore") return;
+    try {
+      const url = canvas.toDataURL("image/jpeg", 0.7);
+      photoShots.unshift(url);
+      if (photoShots.length > 12) photoShots.length = 12;
+      photoFlashT = 0.18;
+      if (ui.photoFlash) { ui.photoFlash.hidden = false; ui.photoFlash.classList.add("on"); }
+      blip(880, 0.06, "square");
+      persistProgress();
+      if (ui.hint) ui.hint.textContent = "Sighting saved to JOURNAL";
+    } catch (e) {
+      if (ui.hint) ui.hint.textContent = "Photo failed (try again)";
+    }
+  }
+
   function drawWorld() {
     drawSkyFloor();
     drawSprites();
     drawParticles();
+    drawWeather();
     drawHUDOverlay();
     if (noteFlash > 0) {
       ctx.fillStyle = "rgba(93,206,122," + (noteFlash * 0.15) + ")";
       ctx.fillRect(0, 0, W, H);
+    }
+    if (photoFlashT > 0 && ui.photoFlash) {
+      ui.photoFlash.hidden = false;
+      ui.photoFlash.classList.add("on");
     }
   }
 
@@ -1846,7 +2123,7 @@
   }
 
   function inGameMode() {
-    return mode === "explore" || mode === "dossier" || mode === "log" || mode === "note" || mode === "help";
+    return mode === "explore" || mode === "dossier" || mode === "log" || mode === "note" || mode === "help" || mode === "journal";
   }
 
   function notifyParentChrome() {
@@ -1921,7 +2198,7 @@
         ? "FULL SCREEN · Stick · LOOK ▲▼◀▶ · Drag canvas · Tap animals"
         : "Stick · LOOK all ways · Drag to look · NOTES · FULL SCREEN";
     } else if (ui.hint && mode === "explore") {
-      ui.hint.textContent = "WASD move · Drag look around · Arrows look · Tap animal · L log · Esc";
+      ui.hint.textContent = "WASD · Drag look · Tap animal · J journal · P photo · L log · Esc";
     }
     syncFsBtn();
     notifyParentChrome();
@@ -1993,6 +2270,8 @@
     ui.hint.hidden = false;
     if (ui.menuBtn) ui.menuBtn.hidden = false;
     if (ui.obj) ui.obj.hidden = false;
+    if (ui.journalBtn) ui.journalBtn.hidden = false;
+    if (ui.photoBtn) ui.photoBtn.hidden = false;
     ui.regionChip.textContent = region.name;
     closeDossier();
     clearInput();
@@ -2013,22 +2292,26 @@
     ui.hint.hidden = true;
     if (ui.obj) ui.obj.hidden = true;
     if (ui.menuBtn) ui.menuBtn.hidden = true;
+    if (ui.journalBtn) ui.journalBtn.hidden = true;
+    if (ui.photoBtn) ui.photoBtn.hidden = true;
     setPaused(false);
     stopMusic();
     closeDossier();
     closeLog();
+    closeJournal();
     if (ui.note) ui.note.classList.remove("show");
     if (ui.help) ui.help.classList.remove("show");
     notePendingLog = false;
     clearInput();
     syncContinueBtn();
+    syncRegionStamps();
     syncTouchUI();
   }
 
   function loop(now) {
     const dt = Math.min(0.033, (now - (loop._last || now)) / 1000);
     loop._last = now;
-    if (gamePaused && (mode === "explore" || mode === "dossier" || mode === "log" || mode === "note" || mode === "help")) {
+    if (gamePaused && (mode === "explore" || mode === "dossier" || mode === "log" || mode === "note" || mode === "help" || mode === "journal")) {
       drawWorld();
       requestAnimationFrame(loop);
       return;
@@ -2036,18 +2319,26 @@
     t += dt;
     dayT += dt;
     if (noteFlash > 0) noteFlash = Math.max(0, noteFlash - dt);
+    if (photoFlashT > 0) {
+      photoFlashT -= dt;
+      if (photoFlashT <= 0 && ui.photoFlash) {
+        ui.photoFlash.classList.remove("on");
+        ui.photoFlash.hidden = true;
+      }
+    }
     ambientChirpT -= dt;
     if (ambientChirpT <= 0 && mode === "explore") {
       ambientChirpT = 4 + Math.random() * 7;
       if (Math.random() < 0.65) birdChirp();
     }
     if (mode === "explore") {
+      updateWeather(dt);
       movePlayer(dt);
       moveAnimals(dt);
       updateParticles(dt);
       ui.posChip.textContent = "POS " + player.x.toFixed(1) + "," + player.y.toFixed(1);
       drawWorld();
-    } else if (mode === "dossier" || mode === "log" || mode === "note" || mode === "help") {
+    } else if (mode === "dossier" || mode === "log" || mode === "note" || mode === "help" || mode === "journal") {
       moveAnimals(dt);
       updateParticles(dt);
       drawWorld();
@@ -2063,12 +2354,21 @@
       if (mode === "dossier") closeDossier();
       else if (mode === "note") closeFieldNote();
       else if (mode === "help") closeHelp(true);
+      else if (mode === "journal") closeJournal();
       else if (mode === "log") closeLog();
       else if (mode === "explore") showTitle();
       return;
     }
     if (mode === "explore" && (e.key === "l" || e.key === "L")) {
       if (notesFound.length) openExpeditionLog();
+      return;
+    }
+    if (mode === "explore" && (e.key === "j" || e.key === "J")) {
+      openJournal();
+      return;
+    }
+    if (mode === "explore" && (e.key === "p" || e.key === "P")) {
+      takePhoto();
       return;
     }
     if (mode === "explore" && (e.key === "e" || e.key === "E")) {
@@ -2204,6 +2504,36 @@
     });
   }
   syncContinueBtn();
+  syncRegionStamps();
+  applyA11yFromSave();
+  if (ui.journalBtn) ui.journalBtn.addEventListener("click", openJournal);
+  if (ui.journalX) ui.journalX.addEventListener("click", function (e) {
+    e.stopPropagation();
+    closeJournal();
+  });
+  if (ui.journal) {
+    ui.journal.addEventListener("click", function (e) {
+      if (e.target === ui.journal) closeJournal();
+    });
+  }
+  if (ui.photoBtn) ui.photoBtn.addEventListener("click", takePhoto);
+  if (ui.bigLookBtn) {
+    ui.bigLookBtn.addEventListener("click", function () {
+      const on = !document.documentElement.classList.contains("po-big-look");
+      document.documentElement.classList.toggle("po-big-look", on);
+      ui.bigLookBtn.setAttribute("aria-pressed", on ? "true" : "false");
+      persistProgress();
+    });
+  }
+  if (ui.reduceMotionBtn) {
+    ui.reduceMotionBtn.addEventListener("click", function () {
+      reduceMotion = !reduceMotion;
+      document.documentElement.classList.toggle("po-reduce-motion", reduceMotion);
+      ui.reduceMotionBtn.setAttribute("aria-pressed", reduceMotion ? "true" : "false");
+      if (reduceMotion) weather.kind = null;
+      persistProgress();
+    });
+  }
   if (ui.fsBtn) {
     ui.fsBtn.addEventListener("click", function (e) {
       e.preventDefault();
@@ -2357,7 +2687,10 @@
   syncMuteUI();
   syncTouchUI();
   preloadRemoteArt();
-  requestAnimationFrame(loop);
+  requestAnimationFrame(function () {
+    document.documentElement.classList.remove("po-loading");
+    requestAnimationFrame(loop);
+  });
 
   window.PO = {
     enterRegion: enterRegion,

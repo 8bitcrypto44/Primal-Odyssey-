@@ -18,6 +18,8 @@
     </div>
     <div class="po-paused" id="po-paused" hidden>PAUSED</div>
     <button type="button" class="chip po-menu-dock" id="po-menu-btn" hidden>REGIONS</button>
+    <button type="button" class="chip po-journal-btn" id="po-journal-btn" hidden>JOURNAL</button>
+    <button type="button" class="chip po-photo-btn" id="po-photo-btn" hidden title="Photo mode (P)">PHOTO</button>
     <button type="button" class="chip po-fs-btn" id="po-fs-btn" hidden aria-pressed="false">FULL SCREEN</button>
     <div class="po-hint" id="po-hint" hidden>Drag to look · Tap animal for dossier · REGIONS menu</div>
     <div class="po-touch" id="po-touch" hidden aria-label="Mobile controls">
@@ -43,31 +45,41 @@
         <p class="po-tag">Explore wild regions · Meet apex animals · Collect field notes · Open dossiers</p>
         <p class="po-wip" title="Work in progress — unfinished build">WIP · ALPHA · LIVING WORLD</p>
         <h2>CHOOSE YOUR EXPEDITION</h2>
-        <p class="lead">Three living biomes. Weather, day cycle, animal behavior, landmarks, and field notes. Tap creatures for dossiers — Africa hides a rare honey badger.</p>
-        <button type="button" class="po-continue" id="po-continue" hidden>CONTINUE EXPEDITION</button>
+        <p class="lead">Three living biomes. Weather, day cycle, animal behavior, landmarks, and field notes. Each region hides a rare animal.</p>
+        <button type="button" class="po-continue" id="po-continue" hidden>
+          <img class="po-continue-art" id="po-continue-art" alt="" width="120" height="48" hidden>
+          <span id="po-continue-label">CONTINUE EXPEDITION</span>
+        </button>
+        <div class="po-a11y">
+          <button type="button" class="chip" id="po-big-look" aria-pressed="false">BIG LOOK</button>
+          <button type="button" class="chip" id="po-reduce-motion" aria-pressed="false">LESS MOTION</button>
+        </div>
         <div class="po-regions">
           <button type="button" class="po-card" data-region="africa">
             <img class="preview" src="https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg" alt="Africa cover" width="320" height="110" loading="lazy">
+            <div class="po-stamp" data-stamp="africa" hidden>CLEARED</div>
             <div class="body">
               <h3>AFRICA</h3>
               <p>Golden grasslands, acacia shade, and crowded watering holes under a hard sun.</p>
-              <div class="meta"><span class="go">START</span> 5 animals + rare find</div>
+              <div class="meta"><span class="go">START</span> 5 animals + rare honey badger</div>
             </div>
           </button>
           <button type="button" class="po-card" data-region="mountains">
             <img class="preview" src="https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg" alt="Mountains cover" width="320" height="110" loading="lazy">
+            <div class="po-stamp" data-stamp="mountains" hidden>CLEARED</div>
             <div class="body">
               <h3>MOUNTAINS</h3>
               <p>Thin air, pine ridges, snow glitter, and sharp hunters on the high trails.</p>
-              <div class="meta"><span class="go">START</span> 5 animals</div>
+              <div class="meta"><span class="go">START</span> 5 animals + rare lynx</div>
             </div>
           </button>
           <button type="button" class="po-card" data-region="jungle">
             <img class="preview" src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="Jungle cover" width="320" height="110" loading="lazy">
+            <div class="po-stamp" data-stamp="jungle" hidden>CLEARED</div>
             <div class="body">
               <h3>JUNGLE</h3>
               <p>Canopy gloom, dripping mist, fern thickets, and ambush predators.</p>
-              <div class="meta"><span class="go">START</span> 5 animals</div>
+              <div class="meta"><span class="go">START</span> 5 animals + rare ocelot</div>
             </div>
           </button>
         </div>
@@ -79,10 +91,11 @@
         <div class="po-paper-seal">?</div>
         <p class="po-paper-label">EXPEDITION BRIEFING</p>
         <div class="po-help-body">
-          <p><b>Move</b> with WASD or the MOVE stick.</p>
+          <p><b>Move</b> with WASD or the MOVE stick. Water slows you (wade).</p>
           <p><b>Look</b> by dragging the view, using LOOK buttons, or arrow keys (up/down tilt).</p>
-          <p><b>Field notes</b> glow as notebooks — walk onto them to read.</p>
-          <p><b>Animals</b> — tap or click for a parchment dossier.</p>
+          <p><b>Field notes</b> glow as notebooks — follow print trails from camp.</p>
+          <p><b>Animals</b> — tap or click for a parchment dossier. They react when you get close.</p>
+          <p><b>JOURNAL / J</b> opens your log. <b>PHOTO / P</b> saves a sighting.</p>
           <p><b>Goals</b> show under OBJECTIVES. REGIONS returns to the map.</p>
         </div>
         <button type="button" class="po-help-go" id="po-help-go">GOT IT — EXPLORE</button>
@@ -120,6 +133,15 @@
         <p class="po-paper-foot" id="po-note-foot"></p>
       </div>
     </div>
+    <div id="po-journal" class="po-overlay po-note-overlay" role="dialog" aria-label="Field journal" aria-modal="true">
+      <div class="po-paper po-paper-journal">
+        <button type="button" class="po-paper-x" id="po-journal-x" aria-label="Close journal">×</button>
+        <div class="po-paper-seal">J</div>
+        <p class="po-paper-label">FIELD JOURNAL</p>
+        <p class="po-paper-meta" id="po-journal-meta"></p>
+        <div class="po-journal-body" id="po-journal-body"></div>
+      </div>
+    </div>
     <div id="po-log" class="po-overlay" role="dialog" aria-label="Expedition log">
       <div class="po-dossier">
         <h2 style="color:var(--line-hi);margin:0 0 8px">EXPEDITION LOG</h2>
@@ -127,6 +149,7 @@
         <button type="button" class="po-close" id="po-log-close">CLOSE LOG</button>
       </div>
     </div>
+    <div class="po-photo-flash" id="po-photo-flash" hidden></div>
   </div>
   <div class="po-frame" aria-hidden="true"></div>
   <p class="po-credit">Primal Odyssey · WIP/alpha · music CC BY Kevin MacLeod · 8bitcrypto_44</p>

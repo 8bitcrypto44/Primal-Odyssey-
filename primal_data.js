@@ -562,5 +562,47 @@ window.PO_BONUS = {
       "Do not corner a honey badger near a den or kill. Give space, keep dogs leashed, and never try to feed or provoke one for a video.",
       "If you find an active dig, note it and move on. Report injured or habituated animals to guides so camps stay safe."
     ]
+  },
+  lynx: {
+    id:"lynx",
+    name:"Canada Lynx",
+    latin:"Lynx canadensis",
+    danger:"Silent stalker · Rare highland sighting",
+    x:20, y:16, color:"#b8a890",
+    behavior:"ambush", speed:0.65, waterLove:false, fleeDist:5.5, aggroDist:2.8, idleBob:0.25,
+    facts:[
+      "Canada lynx are padded highland hunters built for snow: oversized paws act like natural snowshoes, and tufted ears help pinpoint tiny prey in wind. They specialize on snowshoe hare cycles and leave soft round tracks that explorers can follow along ridge trails.",
+      "Lynx stay secretive, resting in thick cover by day and moving at dusk. A rare mountain expedition sighting is often just a gray-tan ghost slipping between pines — count yourself lucky and keep quiet."
+    ],
+    myths:[
+      "Some tales claim lynx can see through solid snow. Real lynx simply hear and smell under powder better than we do. Old bestiaries mixed lynx with European wildcats until science sorted the family tree."
+    ],
+    fun:[
+      "Those ear tufts are not fashion — they may help channel faint sounds. Lynx tails look bobbed, ending in a black tip like a punctuation mark on a snow sentence."
+    ],
+    survive:[
+      "If you spot a lynx, freeze, speak softly, and give it an exit path. Never approach kits or try for a selfie. Keep dogs leashed on mountain trails."
+    ]
+  },
+  ocelot: {
+    id:"ocelot",
+    name:"Ocelot",
+    latin:"Leopardus pardalis",
+    danger:"Nocturnal ambush · Canopy edges",
+    x:19, y:17, color:"#c9a050",
+    behavior:"ambush", speed:0.7, waterLove:false, fleeDist:4.5, aggroDist:3.2, idleBob:0.3,
+    facts:[
+      "Ocelots are medium spotted cats of forests and thickets, hunting rodents, birds, and reptiles along shadowed game trails. Their coats break up outlines in leaf litter, making them nearly invisible until they move.",
+      "Mostly nocturnal, they rest on branches or dense brush by day. Expedition sightings in jungle clearings are rare — treat any glimpse as a gift and keep flashlights aimed low."
+    ],
+    myths:[
+      "Fur-trade eras nearly erased ocelots from some ranges; stories of 'painted ghosts' linger where they survived. Folklore sometimes confuses them with young jaguars, but ocelots are lighter and more arboreal."
+    ],
+    fun:[
+      "An ocelot's footprints are small and neat compared with jaguar plates. They can climb and swim, so a river bank is as likely as a forest floor for a track find."
+    ],
+    survive:[
+      "Do not shine bright lights into eyes or chase for photos. Stay on marked trails, secure food, and report injured or habituated cats to rangers."
+    ]
   }
 };

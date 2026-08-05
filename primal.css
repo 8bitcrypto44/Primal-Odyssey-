@@ -290,13 +290,50 @@ html.po-land.po-touch-on:has(#po-help.show) .po-obj{visibility:hidden;pointer-ev
   pointer-events:none;box-shadow:0 0 24px rgba(93,206,122,.35)
 }
 .po-continue{
-  display:block;width:min(420px,100%);margin:0 auto 14px;padding:12px 16px;
+  display:flex;align-items:center;justify-content:center;gap:12px;width:min(420px,100%);margin:0 auto 14px;padding:10px 16px;
   border:3px solid var(--line-hi);border-radius:10px;background:rgba(61,155,95,.22);
   color:#e8ffe8;font:700 13px/1.2 "Courier New",monospace;letter-spacing:1px;cursor:pointer;
   box-shadow:0 0 18px rgba(93,206,122,.25)
 }
-.po-continue:hover{background:rgba(61,155,95,.4)}
-.po-continue[hidden]{display:none!important}
+.po-continue-art{width:120px;height:48px;object-fit:cover;border-radius:6px;border:2px solid #2d6b45;display:none}
+.po-continue-art:not([hidden]){display:block}
+.po-a11y{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.po-a11y .chip{pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);font-size:10px;padding:8px 10px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit}
+.po-a11y .chip[aria-pressed="true"]{border-color:var(--line-hi);color:var(--line-hi)}
+.po-card{position:relative}
+.po-stamp{
+  position:absolute;top:12px;right:12px;z-index:2;padding:6px 10px;
+  border:3px solid #8a2020;color:#8a2020;background:rgba(255,240,220,.85);
+  font:700 12px/1 "Courier New",monospace;letter-spacing:2px;transform:rotate(12deg);
+  box-shadow:0 2px 8px rgba(0,0,0,.25)
+}
+.po-stamp[hidden]{display:none!important}
+.po-journal-btn,.po-photo-btn{position:absolute;z-index:7;pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);font-size:10px;padding:8px 10px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit}
+.po-journal-btn{left:8px;bottom:48px}
+.po-photo-btn{right:8px;top:8px}
+.po-journal-btn[hidden],.po-photo-btn[hidden]{display:none!important}
+html.po-touch-on .po-journal-btn{left:8px;top:96px;bottom:auto}
+html.po-touch-on .po-photo-btn{right:8px;top:8px}
+.po-paper-journal{width:min(520px,94%);max-height:min(88vh,720px);overflow:auto}
+.po-journal-body{position:relative;z-index:1;font-size:13px;line-height:1.55;color:#2a1c0c}
+.po-journal-body h3{margin:12px 0 6px;font:700 12px "Courier New",monospace;color:#5a3a18;letter-spacing:1px}
+.po-journal-body ul{margin:0 0 8px;padding-left:18px}
+.po-journal-body li{margin:0 0 4px}
+.po-journal-body .shot{display:inline-block;margin:4px;border:2px solid #8a6a38;border-radius:4px;max-width:96px;max-height:64px}
+.po-photo-flash{
+  position:absolute;inset:0;z-index:40;background:#fff;pointer-events:none;opacity:0;
+  transition:opacity .08s linear
+}
+.po-photo-flash.on{opacity:.85}
+html.po-big-look .po-look-btn{width:72px;height:60px;font-size:22px}
+html.po-big-look .po-look-u,html.po-big-look .po-look-d{width:150px;height:52px}
+html.po-reduce-motion .po-brand{animation:none}
+html.po-reduce-motion .po-card .go{animation:none}
+html.po-loading #po-root::after{
+  content:"LOADING EXPEDITION…";position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);
+  z-index:99999;background:rgba(3,6,5,.92);border:3px solid #2d6b45;color:#5dce7a;
+  font:700 14px "Courier New",monospace;letter-spacing:2px;padding:16px 22px;border-radius:12px
+}
 .po-paper-help{width:min(460px,94%);transform:rotate(-0.6deg)}
 .po-help-body{position:relative;z-index:1;margin:8px 4px 14px;font-size:14px;line-height:1.55;color:#2a1c0c}
 .po-help-body p{margin:0 0 10px}
