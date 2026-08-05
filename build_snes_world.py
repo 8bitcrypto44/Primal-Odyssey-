@@ -675,32 +675,50 @@ def gen_map(region, frames, seed=42):
     if not tree_ids:
         tree_ids = [k for k in frames if k.startswith("ptree") or k.startswith("tree")]
 
-    dens = {"africa": 200, "mountains": 180, "jungle": 280, "wetlands": 220}[region]
+    dens = {"africa": 110, "mountains": 95, "jungle": 140, "wetlands": 115}[region]
+    placed = []  # (tx, ty) — keep trees/rocks from stacking on top of each other
+
+    def too_close(tx, ty, min_d):
+        for px, py in placed:
+            if abs(px - tx) + abs(py - ty) < min_d:
+                return True
+        return False
+
     for _ in range(dens):
         tx, ty = rnd.randint(2, W - 3), rnd.randint(2, H - 3)
-        if abs(tx - sx) < 4 and abs(ty - sy) < 4:
+        if abs(tx - sx) < 5 and abs(ty - sy) < 5:
             continue
         if not walkable(tx, ty):
             continue
         r = rnd.random()
-        if r < 0.28 and tree_ids:
+        if r < 0.24 and tree_ids:
+            if too_close(tx, ty, 4):
+                continue
             oid = tree_ids[rnd.randint(0, len(tree_ids) - 1)]
-        elif r < 0.55 and bush_ids:
+            placed.append((tx, ty))
+        elif r < 0.48 and bush_ids:
+            if too_close(tx, ty, 2):
+                continue
             oid = bush_ids[rnd.randint(0, len(bush_ids) - 1)]
-        elif r < 0.75 and rock_ids:
+            placed.append((tx, ty))
+        elif r < 0.68 and rock_ids:
+            if too_close(tx, ty, 2):
+                continue
             oid = rock_ids[rnd.randint(0, len(rock_ids) - 1)]
+            placed.append((tx, ty))
         elif detail_ids:
             oid = detail_ids[rnd.randint(0, len(detail_ids) - 1)]
         else:
             continue
         objects.append({"id": oid, "x": tx * TW + 8, "y": ty * TW + (14 if "grass" in oid or "detail" in oid or "bush" in oid else 8)})
 
-    # denser ground detail layer
+    # lighter ground detail layer (was 180 — read as visual noise under big trees)
     details = []
-    for _ in range(180):
+    for _ in range(90):
         tx, ty = rnd.randint(2, W - 3), rnd.randint(2, H - 3)
-        if walkable(tx, ty) and detail_ids and rnd.random() < 0.75:
+        if walkable(tx, ty) and detail_ids and rnd.random() < 0.7 and not too_close(tx, ty, 1):
             details.append({"id": detail_ids[rnd.randint(0, len(detail_ids) - 1)], "x": tx * TW + 8, "y": ty * TW + 14})
+            placed.append((tx, ty))
 
     spawns = []
     for _ in range(80):
@@ -778,21 +796,21 @@ def main():
         maps[rid] = gen_map(rid, frames, 5200 + i * 31)
         print(rid, "objs", len(maps[rid]["objects"]), "details", len(maps[rid]["details"]))
 
-    parallax = copy_parallax("48")
+    parallax = copy_parallax("49")
 
     js = []
-    js.append("// Auto-built SNES tilemap data v48 — hi-res trees + full canopies")
+    js.append("// Auto-built SNES tilemap data v49 — declutter + roam fixes")
     js.append("window.PO_SNES = window.PO_SNES || {};")
     js.append("PO_SNES.TILE = 16;")
     js.append("PO_SNES.frames = " + json.dumps(frames) + ";")
     js.append("PO_SNES.maps = " + json.dumps(maps) + ";")
     js.append("PO_SNES.atlas = {")
     for rid in ("africa", "mountains", "jungle", "wetlands"):
-        js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png?v=48",')
+        js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png?v=49",')
     js.append("};")
     js.append("PO_SNES.parallax = " + json.dumps(parallax) + ";")
-    js.append('PO_SNES.playerSheet = "assets/snes/built/player.png?v=48";')
-    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png?v=48";')
+    js.append('PO_SNES.playerSheet = "assets/snes/built/player.png?v=49";')
+    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png?v=49";')
     js.append("PO_SNES.waterAnim = [\"water\",\"water2\",\"water3\",\"water_a\"];")
     (root / "primal_snes_data.js").write_text("\n".join(js), encoding="utf-8")
 

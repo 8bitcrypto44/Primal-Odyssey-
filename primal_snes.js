@@ -1,4 +1,4 @@
-/* Primal Odyssey — SNES tilemap explore v48 */
+/* Primal Odyssey — SNES tilemap explore v49 */
 (function () {
   "use strict";
   if (!window.PO_SNES) window.PO_SNES = {};
@@ -87,7 +87,7 @@
       if (!fr || !fr.solid) continue;
       var ox = o.x / m.tile;
       var oy = o.y / m.tile;
-      var rad = Math.max(0.35, (fr.feet || 8) / m.tile * 0.55);
+      var rad = Math.max(0.28, Math.min(0.85, (fr.feet || 8) / m.tile * 0.42));
       if (Math.hypot(wx - ox, wy - oy) < rad) return true;
     }
     return false;
@@ -209,10 +209,16 @@
     var T = m.tile || 16;
     var px = player.x * T;
     var py = player.y * T;
-    S.camX = px - W / 2;
-    S.camY = py - H / 2;
-    S.camX = Math.max(0, Math.min(m.w * T - W, S.camX));
-    S.camY = Math.max(0, Math.min(m.h * T - H, S.camY));
+    // Soft camera follow — kills 1px jitter from discrete player steps
+    var targetCamX = px - W / 2;
+    var targetCamY = py - H / 2;
+    targetCamX = Math.max(0, Math.min(m.w * T - W, targetCamX));
+    targetCamY = Math.max(0, Math.min(m.h * T - H, targetCamY));
+    if (S.camX == null || isNaN(S.camX)) S.camX = targetCamX;
+    if (S.camY == null || isNaN(S.camY)) S.camY = targetCamY;
+    var camLerp = 0.18;
+    S.camX += (targetCamX - S.camX) * camLerp;
+    S.camY += (targetCamY - S.camY) * camLerp;
 
     var phase = dayPhase ? dayPhase() : { light: 1, tint: [1, 1, 1], name: "day" };
     ctx.imageSmoothingEnabled = false;
@@ -234,7 +240,8 @@
     }
 
     var anim = S.waterAnim || m.waterAnim || ["water", "water2", "water3", "water_a"];
-    var animI = (performance.now() / 280 | 0) % anim.length;
+    // Slower base tick + per-tile phase so lakes ripple instead of whole-map flicker
+    var animBase = (performance.now() / 420 | 0);
     var now = performance.now();
 
     var x0 = Math.max(0, (S.camX / T) | 0);
@@ -246,7 +253,7 @@
       for (var tx = x0; tx <= x1; tx++) {
         var id = m.ground[ty][tx];
         if (id === "water" || id === "water2" || id === "water3" || id === "water_a" || id === "water_b" || id === "water_c") {
-          id = anim[animI];
+          id = anim[(animBase + tx * 3 + ty * 5) % anim.length];
         }
         var fr = S.frames[id] || S.frames.grass;
         drawTile(ctx, atlas, fr, tx * T - S.camX, ty * T - S.camY);
@@ -313,7 +320,9 @@
     list.sort(function (a, b) { return a.y - b.y; });
 
     var moving = !!(player._snesMoving);
-    var walkFrame = moving ? ((now / 100 | 0) % 3) : 0;
+    // Walk cycle paced by smoothed speed (less strobe than fixed 100ms)
+    var pSpd = Math.hypot(player.vx || 0, player.vy || 0);
+    var walkFrame = moving ? ((now / Math.max(90, 160 - pSpd * 28) | 0) % 3) : 0;
     var face = facingDir(player);
     if (moving && (!S._lastFp || now - S._lastFp > 160)) {
       S.pushFootprint(player.x, player.y);
@@ -359,7 +368,8 @@
         ctx.ellipse(it.ax, it.ay + 2, 10, 3.5, 0, 0, Math.PI * 2);
         ctx.fill();
         var dir = animalFacing(it.sp);
-        var movingA = Math.hypot(it.sp.vx || 0, it.sp.vy || 0) > 0.04;
+        // Prefer real travel over velocity — velocity stays high when jammed in solids
+        var movingA = (it.sp._moved != null ? it.sp._moved > 0.002 : Math.hypot(it.sp.vx || 0, it.sp.vy || 0) > 0.04);
         var aFrame = movingA ? ((now / 120 | 0) % 3) : 1;
         var td = S.frames["td_" + it.sp.id + "_" + dir + "_" + aFrame]
           || S.frames["td_" + it.sp.id + "_" + dir + "_0"]

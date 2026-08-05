@@ -44,7 +44,7 @@
   // ImageData floor stays cheap — keep readable res for Digistracts / fullscreen
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
     (window.matchMedia && matchMedia("(pointer:coarse)").matches);
-  // Higher internal res (still integer-scaled nearest-neighbor). v48: 320x240.
+  // Higher internal res (still integer-scaled nearest-neighbor). v49: 320x240.
   const W = 320;
   const H = 240;
   canvas.width = W;
@@ -883,7 +883,7 @@
   let wall = [];
   let floor = [];
   let sprites = [];
-  let player = { x: 3.5, y: 3.5, dir: 0, pitch: 0, bob: 0 };
+  let player = { x: 3.5, y: 3.5, dir: 0, pitch: 0, bob: 0, vx: 0, vy: 0 };
   let keys = {};
   let openAnimal = null;
   let tab = "facts";
@@ -1541,6 +1541,14 @@
     return wet(x, y);
   }
 
+  function worldBounds() {
+    if (window.PO_SNES && PO_SNES.enabled && PO_SNES.current && PO_SNES.current()) {
+      const m = PO_SNES.current();
+      return { min: 1.5, maxX: m.w - 1.5, maxY: m.h - 1.5 };
+    }
+    return { min: 1.5, maxX: MAP - 1.5, maxY: MAP - 1.5 };
+  }
+
   function retargetAnimal(sp) {
     const dx = player.x - sp.x, dy = player.y - sp.y;
     const dist = Math.hypot(dx, dy) || 0.001;
@@ -1659,19 +1667,30 @@
       if (weather.kind === "rain" && sp.waterLove) moveMul *= 1.2;
       const nx = sp.x + sp.vx * dt * moveMul;
       const ny = sp.y + sp.vy * dt * moveMul;
+      let hitX = false, hitY = false;
       if (!animalBlocked(nx, sp.y, sp)) sp.x = nx;
       else {
+        hitX = true;
         sp.vx *= -1;
         if (Math.abs(sp.vx) > 0.05) sp.face = sp.vx < 0 ? -1 : 1;
-        sp.walkT = Math.min(sp.walkT, 0.4);
       }
       if (!animalBlocked(sp.x, ny, sp)) sp.y = ny;
       else {
+        hitY = true;
         sp.vy *= -1;
-        sp.walkT = Math.min(sp.walkT, 0.4);
       }
-      sp.x = clamp(sp.x, 1.5, MAP - 1.5);
-      sp.y = clamp(sp.y, 1.5, MAP - 1.5);
+      // Cornered / jammed against solids → pick a new wander heading (stops run-in-place)
+      if ((hitX && hitY) || (hitX || hitY) && Math.hypot(sp.vx, sp.vy) < 0.12) {
+        sp.walkT = 0;
+      } else if (hitX || hitY) {
+        sp.walkT = Math.min(sp.walkT, 0.35);
+      }
+      const wb = worldBounds();
+      sp.x = clamp(sp.x, wb.min, wb.maxX);
+      sp.y = clamp(sp.y, wb.min, wb.maxY);
+      // Actual travel this frame — used by SNES draw for walk vs idle
+      sp._moved = Math.hypot(sp.x - (sp._lx || sp.x), sp.y - (sp._ly || sp.y));
+      sp._lx = sp.x; sp._ly = sp.y;
       if (sp.herdSil) continue;
       // Dynamic fading prints
       if (moving && Math.hypot(sp.x - (sp._px || sp.x), sp.y - (sp._py || sp.y)) > 0.55) {
@@ -1798,6 +1817,10 @@
     syncTouchUI();
   }
 
+  // Smoothed top-down velocity (SNES + raycast share this)
+  player.vx = player.vx || 0;
+  player.vy = player.vy || 0;
+
   function movePlayer(dt) {
     let turn = 0, fwd = 0, strafe = 0, pitchIn = 0;
     if (keys.ArrowLeft || keys.q || keys.Q) turn -= 1;
@@ -1845,14 +1868,26 @@
     player.dir += turn * 2.4 * dt;
     player.pitch = clamp(player.pitch + pitchIn * 1.35 * dt, -0.58, 0.58);
     let c = Math.cos(player.dir), s = Math.sin(player.dir);
+    let wishX = 0, wishY = 0;
     if (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps) {
-      const mx0 = strafe;
-      const my0 = -fwd;
-      if (Math.abs(mx0) + Math.abs(my0) > 0.01) player.dir = Math.atan2(my0, mx0);
+      // Top-down: WASD is world-relative
+      wishX = strafe;
+      wishY = -fwd;
+      const wishLen = Math.hypot(wishX, wishY);
+      if (wishLen > 0.01) {
+        player.dir = Math.atan2(wishY, wishX);
+        wishX /= wishLen;
+        wishY /= wishLen;
+      } else {
+        wishX = wishY = 0;
+      }
       c = Math.cos(player.dir);
       s = Math.sin(player.dir);
-      fwd = Math.hypot(mx0, my0);
-      strafe = 0;
+    } else {
+      wishX = c * fwd + -s * strafe;
+      wishY = s * fwd + c * strafe;
+      const wl = Math.hypot(wishX, wishY);
+      if (wl > 1) { wishX /= wl; wishY /= wl; }
     }
     let spMul = 1;
     if (wet(player.x, player.y)) spMul *= 0.48;
@@ -1860,19 +1895,32 @@
     else if (weather.kind === "dust") spMul *= 0.82;
     else if (weather.kind === "rain") spMul *= 0.88;
     else if (weather.kind) spMul *= 0.78;
-    const sp = 2.6 * spMul * dt;
-    const mx = (c * fwd + -s * strafe) * sp;
-    const my = (s * fwd + c * strafe) * sp;
-    if (!playerBlocked(player.x + mx * 3.2, player.y)) player.x += mx;
-    if (!playerBlocked(player.x, player.y + my * 3.2)) player.y += my;
-    {
-      const mapMax = (window.PO_SNES && PO_SNES.enabled && PO_SNES.current && PO_SNES.current())
-        ? (PO_SNES.current().w - 1.5) : (MAP - 1.5);
-      player.x = clamp(player.x, 1.5, mapMax);
-      player.y = clamp(player.y, 1.5, mapMax);
+    const maxSp = 2.75 * spMul;
+    // Blend toward wish velocity (smooth accel) / strong decay when idle (smooth stop)
+    if (wishX || wishY) {
+      const blend = Math.min(1, 11 * dt);
+      player.vx += (wishX * maxSp - player.vx) * blend;
+      player.vy += (wishY * maxSp - player.vy) * blend;
+    } else {
+      const fr = Math.exp(-16 * dt);
+      player.vx *= fr;
+      player.vy *= fr;
+      if (Math.hypot(player.vx, player.vy) < 0.05) { player.vx = 0; player.vy = 0; }
     }
-    player._snesMoving = !!(Math.abs(fwd) > 0.01 || Math.abs(strafe) > 0.01);
-    if (fwd || strafe) {
+    const mx = player.vx * dt;
+    const my = player.vy * dt;
+    if (!playerBlocked(player.x + mx * 2.2, player.y)) player.x += mx;
+    else player.vx *= 0.2;
+    if (!playerBlocked(player.x, player.y + my * 2.2)) player.y += my;
+    else player.vy *= 0.2;
+    {
+      const wb = worldBounds();
+      player.x = clamp(player.x, wb.min, wb.maxX);
+      player.y = clamp(player.y, wb.min, wb.maxY);
+    }
+    const movingNow = Math.hypot(player.vx, player.vy) > 0.12;
+    player._snesMoving = movingNow;
+    if (movingNow) {
       player.bob += dt * 10;
       footTimer -= dt;
       if (footTimer <= 0) {
