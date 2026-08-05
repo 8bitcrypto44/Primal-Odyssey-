@@ -1,6 +1,6 @@
 <!-- Digistracts / GoDaddy: Primal Odyssey cover → expand on ENTER -->
 <style>
-.po-gd{box-sizing:border-box;width:100%;max-width:920px;margin:0 auto;font-family:"Courier New",Courier,monospace;color:#cfe8d6}
+.po-gd{box-sizing:border-box;width:100%;max-width:920px;margin:0 auto;font-family:"Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;color:#e8f5ec}
 .po-gd *{box-sizing:border-box}
 .po-gd-card{
   border:4px solid #2d6b45;border-radius:12px;padding:10px;overflow:hidden;
@@ -8,8 +8,8 @@
   box-shadow:0 0 24px rgba(61,155,95,.28),0 12px 28px rgba(0,0,0,.45)
 }
 .po-gd-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
-.po-gd-brand{font-size:14px;letter-spacing:1px;color:#5dce7a;font-weight:700}
-.po-gd-brand span{color:#7fa88c;font-weight:400;font-size:12px}
+.po-gd-brand{font-size:15px;letter-spacing:.3px;color:#5dce7a;font-weight:700}
+.po-gd-brand span{color:#a8cbb8;font-weight:400;font-size:13px}
 .po-gd-stage{position:relative;width:100%;aspect-ratio:16/9;background:#041008;border:2px solid #1a3d28;border-radius:8px;overflow:hidden}
 .po-gd-cover{position:absolute;inset:0}
 .po-gd-mosaic{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;width:100%;height:100%;background:#041008}
@@ -17,26 +17,26 @@
 .po-gd-mosaic img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.05) contrast(1.05);transition:transform .8s ease}
 .po-gd-mosaic button:hover img,.po-gd.is-trailer .po-gd-mosaic img{transform:scale(1.08)}
 .po-gd-mosaic .po-wet{filter:hue-rotate(75deg) saturate(1.3) brightness(.85) sepia(.2)}.po-gd-mosaic button[data-region=wetlands]::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(30,90,100,.2),rgba(10,50,60,.35));pointer-events:none}
-.po-gd-promo{margin:0;font-size:10px;color:#4a6b55;max-width:32em;line-height:1.35}
+.po-gd-promo{margin:0;font-size:12px;color:#6a8b75;max-width:32em;line-height:1.4}
 .po-gd-regions{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
-.po-gd-regions button{appearance:none;border:2px solid #2d6b45;border-radius:8px;padding:6px 10px;background:rgba(4,20,10,.85);color:#5dce7a;font:700 10px "Courier New",monospace;cursor:pointer}
+.po-gd-regions button{appearance:none;border:2px solid #2d6b45;border-radius:8px;padding:8px 12px;background:rgba(4,20,10,.85);color:#5dce7a;font:700 13px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;cursor:pointer}
 @keyframes poTrail{0%,100%{opacity:.92}50%{opacity:1}}
 .po-gd.is-trailer .po-gd-veil{animation:poTrail 2.4s ease-in-out infinite}
 .po-gd-veil{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center;background:linear-gradient(180deg,rgba(2,10,6,.35) 0%,rgba(3,12,8,.72) 45%,rgba(3,6,5,.92) 100%)}
 .po-gd-title{margin:0;font-family:Papyrus,"Segoe Print","Bradley Hand ITC",fantasy;font-size:clamp(26px,5vw,40px);font-weight:400;letter-spacing:2px;color:#5dce7a;text-shadow:0 0 18px rgba(61,155,95,.55),3px 3px 0 #021208;line-height:1.1}
-.po-gd-tag{margin:0;font-size:clamp(11px,2.8vw,13px);color:#9ec9ad;letter-spacing:.5px;max-width:28em;line-height:1.4}
-.po-gd-tip{margin:0;font-size:clamp(10px,2.4vw,12px);color:#7fa88c;letter-spacing:.4px;max-width:28em;line-height:1.35}
+.po-gd-tag{margin:0;font-size:clamp(13px,2.8vw,15px);color:#cfe8d6;letter-spacing:.2px;max-width:28em;line-height:1.45}
+.po-gd-tip{margin:0;font-size:clamp(12px,2.4vw,14px);color:#a8cbb8;letter-spacing:.2px;max-width:28em;line-height:1.4}
 .po-gd-cover{transition:opacity .55s ease}
 .po-gd.is-fading .po-gd-cover{opacity:0}
-.po-gd-enter{appearance:none;border:3px solid #5dce7a;border-radius:10px;padding:12px 28px;font:700 15px "Courier New",Courier,monospace;letter-spacing:2px;cursor:pointer;color:#041208;background:linear-gradient(180deg,#5dce7a,#2d6b45);box-shadow:0 0 18px rgba(93,206,122,.35),0 4px 0 #0a1f12;transition:transform .12s,box-shadow .12s}
+.po-gd-enter{appearance:none;border:3px solid #5dce7a;border-radius:10px;padding:12px 28px;font:700 16px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;letter-spacing:.3px;cursor:pointer;color:#041208;background:linear-gradient(180deg,#5dce7a,#2d6b45);box-shadow:0 0 18px rgba(93,206,122,.35),0 4px 0 #0a1f12;transition:transform .12s,box-shadow .12s}
 .po-gd-enter:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(93,206,122,.5),0 6px 0 #0a1f12}
 .po-gd-enter:active{transform:scale(.98)}
 .po-gd-play{display:none;position:absolute;inset:0;background:#030605;line-height:0}
 .po-gd-play iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#030605}
 .po-gd-load{
   display:none;position:absolute;inset:0;z-index:15;align-items:center;justify-content:center;
-  background:rgba(3,6,5,.92);color:#5dce7a;font:700 14px "Courier New",Courier,monospace;
-  letter-spacing:2px;text-align:center;padding:20px
+  background:rgba(3,6,5,.92);color:#5dce7a;font:700 16px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;
+  letter-spacing:.3px;text-align:center;padding:20px
 }
 .po-gd.is-loading .po-gd-load{display:flex}
 .po-gd.is-open .po-gd-cover{display:none}
@@ -44,12 +44,12 @@
 .po-gd-fs{
   display:none;position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:20;
   border:2px solid #5dce7a;border-radius:10px;padding:10px 14px;min-height:44px;
-  font:700 12px "Courier New",Courier,monospace;letter-spacing:1px;cursor:pointer;
+  font:700 13px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;letter-spacing:.2px;cursor:pointer;
   color:#fff;background:rgba(4,20,10,.92);box-shadow:0 0 18px rgba(93,206,122,.35);
   -webkit-tap-highlight-color:transparent;white-space:nowrap
 }
 .po-gd.is-open.is-land .po-gd-fs{display:block}
-.po-gd.is-fs .po-gd-fs{opacity:.85;font-size:11px;padding:8px 12px;min-height:36px;border-color:#7fa88c;color:#9ec9ad;box-shadow:none}
+.po-gd.is-fs .po-gd-fs{opacity:.85;font-size:12px;padding:8px 12px;min-height:36px;border-color:#7fa88c;color:#9ec9ad;box-shadow:none}
 .po-gd.is-open.is-land{
   position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;height:100dvh;margin:0;
   background:#030605
@@ -97,26 +97,26 @@
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Tap a biome — SNES tilemap v44 (blends, canopy, walk cycle)</p>
+          <p class="po-gd-tip">Tap a biome — readable UI + SNES tilemaps (v45)</p>
           <div class="po-gd-regions" id="po-gd-regions">
-            <button type="button" data-region="africa">AFRICA</button>
-            <button type="button" data-region="mountains">MOUNTAINS</button>
-            <button type="button" data-region="jungle">JUNGLE</button>
-            <button type="button" data-region="wetlands">WETLANDS</button>
+            <button type="button" data-region="africa">Africa</button>
+            <button type="button" data-region="mountains">Mountains</button>
+            <button type="button" data-region="jungle">Jungle</button>
+            <button type="button" data-region="wetlands">Wetlands</button>
           </div>
-          <button type="button" class="po-gd-enter" id="po-gd-enter">ENTER EXPEDITION</button>
+          <button type="button" class="po-gd-enter" id="po-gd-enter">Enter expedition</button>
           <p class="po-gd-promo">Also: Thank You For Your Service kids coloring books - Free &amp; Faithful Press</p>
         </div>
       </div>
       <div class="po-gd-play" id="po-gd-play">
-        <div class="po-gd-load" id="po-gd-load" aria-live="polite">LOADING EXPEDITION...</div>
-        <button type="button" class="po-gd-fs" id="po-gd-fs" aria-pressed="false">FULL SCREEN</button>
+        <div class="po-gd-load" id="po-gd-load" aria-live="polite">Loading expedition…</div>
+        <button type="button" class="po-gd-fs" id="po-gd-fs" aria-pressed="false">Full screen</button>
         <iframe
           id="po-gd-frame"
           title="Primal Odyssey"
           width="100%"
           height="450"
-          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=44"
+          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=45"
           allow="autoplay; fullscreen"
           allowfullscreen
           scrolling="no"
@@ -149,7 +149,7 @@
     var on=isFs();
     root.classList.toggle("is-fs",on);
     fsBtn.setAttribute("aria-pressed",on?"true":"false");
-    fsBtn.textContent=on?"EXIT FULL SCREEN":"FULL SCREEN";
+    fsBtn.textContent=on?"Exit full screen":"Full screen";
   }
   function syncLand(){
     root.classList.toggle("is-land", root.classList.contains("is-open") && playing && phone() && land());
@@ -174,7 +174,7 @@
     }
   }
   var playing=false;
-  var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=44".replace(/&amp;/g,"&");
+  var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=45".replace(/&amp;/g,"&");
   root.classList.add("is-trailer");
   var tiles=root.querySelectorAll("#po-gd-mosaic button");
   var ti=0;

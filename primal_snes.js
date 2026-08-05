@@ -146,8 +146,9 @@
       ctx.fillStyle = "#143018";
       ctx.fillRect(0, 0, W, H);
       ctx.fillStyle = "#5dce7a";
-      ctx.font = "10px monospace";
-      ctx.fillText("LOADING SNES WORLD...", 40, H / 2);
+      ctx.fillRect(40, H / 2 - 2, 48, 4);
+      ctx.fillRect(96, H / 2 - 2, 16, 4);
+      ctx.fillRect(120, H / 2 - 2, 8, 4);
       return;
     }
     var rid = (window.region && window.region.id) || "africa";

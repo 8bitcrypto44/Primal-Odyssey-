@@ -449,7 +449,7 @@
     const s = loadSave();
     const show = !!(s.lastRegion && PO_DATA[s.lastRegion]);
     ui.continueBtn.hidden = !show;
-    const label = "CONTINUE · " + (show ? (PO_DATA[s.lastRegion].name || s.lastRegion).toUpperCase() : "");
+    const label = "Continue · " + (show ? (PO_DATA[s.lastRegion].name || s.lastRegion) : "");
     if (ui.continueLabel) ui.continueLabel.textContent = label;
     else ui.continueBtn.textContent = label;
     if (ui.continueArt) {
@@ -465,7 +465,7 @@
       const id = el.getAttribute("data-stamp");
       const done = !!(s.regions[id] && s.regions[id].complete);
       el.hidden = !done;
-      if (done) el.textContent = "CLEARED · " + (BADGE_LABEL[id] || "RANGER");
+      if (done) el.textContent = "Cleared · " + (BADGE_LABEL[id] || "Ranger");
     });
     syncBadgeWall(s);
     syncShareLine(s);
@@ -585,7 +585,7 @@
       mode = "victory";
       clearInput();
     }
-    if (ui.hint) ui.hint.textContent = "EXPEDITION CLEARED — " + (BADGE_LABEL[region.id] || "badge");
+    if (ui.hint) ui.hint.textContent = "Expedition cleared — " + (BADGE_LABEL[region.id] || "badge");
     const s = loadSave();
     const b = regionBucket(s, region.id);
     b.complete = true;
@@ -622,14 +622,14 @@
     g.lineWidth = 6;
     g.strokeRect(12, 12, 696, 381);
     g.fillStyle = "#5dce7a";
-    g.font = "bold 28px Courier New, monospace";
-    g.fillText("PRIMAL ODYSSEY", 36, 58);
+    g.font = "700 32px Atkinson Hyperlegible, Segoe UI, sans-serif";
+    g.fillText("Primal Odyssey", 36, 58);
     g.fillStyle = "#e8c86a";
-    g.font = "bold 22px Courier New, monospace";
-    g.fillText(info.badge, 36, 92);
+    g.font = "700 24px Atkinson Hyperlegible, Segoe UI, sans-serif";
+    g.fillText(info.badge, 36, 96);
     g.fillStyle = "#cfe8d6";
-    g.font = "16px Courier New, monospace";
-    g.fillText(info.region, 36, 124);
+    g.font = "400 18px Atkinson Hyperlegible, Segoe UI, sans-serif";
+    g.fillText(info.region, 36, 128);
     const mins = (info.seconds / 60) | 0;
     const secs = info.seconds % 60;
     const lines = [
@@ -640,14 +640,14 @@
       weeklyMode ? ("Weekly seed  " + sessionSeed) : "Session run"
     ];
     lines.forEach(function (ln, i) {
-      g.fillText(ln, 36, 170 + i * 28);
+      g.fillText(ln, 36, 174 + i * 30);
     });
     g.fillStyle = "#7fa88c";
-    g.font = "13px Courier New, monospace";
+    g.font = "400 15px Atkinson Hyperlegible, Segoe UI, sans-serif";
     const tip = (info.tip || "").slice(0, 70);
     g.fillText(tip, 36, 360);
     g.fillStyle = "#5dce7a";
-    g.fillText("8bitcrypto_44", 520, 380);
+    g.fillText("8bitcrypto_44", 500, 380);
     return c.toDataURL("image/png");
   }
 
@@ -656,24 +656,24 @@
     if (notesFound.length >= 3 && questPhase < 1) {
       questPhase = 1;
       radioCall((RANGER_CHAT[region.id] || ["Ranger net: good work."])[0]);
-      if (ui.hint) ui.hint.textContent = "QUEST: rare trail unlocked — follow gold RARE prints";
+      if (ui.hint) ui.hint.textContent = "Quest: rare trail unlocked — follow gold rare prints";
       haptic(40);
     }
     if (questPhase >= 1 && (rareFound || animalsSeen[RARE_IDS[region.id]]) && questPhase < 2) {
       questPhase = 2;
-      if (ui.hint) ui.hint.textContent = "QUEST: photograph the rare (PHOTO when IN FRAME)";
+      if (ui.hint) ui.hint.textContent = "Quest: photograph the rare (Photo when in frame)";
     }
     if (questPhase >= 2 && photoRareDone && questPhase < 3) {
       questPhase = 3;
-      if (ui.hint) ui.hint.textContent = "QUEST complete — finish remaining objectives";
+      if (ui.hint) ui.hint.textContent = "Quest complete — finish remaining objectives";
     }
     if (ui.questChip) {
       const labels = [
-        "QUEST: collect 3 field notes",
-        "QUEST: follow rare trail",
-        "QUEST: photo the rare",
-        "QUEST: wrap objectives",
-        "QUEST: cleared"
+        "Quest: collect 3 field notes",
+        "Quest: follow rare trail",
+        "Quest: photo the rare",
+        "Quest: wrap objectives",
+        "Quest: cleared"
       ];
       ui.questChip.textContent = labels[Math.min(questPhase, 4)];
       ui.questChip.hidden = mode === "title";
@@ -744,7 +744,7 @@
       writeSave(s);
       if (!s.tourDone) {
         tourStep = 1;
-        if (ui.hint) ui.hint.textContent = "TOUR: follow the green NOTE arrow to your first field note";
+        if (ui.hint) ui.hint.textContent = "Tour: follow the green note arrow to your first field note";
       }
     }
     clearInput();
@@ -837,7 +837,7 @@
 
   function syncMuteUI() {
     if (ui.mute) {
-      ui.mute.textContent = muted ? "MUTED" : "SOUND";
+      ui.mute.textContent = muted ? "Muted" : "Sound";
       ui.mute.setAttribute("aria-pressed", muted ? "true" : "false");
     }
     if (ui.vol) ui.vol.value = String(Math.round(musicVol * 100));
@@ -908,7 +908,7 @@
 
   function syncNotesUI() {
     if (ui.notesChip) {
-      ui.notesChip.textContent = "NOTES " + notesFound.length + "/" + notesTotal;
+      ui.notesChip.textContent = "Notes " + notesFound.length + "/" + notesTotal;
       ui.notesChip.classList.toggle("pulse", notesFound.length > 0 && notesFound.length < notesTotal);
       ui.notesChip.classList.toggle("done", notesTotal > 0 && notesFound.length >= notesTotal);
     }
@@ -1706,7 +1706,7 @@
         binocsOwned = true;
         sp.binocs = false;
         blip(700, 0.12, "sine");
-        if (ui.hint) ui.hint.textContent = "BINOCULARS found — hold B or BINOC to zoom & ID";
+        if (ui.hint) ui.hint.textContent = "Binoculars found — hold B or Binoc to zoom & ID";
         if (ui.binocsBtn) ui.binocsBtn.hidden = false;
         persistProgress();
       }
@@ -1725,7 +1725,7 @@
       syncQuest();
       if (tourStep === 1) {
         tourStep = 2;
-        if (ui.hint) ui.hint.textContent = "TOUR: tap a nearby animal for its parchment dossier";
+        if (ui.hint) ui.hint.textContent = "Tour: tap a nearby animal for its parchment dossier";
       }
       syncNotesUI();
       persistProgress();
@@ -1908,12 +1908,12 @@
     if (ui.cautionEl) {
       if (threat >= 0.9) {
         ui.cautionEl.hidden = false;
-        ui.cautionEl.textContent = "CAUTION — TOO CLOSE";
+        ui.cautionEl.textContent = "Caution — too close";
         ui.cautionEl.className = "po-caution hot";
         if (threat > cautionLevel) haptic(30);
       } else if (threat >= 0.4) {
         ui.cautionEl.hidden = false;
-        ui.cautionEl.textContent = "CAUTION — WILDLIFE NEAR";
+        ui.cautionEl.textContent = "Caution — wildlife near";
         ui.cautionEl.className = "po-caution warm";
       } else {
         ui.cautionEl.hidden = true;
@@ -3011,11 +3011,14 @@
           }
         }
         if (sp.rareTrack && transformY < 8) {
-          ctx.fillStyle = "rgba(232,200,106,0.85)";
-          ctx.font = "9px monospace";
-          ctx.textAlign = "center";
-          ctx.fillText("RARE", spriteScreenX, drawStartY - 2);
-          ctx.textAlign = "left";
+          ctx.fillStyle = "rgba(232,200,106,0.9)";
+          ctx.beginPath();
+          ctx.moveTo(spriteScreenX, drawStartY - 10);
+          ctx.lineTo(spriteScreenX + 5, drawStartY - 4);
+          ctx.lineTo(spriteScreenX, drawStartY + 2);
+          ctx.lineTo(spriteScreenX - 5, drawStartY - 4);
+          ctx.closePath();
+          ctx.fill();
         }
         ctx.restore();
         continue;
@@ -3089,13 +3092,13 @@
 
       if (sp.kind === "note") {
         if (transformY < 7) {
-          ctx.fillStyle = "rgba(4,20,10,0.82)";
-          ctx.fillRect(spriteScreenX - 34, drawStartY - 14, 68, 12);
-          ctx.fillStyle = "#8dffb0";
-          ctx.font = "11px monospace";
-          ctx.textAlign = "center";
-          ctx.fillText("FIELD NOTE", spriteScreenX, drawStartY - 5);
-          ctx.textAlign = "left";
+          ctx.fillStyle = "rgba(93,206,122,0.9)";
+          ctx.beginPath();
+          ctx.arc(spriteScreenX, drawStartY - 8, 4, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "#e8ffe8";
+          ctx.lineWidth = 1;
+          ctx.stroke();
         }
         continue;
       }
@@ -3110,27 +3113,24 @@
           dist: transformY
         });
         if (transformY < labelDist) {
-          ctx.fillStyle = "rgba(4,20,10,0.75)";
-          const label = (sp.rare ? "★ " : "") + sp.data.name + " · tap";
-          const lw = Math.min(110, 8 + label.length * 5);
-          ctx.fillRect(spriteScreenX - lw / 2, drawStartY - 14, lw, 11);
-          ctx.fillStyle = sp.rare ? "#e8c86a" : "#5dce7a";
-          ctx.font = "11px monospace";
-          ctx.textAlign = "center";
-          ctx.fillText(label, spriteScreenX, drawStartY - 6);
-          ctx.textAlign = "left";
+          ctx.fillStyle = sp.rare ? "rgba(232,200,106,0.95)" : "rgba(93,206,122,0.85)";
+          ctx.beginPath();
+          ctx.arc(spriteScreenX, drawStartY - 6, sp.rare ? 3.5 : 2.5, 0, Math.PI * 2);
+          ctx.fill();
         }
         if (sp.alertT > 0) {
           ctx.fillStyle = "rgba(255,220,80," + clamp(sp.alertT, 0, 1) + ")";
-          ctx.font = "bold 18px monospace";
-          ctx.textAlign = "center";
-          ctx.fillText("!", spriteScreenX, drawStartY - 18);
-          ctx.textAlign = "left";
+          ctx.beginPath();
+          ctx.moveTo(spriteScreenX, drawStartY - 22);
+          ctx.lineTo(spriteScreenX + 5, drawStartY - 12);
+          ctx.lineTo(spriteScreenX - 5, drawStartY - 12);
+          ctx.closePath();
+          ctx.fill();
         }
       }
     }
 
-    // Landmark labels when near
+    // Landmark markers when near (bitmap only — no canvas text)
     for (let i = 0; i < landmarks.length; i++) {
       const lm = landmarks[i];
       const dx = lm.x - player.x, dy = lm.y - player.y;
@@ -3142,13 +3142,13 @@
       if (transformY <= 0.2) continue;
       const sx = ((W / 2) * (1 + transformX / transformY)) | 0;
       const sy = (H / 2 + bobY + pitchPx() - 20 / transformY) | 0;
-      ctx.fillStyle = "rgba(4,20,10,0.8)";
-      ctx.fillRect(sx - 48, sy - 8, 96, 12);
-      ctx.fillStyle = "#9ec9ad";
-      ctx.font = "11px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(lm.label, sx, sy + 2);
-      ctx.textAlign = "left";
+      ctx.fillStyle = "rgba(232,200,106,0.9)";
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - 6);
+      ctx.lineTo(sx + 5, sy + 4);
+      ctx.lineTo(sx - 5, sy + 4);
+      ctx.closePath();
+      ctx.fill();
     }
   }
 
@@ -3169,13 +3169,11 @@
       ctx.fillStyle = vg;
       ctx.fillRect(0, 0, W, H);
     } else {
-      ctx.fillStyle = "rgba(8,20,12,0.82)";
-      ctx.fillRect(4, H - 18, 92, 14);
-      ctx.strokeStyle = "rgba(93,206,122,0.55)";
-      ctx.strokeRect(4.5, H - 17.5, 91, 13);
-      ctx.fillStyle = "#9ec9ad";
-      ctx.font = "8px monospace";
-      ctx.fillText((region && region.name ? region.name : "EXPLORE").slice(0, 14).toUpperCase(), 8, H - 7);
+      // Region name lives on DOM chips — keep a small status plate without text
+      ctx.fillStyle = "rgba(8,20,12,0.72)";
+      ctx.fillRect(4, H - 10, 48, 6);
+      ctx.fillStyle = "rgba(93,206,122,0.75)";
+      ctx.fillRect(4, H - 10, 48, 2);
     }
     if (phase.name === "night" || phase.name === "dusk") {
       const lg = ctx.createRadialGradient(W / 2, H * 0.58, 16, W / 2, H * 0.55, H * 0.62);
@@ -3225,13 +3223,13 @@
     ctx.lineTo(ppx + Math.cos(player.dir + 2.4) * 2.5, ppy + Math.sin(player.dir + 2.4) * 2.5);
     ctx.lineTo(ppx + Math.cos(player.dir - 2.4) * 2.5, ppy + Math.sin(player.dir - 2.4) * 2.5);
     ctx.fill();
+    const phaseCol = phase.name === "night" ? "#5a7ab0"
+      : (phase.name === "dusk" ? "#c97820"
+        : (phase.name === "dawn" ? "#e8a060" : "#e8c86a"));
     ctx.fillStyle = "rgba(4,20,10,0.85)";
-    ctx.fillRect(ox - 3, oy + drawSz + 4, drawSz + 6, 10);
-    ctx.fillStyle = "#9ec9ad";
-    ctx.font = "7px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(phase.name.toUpperCase(), ox + drawSz / 2, oy + drawSz + 11);
-    ctx.textAlign = "left";
+    ctx.fillRect(ox - 3, oy + drawSz + 4, drawSz + 6, 6);
+    ctx.fillStyle = phaseCol;
+    ctx.fillRect(ox - 1, oy + drawSz + 5, drawSz + 2, 3);
     drawPhotoAssist();
     if (binocsOn) {
       ctx.fillStyle = "rgba(0,10,5,0.55)";
@@ -3330,11 +3328,10 @@
       ctx.lineWidth = 2;
       const s = 18;
       ctx.strokeRect(W / 2 - s, H / 2 - s, s * 2, s * 2);
-      ctx.fillStyle = "#8dffb0";
-      ctx.font = "10px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(best ? "IN FRAME · PHOTO" : "LANDMARK · PHOTO", W / 2, H / 2 - 24);
-      ctx.textAlign = "left";
+      ctx.fillStyle = best ? "#8dffb0" : "#e8c86a";
+      ctx.beginPath();
+      ctx.arc(W / 2, H / 2 - 28, 3, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
@@ -3365,10 +3362,6 @@
       ctx.lineTo(sx + 6, sy + 5);
       ctx.lineTo(sx - 6, sy + 5);
       ctx.fill();
-      ctx.font = "9px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(tag, sx, sy + 16);
-      ctx.textAlign = "left";
     }
     let bestNote = null, bestNd = 1e9;
     sprites.forEach(function (sp) {
@@ -3426,10 +3419,9 @@
     ctx.closePath(); ctx.fill();
     ctx.restore();
     ctx.fillStyle = col;
-    ctx.font = "8px monospace";
-    ctx.textAlign = "center";
-    ctx.fillText(tag, cx, cy + 30);
-    ctx.textAlign = "left";
+    ctx.beginPath();
+    ctx.arc(cx, cy + 28, 3, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   function rebuildMiniBase() {
@@ -3648,27 +3640,27 @@
     const s = loadSave();
     if (ui.journalMeta) ui.journalMeta.textContent = (region ? region.name : "EXPEDITION") + " · field journal";
     let html = "";
-    html += "<h3>EXPEDITION MAP</h3>";
+    html += "<h3>Expedition map</h3>";
     html += "<p class=\"map-legend\">Green = notes · Gold = landmarks · Red = you</p>";
     html += "<img class=\"jmap\" src=\"" + journalMapDataUrl() + "\" alt=\"field map\">";
     if (region && RANGER_TIPS[region.id]) html += "<p><i>" + RANGER_TIPS[region.id] + "</i></p>";
-    html += "<h3>NOTES</h3><ul>";
+    html += "<h3>Notes</h3><ul>";
     if (!notesFound.length) html += "<li>No field notes yet — follow the print trails.</li>";
     notesFound.forEach(function (n, i) { html += "<li>✓ " + (i + 1) + ". " + n.text + "</li>"; });
-    html += "</ul><h3>LANDMARKS</h3><ul>";
+    html += "</ul><h3>Landmarks</h3><ul>";
     const lms = Object.keys(landmarksVisited);
     if (!lms.length) html += "<li>No landmarks logged yet.</li>";
     lms.forEach(function (id) { html += "<li>✓ " + id + "</li>"; });
-    html += "</ul><h3>SIGHTINGS</h3><ul>";
+    html += "</ul><h3>Sightings</h3><ul>";
     const seen = Object.keys(animalsSeen);
     if (!seen.length) html += "<li>No dossiers opened yet.</li>";
     seen.forEach(function (id) { html += "<li>✓ " + id + "</li>"; });
-    html += "</ul><h3>PHOTO CHALLENGES</h3><ul>";
+    html += "</ul><h3>Photo challenges</h3><ul>";
     html += "<li class=\"" + (photoAnimals >= 3 ? "done" : "") + "\">Animals " + Math.min(photoAnimals, 3) + "/3</li>";
     html += "<li class=\"" + (photoLandmark ? "done" : "") + "\">Landmark " + (photoLandmark ? "1" : "0") + "/1</li>";
     html += "<li class=\"" + (photoDusk ? "done" : "") + "\">Dusk/night " + (photoDusk ? "1" : "0") + "/1</li>";
-    html += "</ul><h3>PHOTOS</h3>";
-    if (!photoShots.length) html += "<p>Press PHOTO or P to snap a sighting.</p>";
+    html += "</ul><h3>Photos</h3>";
+    if (!photoShots.length) html += "<p>Press Photo or P to snap a sighting.</p>";
     else {
       photoShots.forEach(function (src) {
         html += "<img class=\"shot\" src=\"" + src + "\" alt=\"sighting\">";
@@ -3676,7 +3668,7 @@
     }
     const stamp = s.regions[region ? region.id : ""] && s.regions[region.id].complete;
     if (stamp) {
-      html += "<p><b>REGION CLEARED</b> — badge: " + (BADGE_LABEL[region.id] || "RANGER") + "</p>";
+      html += "<p><b>Region cleared</b> — badge: " + (BADGE_LABEL[region.id] || "Ranger") + "</p>";
       if (RANGER_TIPS[region.id]) html += "<p>" + RANGER_TIPS[region.id] + "</p>";
     }
     if (ui.journalBody) ui.journalBody.innerHTML = html;
@@ -3722,25 +3714,25 @@
     g.strokeStyle = "rgba(93,206,122,0.5)";
     g.lineWidth = 2;
     g.strokeRect(6, 6, W - 12, H - 12);
-    // Postcard brand plate
+    // Postcard brand plate (bitmap bars — readable stamp drawn large)
     g.fillStyle = "rgba(4,20,10,0.82)";
     g.fillRect(8, 8, 168, 36);
     g.strokeStyle = "#5dce7a";
     g.strokeRect(8.5, 8.5, 167, 35);
     g.fillStyle = "#5dce7a";
-    g.font = "bold 11px monospace";
-    g.fillText("PRIMAL ODYSSEY", 14, 24);
+    g.font = "700 13px Atkinson Hyperlegible, Segoe UI, sans-serif";
+    g.fillText("Primal Odyssey", 14, 24);
     g.fillStyle = "#9ec9ad";
-    g.font = "9px monospace";
-    const rname = region ? region.name.toUpperCase() : "FIELD";
-    g.fillText(rname + " · FIELD CARD", 14, 38);
+    g.font = "400 11px Atkinson Hyperlegible, Segoe UI, sans-serif";
+    const rname = region ? region.name : "Field";
+    g.fillText(rname + " · field card", 14, 38);
     g.fillStyle = "rgba(4,20,10,0.8)";
     g.fillRect(10, H - 32, Math.min(W - 20, 220), 20);
     g.fillStyle = "#8dffb0";
-    g.font = "10px monospace";
+    g.font = "600 12px Atkinson Hyperlegible, Segoe UI, sans-serif";
     const stamp = photoLock && photoLock.data && photoLock.data.name
       ? photoLock.data.name
-      : "FIELD SIGHTING";
+      : "Field sighting";
     g.fillText(stamp.slice(0, 28), 16, H - 18);
     return off.toDataURL("image/jpeg", 0.8);
   }
@@ -3892,15 +3884,10 @@
         ctx.lineWidth = 2;
         ctx.strokeRect(W * 0.08 + 4, H * 0.28 + 4, W * 0.84 - 8, H * 0.34 - 8);
         ctx.fillStyle = "rgba(93,206,122," + f + ")";
-        ctx.font = "bold 16px monospace";
-        ctx.textAlign = "center";
-        ctx.fillText((region && region.name ? region.name.toUpperCase() : "EXPEDITION"), W / 2, H * 0.42);
+        ctx.beginPath();
+        ctx.arc(W / 2, H * 0.42, 6, 0, Math.PI * 2);
+        ctx.fill();
       }
-      ctx.fillStyle = "rgba(200,180,120," + (f * 0.95) + ")";
-      ctx.font = "11px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText(introCard || "EXPEDITION LOG — ENTERING BIOME", W / 2, H * 0.78);
-      ctx.textAlign = "left";
     }
     if (photoFlashT > 0 && ui.photoFlash) {
       ui.photoFlash.hidden = false;
@@ -4022,7 +4009,7 @@
     const fs = isNativeFullscreen();
     ui.fsBtn.hidden = !show;
     ui.fsBtn.setAttribute("aria-pressed", fs ? "true" : "false");
-    ui.fsBtn.textContent = fs ? "EXIT FULL SCREEN" : "FULL SCREEN";
+    ui.fsBtn.textContent = fs ? "Exit full screen" : "Full screen";
     document.documentElement.classList.toggle("po-fs", fs);
   }
 
@@ -4035,8 +4022,8 @@
     if (ui.touch) ui.touch.hidden = !exploring;
     if (ui.hint && mode === "explore" && exploring) {
       ui.hint.textContent = land
-        ? "FULL SCREEN · Stick · LOOK ▲▼◀▶ · Drag canvas · Tap animals"
-        : "Stick · LOOK all ways · Drag to look · NOTES · FULL SCREEN";
+        ? "Full screen · Stick · Look ▲▼◀▶ · Drag canvas · Tap animals"
+        : "Stick · Look all ways · Drag to look · Notes · Full screen";
     } else if (ui.hint && mode === "explore") {
       ui.hint.textContent = "WASD · Drag look · Tap animal · J journal · P photo · L log · Esc";
     }
@@ -4064,9 +4051,9 @@
     mode = "dossier";
     syncTouchUI();
     ui.dossier.classList.add("show");
-    ui.dName.textContent = animal.data.name.toUpperCase();
+    ui.dName.textContent = animal.data.name;
     ui.dLatin.textContent = animal.data.latin;
-    ui.dDanger.textContent = animal.data.danger + (animal.rare ? " · RARE FIND" : "");
+    ui.dDanger.textContent = animal.data.danger + (animal.rare ? " · Rare find" : "");
     blip(440, 0.08, "sine");
     const dctx = ui.dArt.getContext("2d");
     dctx.imageSmoothingEnabled = false;
@@ -4325,12 +4312,12 @@
       return;
     }
     if (mode === "explore" && (e.key === "b" || e.key === "B")) {
-      if (binocsOwned) { binocsOn = !binocsOn; if (ui.hint) ui.hint.textContent = binocsOn ? "BINOCULARS ON" : "Binoculars off"; }
+      if (binocsOwned) { binocsOn = !binocsOn; if (ui.hint) ui.hint.textContent = binocsOn ? "Binoculars on" : "Binoculars off"; }
       return;
     }
     if (mode === "explore" && (e.key === "v" || e.key === "V")) {
       focusHold = true;
-      if (ui.hint) ui.hint.textContent = "FOCUS — compass shows next objective";
+      if (ui.hint) ui.hint.textContent = "Focus — compass shows next objective";
       return;
     }
     if (mode === "explore" && (e.key === "k" || e.key === "K")) {
@@ -4496,11 +4483,11 @@
     document.documentElement.classList.toggle("po-kids", difficulty === "kids");
     document.documentElement.classList.toggle("po-postcard", !!s.postcard);
     if (ui.postcard) ui.postcard.hidden = !s.postcard;
-    if (ui.seasonBtn) ui.seasonBtn.textContent = "SEASON · " + season.toUpperCase();
-    if (ui.diffBtn) ui.diffBtn.textContent = difficulty === "kids" ? "KIDS MODE" : "EXPLORER";
+    if (ui.seasonBtn) ui.seasonBtn.textContent = "Season · " + (season.charAt(0).toUpperCase() + season.slice(1));
+    if (ui.diffBtn) ui.diffBtn.textContent = difficulty === "kids" ? "Kids mode" : "Explorer";
     if (ui.weeklyBtn) {
       ui.weeklyBtn.setAttribute("aria-pressed", weeklyMode ? "true" : "false");
-      ui.weeklyBtn.textContent = weeklyMode ? ("WEEKLY · " + sessionSeed) : "SESSION SEED";
+      ui.weeklyBtn.textContent = weeklyMode ? ("Weekly · " + sessionSeed) : "Session seed";
     }
   })();
   if (ui.journalBtn) ui.journalBtn.addEventListener("click", openJournal);
@@ -4534,7 +4521,7 @@
       spotterOn = !spotterOn;
       document.documentElement.classList.toggle("po-spotter", spotterOn);
       ui.spotterBtn.setAttribute("aria-pressed", spotterOn ? "true" : "false");
-      if (ui.hint) ui.hint.textContent = spotterOn ? "SPOTTER ON — tap animals while explorer moves" : "Spotter off";
+      if (ui.hint) ui.hint.textContent = spotterOn ? "Spotter on — tap animals while explorer moves" : "Spotter off";
       persistProgress();
     });
   }
@@ -4549,13 +4536,13 @@
     ui.autoBtn.addEventListener("click", function () {
       autoWalk = !autoWalk;
       ui.autoBtn.setAttribute("aria-pressed", autoWalk ? "true" : "false");
-      if (ui.hint) ui.hint.textContent = autoWalk ? "ONE-THUMB: walking toward next goal" : "Auto-walk off";
+      if (ui.hint) ui.hint.textContent = autoWalk ? "One-thumb: walking toward next goal" : "Auto-walk off";
     });
   }
   if (ui.seasonBtn) {
     ui.seasonBtn.addEventListener("click", function () {
       season = season === "wet" ? "dry" : "wet";
-      ui.seasonBtn.textContent = "SEASON · " + season.toUpperCase();
+      ui.seasonBtn.textContent = "Season · " + (season.charAt(0).toUpperCase() + season.slice(1));
       persistProgress();
       if (ui.hint) ui.hint.textContent = "Season set to " + season + " — applies on next region enter";
     });
@@ -4564,7 +4551,7 @@
     ui.diffBtn.addEventListener("click", function () {
       difficulty = difficulty === "kids" ? "explorer" : "kids";
       document.documentElement.classList.toggle("po-kids", difficulty === "kids");
-      ui.diffBtn.textContent = difficulty === "kids" ? "KIDS MODE" : "EXPLORER";
+      ui.diffBtn.textContent = difficulty === "kids" ? "Kids mode" : "Explorer";
       persistProgress();
     });
   }
@@ -4573,7 +4560,7 @@
       weeklyMode = !weeklyMode;
       sessionSeed = weeklyMode ? isoWeekSeed() : ((Date.now() / 1000) | 0);
       ui.weeklyBtn.setAttribute("aria-pressed", weeklyMode ? "true" : "false");
-      ui.weeklyBtn.textContent = weeklyMode ? ("WEEKLY · " + sessionSeed) : "SESSION SEED";
+      ui.weeklyBtn.textContent = weeklyMode ? ("Weekly · " + sessionSeed) : "Session seed";
       persistProgress();
     });
   }
