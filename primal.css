@@ -353,11 +353,11 @@ html.po-touch-on .po-tools-tray{top:156px;bottom:auto;left:8px}
 }
 .po-quest-chip[hidden]{display:none!important}
 .po-wetlands-cover{
-  filter:hue-rotate(72deg) saturate(1.25) brightness(.88) contrast(1.08) sepia(.15);
+  /* Natural wetlands art — no hue-rotate (that looked glitchy/overcooked) */
 }
-.po-wetlands-cover::after{
-  content:"";position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(180deg,rgba(20,80,90,.25),rgba(10,40,50,.35));
+.po-card.po-pick{
+  border-color:var(--line-hi);
+  box-shadow:0 0 0 2px rgba(93,206,122,.45),0 12px 24px rgba(0,0,0,.45);
 }
 .po-postcard{
   text-align:center;margin:0 0 10px;padding:10px 12px;border:2px solid #e8c86a;border-radius:8px;

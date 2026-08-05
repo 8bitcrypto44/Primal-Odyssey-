@@ -1,4 +1,4 @@
-/* Primal Odyssey — SNES tilemap explore v49 */
+/* Primal Odyssey — SNES tilemap explore v50 */
 (function () {
   "use strict";
   if (!window.PO_SNES) window.PO_SNES = {};
@@ -216,7 +216,7 @@
     targetCamY = Math.max(0, Math.min(m.h * T - H, targetCamY));
     if (S.camX == null || isNaN(S.camX)) S.camX = targetCamX;
     if (S.camY == null || isNaN(S.camY)) S.camY = targetCamY;
-    var camLerp = 0.18;
+    var camLerp = 0.42; // tighter follow — soft enough to hide jitter, not "drag"
     S.camX += (targetCamX - S.camX) * camLerp;
     S.camY += (targetCamY - S.camY) * camLerp;
 

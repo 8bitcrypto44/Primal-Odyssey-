@@ -13,17 +13,16 @@
 .po-gd-brand span{color:#a8cbb8;font-weight:400;font-size:13px}
 .po-gd-stage{position:relative;width:100%;aspect-ratio:16/9;background:#041008;border:2px solid #1a3d28;border-radius:8px;overflow:hidden}
 .po-gd-cover{position:absolute;inset:0}
-.po-gd-mosaic{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;width:100%;height:100%;background:#041008}
-.po-gd-mosaic button{appearance:none;border:0;padding:0;margin:0;cursor:pointer;background:#041008;position:relative;overflow:hidden;opacity:0.7;transition:opacity .6s ease}
-.po-gd-mosaic img{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.05) contrast(1.05);transition:transform .8s ease}
-.po-gd-mosaic button:hover img,.po-gd.is-trailer .po-gd-mosaic img{transform:scale(1.08)}
-.po-gd-mosaic .po-wet{filter:hue-rotate(75deg) saturate(1.3) brightness(.85) sepia(.2)}.po-gd-mosaic button[data-region=wetlands]::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(30,90,100,.2),rgba(10,50,60,.35));pointer-events:none}
+.po-gd-hero{position:absolute;inset:0;background:#041008}
+.po-gd-hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 1.1s ease}
+.po-gd-hero img.is-on{opacity:1}
 .po-gd-promo{margin:0;font-size:12px;color:#6a8b75;max-width:32em;line-height:1.4}
 .po-gd-regions{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .po-gd-regions button{appearance:none;border:2px solid #2d6b45;border-radius:8px;padding:8px 12px;background:rgba(4,20,10,.85);color:#5dce7a;font:700 13px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;cursor:pointer}
+.po-gd-regions button:hover,.po-gd-regions button.is-sel{border-color:#5dce7a;background:rgba(20,50,30,.95)}
 @keyframes poTrail{0%,100%{opacity:.92}50%{opacity:1}}
 .po-gd.is-trailer .po-gd-veil{animation:poTrail 2.4s ease-in-out infinite}
-.po-gd-veil{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center;background:linear-gradient(180deg,rgba(2,10,6,.35) 0%,rgba(3,12,8,.72) 45%,rgba(3,6,5,.92) 100%)}
+.po-gd-veil{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center;background:linear-gradient(180deg,rgba(2,10,6,.4) 0%,rgba(3,12,8,.78) 45%,rgba(3,6,5,.94) 100%)}
 .po-gd-title{margin:0;font-family:Papyrus,"Segoe Print","Bradley Hand ITC",fantasy;font-size:clamp(26px,5vw,40px);font-weight:400;letter-spacing:2px;color:#5dce7a;text-shadow:0 0 18px rgba(61,155,95,.55),3px 3px 0 #021208;line-height:1.1}
 .po-gd-tag{margin:0;font-size:clamp(13px,2.8vw,15px);color:#cfe8d6;letter-spacing:.2px;max-width:28em;line-height:1.45}
 .po-gd-tip{margin:0;font-size:clamp(12px,2.4vw,14px);color:#a8cbb8;letter-spacing:.2px;max-width:28em;line-height:1.4}
@@ -89,16 +88,16 @@
     </div>
     <div class="po-gd-stage">
       <div class="po-gd-cover">
-        <div class="po-gd-mosaic" id="po-gd-mosaic">
-          <button type="button" data-region="africa" title="Play Africa"><img src="https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg" alt="Africa" width="320" height="180" loading="lazy"></button>
-          <button type="button" data-region="mountains" title="Play Mountains"><img src="https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg" alt="Mountains" width="320" height="180" loading="lazy"></button>
-          <button type="button" data-region="jungle" title="Play Jungle"><img src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="Jungle" width="320" height="180" loading="lazy"></button>
-          <button type="button" data-region="wetlands" title="Play Wetlands"><img class="po-wet" src="https://8bitcrypto44.github.io/Primal-Odyssey-/assets/covers/wetlands.png" alt="Wetlands" width="320" height="180" loading="lazy"></button>
+        <div class="po-gd-hero" id="po-gd-hero" aria-hidden="true">
+          <img class="is-on" src="https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg" alt="" width="920" height="518" decoding="async">
+          <img src="https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg" alt="" width="920" height="518" decoding="async">
+          <img src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="" width="920" height="518" decoding="async">
+          <img src="https://8bitcrypto44.github.io/Primal-Odyssey-/assets/covers/wetlands.png" alt="" width="920" height="518" decoding="async">
         </div>
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Tap a biome — smoother run, calmer water, roaming wildlife (v49)</p>
+          <p class="po-gd-tip">Enter → choose your biome on the title screen (v50)</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">Africa</button>
             <button type="button" data-region="mountains">Mountains</button>
@@ -117,7 +116,7 @@
           title="Primal Odyssey"
           width="100%"
           height="450"
-          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=49"
+          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=50"
           allow="autoplay; fullscreen"
           allowfullscreen
           scrolling="no"
@@ -175,19 +174,22 @@
     }
   }
   var playing=false;
-  var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=49".replace(/&amp;/g,"&");
+  var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=50".replace(/&amp;/g,"&");
   root.classList.add("is-trailer");
-  var tiles=root.querySelectorAll("#po-gd-mosaic button");
-  var ti=0;
-  if(tiles.length){
+  // Soft full-bleed cover crossfade (no mosaic strobe)
+  var heroImgs=root.querySelectorAll("#po-gd-hero img");
+  var hi=0;
+  if(heroImgs.length>1){
     setInterval(function(){
       if(!root.classList.contains("is-trailer"))return;
-      tiles.forEach(function(b,i){b.style.opacity=i===ti?"1":"0.55";b.style.zIndex=i===ti?"2":"1";});
-      ti=(ti+1)%tiles.length;
-    },1600);
+      heroImgs[hi].classList.remove("is-on");
+      hi=(hi+1)%heroImgs.length;
+      heroImgs[hi].classList.add("is-on");
+    },3200);
   }
-  function openGame(region){
-    var src=baseSrc+(region?("&region="+region):"");
+  function openGame(suggest){
+    // Always open title/chooser — never auto-start a world
+    var src=baseSrc+(suggest?("&region="+suggest):"");
     frame.setAttribute("src",src);
     root.classList.add("is-open");
     root.classList.add("is-loading");
@@ -208,10 +210,12 @@
     el.addEventListener("click",function(e){
       e.preventDefault();
       e.stopPropagation();
+      root.querySelectorAll("#po-gd-regions [data-region]").forEach(function(b){b.classList.remove("is-sel");});
+      el.classList.add("is-sel");
       openGame(el.getAttribute("data-region"));
     });
   }
-  document.querySelectorAll("#po-gd-mosaic [data-region], #po-gd-regions [data-region]").forEach(wireRegion);
+  document.querySelectorAll("#po-gd-regions [data-region]").forEach(wireRegion);
   frame.addEventListener("load",function(){
     root.classList.remove("is-loading");
   });

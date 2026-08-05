@@ -1890,29 +1890,30 @@
       if (wl > 1) { wishX /= wl; wishY /= wl; }
     }
     let spMul = 1;
-    if (wet(player.x, player.y)) spMul *= 0.48;
-    if (weather.kind === "snow") spMul *= 0.7;
-    else if (weather.kind === "dust") spMul *= 0.82;
-    else if (weather.kind === "rain") spMul *= 0.88;
-    else if (weather.kind) spMul *= 0.78;
-    const maxSp = 2.75 * spMul;
-    // Blend toward wish velocity (smooth accel) / strong decay when idle (smooth stop)
+    if (wet(player.x, player.y)) spMul *= 0.72; // wade — was 0.48 (felt stuck)
+    if (weather.kind === "snow") spMul *= 0.88;
+    else if (weather.kind === "dust") spMul *= 0.92;
+    else if (weather.kind === "rain") spMul *= 0.94;
+    else if (weather.kind) spMul *= 0.9;
+    const maxSp = 3.85 * spMul; // snappier top speed (v49 felt held back)
+    // Quick accel; still a soft stop so it isn't on/off stiff
     if (wishX || wishY) {
-      const blend = Math.min(1, 11 * dt);
+      const blend = Math.min(1, 22 * dt);
       player.vx += (wishX * maxSp - player.vx) * blend;
       player.vy += (wishY * maxSp - player.vy) * blend;
     } else {
-      const fr = Math.exp(-16 * dt);
+      const fr = Math.exp(-22 * dt);
       player.vx *= fr;
       player.vy *= fr;
-      if (Math.hypot(player.vx, player.vy) < 0.05) { player.vx = 0; player.vy = 0; }
+      if (Math.hypot(player.vx, player.vy) < 0.08) { player.vx = 0; player.vy = 0; }
     }
     const mx = player.vx * dt;
     const my = player.vy * dt;
-    if (!playerBlocked(player.x + mx * 2.2, player.y)) player.x += mx;
-    else player.vx *= 0.2;
-    if (!playerBlocked(player.x, player.y + my * 2.2)) player.y += my;
-    else player.vy *= 0.2;
+    // Lighter look-ahead so trees don't "grab" the Agent
+    if (!playerBlocked(player.x + mx * 1.15, player.y)) player.x += mx;
+    else player.vx *= 0.15;
+    if (!playerBlocked(player.x, player.y + my * 1.15)) player.y += my;
+    else player.vy *= 0.15;
     {
       const wb = worldBounds();
       player.x = clamp(player.x, wb.min, wb.maxX);
@@ -4813,8 +4814,16 @@
     try {
       const q = new URLSearchParams(location.search || "");
       const rid = (q.get("region") || "").toLowerCase();
+      // Never auto-load a world — always land on "Choose your expedition"
       if (rid && PO_DATA[rid]) {
-        setTimeout(function () { enterRegion(rid); }, 80);
+        setTimeout(function () {
+          const card = document.querySelector('.po-card[data-region="' + rid + '"]');
+          if (card) {
+            card.classList.add("po-pick");
+            try { card.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e2) {}
+          }
+          if (ui.hint) ui.hint.textContent = "Pick a biome to begin";
+        }, 60);
       }
     } catch (e) {}
   })();
