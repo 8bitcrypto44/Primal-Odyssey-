@@ -46,27 +46,25 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 }
 .po-hud-l{display:flex;flex-wrap:wrap;gap:6px;align-items:center;justify-content:center;max-width:100%}
 .po-hud[hidden],.po-hint[hidden],.po-menu-dock[hidden],.po-obj[hidden],.po-paused[hidden]{display:none!important}
-.po-hud .chip,.po-audio-bar .chip,.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn,.po-tools-tray .chip{
+.po-hud .chip,.po-audio-bar .chip,.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn,.po-fs-btn,.po-tools-tray .chip{
   pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);
   font-family:var(--font-ui);font-size:13px;padding:8px 11px;border-radius:10px;font-weight:700;
   letter-spacing:.2px;text-shadow:0 1px 0 rgba(0,0,0,.55);box-shadow:0 2px 8px rgba(0,0,0,.35);
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
-  position:relative;left:auto;right:auto;top:auto;bottom:auto;min-height:40px;cursor:pointer
+  position:relative;left:auto;right:auto;top:auto;bottom:auto;min-height:40px;cursor:pointer;
+  transform:none
 }
 .po-hud .chip.pulse{border-color:var(--line-hi);box-shadow:0 0 12px rgba(93,206,122,.25)}
 .po-hud .chip.done{border-color:#e8c86a;color:#e8c86a}
 .po-hud button.chip:hover,.po-audio-bar .chip:hover,.po-menu-dock:hover,
-.po-journal-btn:hover,.po-photo-btn:hover,.po-tools-btn:hover{background:#0d2416;border-color:var(--line-hi);color:#fff}
-.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn{z-index:auto}
+.po-journal-btn:hover,.po-photo-btn:hover,.po-tools-btn:hover,.po-fs-btn:hover{background:#0d2416;border-color:var(--line-hi);color:#fff}
+.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn,.po-fs-btn{z-index:auto}
 .po-fs-btn{
-  display:none;position:absolute;left:50%;top:8px;transform:translateX(-50%);z-index:30;
-  pointer-events:auto;background:rgba(4,20,10,.94);border:2px solid var(--line-hi);color:#fff;
-  font-family:var(--font-ui);font-size:13px;padding:10px 16px;border-radius:10px;font-weight:700;letter-spacing:.3px;
-  box-shadow:0 0 18px rgba(93,206,122,.35);cursor:pointer;
-  -webkit-tap-highlight-color:transparent;min-height:44px;white-space:nowrap
+  display:none;border-color:var(--line-hi);color:#fff;
+  -webkit-tap-highlight-color:transparent;white-space:nowrap
 }
-.po-fs-btn:not([hidden]){display:block}
-.po-fs-btn[aria-pressed="true"]{border-color:#7fa88c;color:var(--muted);box-shadow:none;font-size:12px;padding:8px 12px;min-height:36px}
+.po-fs-btn:not([hidden]){display:inline-flex;align-items:center}
+.po-fs-btn[aria-pressed="true"]{border-color:#7fa88c;color:var(--muted);box-shadow:none;font-size:12px;padding:7px 10px;min-height:36px}
 .po-audio-bar{
   position:relative;left:auto;right:auto;top:auto;bottom:auto;z-index:auto;
   display:flex;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--line);
@@ -141,10 +139,13 @@ html.po-land.po-touch-on .po-vol{width:44px}
 html.po-land.po-touch-on .po-hint{display:none}
 html.po-land .po-pos-chip{display:none}
 html.po-land.po-touch-on .po-obj{
-  top:8px;bottom:auto;left:50%;transform:translateX(-50%);right:auto;max-width:min(50%,320px)
+  top:8px;bottom:auto;left:8px;right:auto;transform:none;max-width:min(220px,38vw)
 }
-html.po-land.po-touch-on .po-fs-btn{top:6px}
-html.po-fs .po-fs-btn{opacity:.85}
+html.po-land.po-touch-on .po-quest-chip{
+  top:8px;max-width:min(46%,280px)
+}
+html.po-land.po-touch-on .po-caution{top:46px}
+html.po-fs .po-fs-btn{opacity:.9}
 /* Dossier open in landscape — keep immersive shell; hide play chrome under overlay */
 html.po-land.po-touch-on:has(#po-dossier.show) .po-touch,
 html.po-land.po-touch-on:has(#po-dossier.show) .po-bottom-bar,
@@ -345,9 +346,10 @@ html.po-land.po-touch-on:has(#po-help.show) .po-obj{visibility:hidden;pointer-ev
 .po-tools-tray[hidden]{display:none!important}
 .po-tools-tray .chip{display:block;width:100%;min-height:40px;font-size:13px;padding:8px 10px}
 .po-quest-chip{
-  position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:8;
+  position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:8;
   pointer-events:none;background:rgba(4,20,10,.9);border:2px solid #e8c86a;color:#e8c86a;
-  font-size:13px;padding:7px 12px;border-radius:8px;font-weight:700;white-space:nowrap;max-width:92%
+  font-size:13px;padding:7px 12px;border-radius:8px;font-weight:700;white-space:nowrap;
+  max-width:min(52%,360px);overflow:hidden;text-overflow:ellipsis
 }
 .po-quest-chip[hidden]{display:none!important}
 .po-wetlands-cover{
@@ -479,7 +481,7 @@ html.po-embed .po-regions{gap:8px}
   .po-regions{grid-template-columns:1fr;gap:10px}
   .po-card .preview{height:110px}
   .po-wip{margin-bottom:12px}
-  .po-hud .chip,.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn,.po-audio-bar .chip{padding:8px 10px;font-size:12px;min-height:38px}
+  .po-hud .chip,.po-menu-dock,.po-journal-btn,.po-photo-btn,.po-tools-btn,.po-fs-btn,.po-audio-bar .chip{padding:8px 10px;font-size:12px;min-height:38px}
   .po-hint{font-size:13px;bottom:62px;padding:8px 10px}
   .po-audio-bar{padding:5px 7px}
   .po-vol{width:64px}

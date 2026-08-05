@@ -3478,8 +3478,11 @@
     else if (rare && !rareFound) { tx = rare.x; ty = rare.y; col = "#e8a050"; tag = "RARE"; }
     if (tx == null) return;
     const ang = Math.atan2(ty - player.y, tx - player.x) - player.dir;
-    // Fixed CSS-px dial (do not scale with world blow-up — was huge on large shells)
-    const cx = 20, cy = 20, r = 11;
+    // Small dial parked left of the minimap (keeps top-left free for Objectives)
+    const mapPad = 10, mapFrame = 3;
+    const mapGuess = Math.round(Math.min(118, Math.max(92, hudCssW * 0.16)));
+    const cx = Math.max(22, hudCssW - mapGuess - mapPad - mapFrame - 26);
+    const cy = 20, r = 11;
     hctx.save();
     hctx.translate(cx, cy);
     const g = hctx.createRadialGradient(0, 0, 1.5, 0, 0, r);
@@ -4317,7 +4320,8 @@
 
   function syncFsBtn() {
     if (!ui.fsBtn) return;
-    const show = inGameMode() && wantsTouchUI() && isLandscape();
+    // Digistracts embed already has a parent Full screen control — avoid double-stack
+    const show = inGameMode() && wantsTouchUI() && isLandscape() && !isEmbed;
     const fs = isNativeFullscreen();
     ui.fsBtn.hidden = !show;
     ui.fsBtn.setAttribute("aria-pressed", fs ? "true" : "false");
