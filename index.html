@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="description" content="Primal Odyssey — explore biomes, meet apex animals, open field dossiers.">
 <title>Primal Odyssey</title>
-<link rel="stylesheet" href="primal.css?v=52">
+<link rel="stylesheet" href="primal.css?v=53">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
@@ -17,17 +17,6 @@
     <canvas id="po-canvas" width="320" height="240" aria-label="Primal Odyssey world"></canvas>
     <!-- Hi-res HUD layer (minimap / compass / nav) - not pixel-scaled with the world -->
     <canvas id="po-hud-canvas" class="po-hud-canvas" width="1" height="1" aria-hidden="true"></canvas>
-    <div class="po-audio po-audio-bar" id="po-audio-bar">
-      <button type="button" class="chip po-mute" id="po-mute" aria-pressed="false" title="Mute">Sound</button>
-      <label class="po-vol-lab">Vol <input type="range" class="po-vol" id="po-vol" min="0" max="100" value="55" aria-label="Music volume"></label>
-    </div>
-    <div class="po-hud" id="po-hud" hidden>
-      <div class="po-hud-l">
-        <div class="chip pulse" id="po-region-chip">Region</div>
-        <button type="button" class="chip" id="po-notes-chip" title="Expedition log">Notes 0/8</button>
-        <div class="chip" id="po-pos-chip">X 0 · Y 0</div>
-      </div>
-    </div>
     <div class="po-obj" id="po-obj" hidden aria-label="Objectives">
       <div class="po-obj-title">Objectives</div>
       <ul class="po-obj-list" id="po-obj-list"></ul>
@@ -35,18 +24,36 @@
     <div class="po-paused" id="po-paused" hidden>Paused</div>
     <div class="po-caution" id="po-caution" hidden>Caution</div>
     <div class="chip po-quest-chip" id="po-quest-chip" hidden>Quest</div>
-    <button type="button" class="chip po-menu-dock" id="po-menu-btn" hidden>Regions</button>
-    <button type="button" class="chip po-journal-btn" id="po-journal-btn" hidden>Journal</button>
-    <button type="button" class="chip po-photo-btn" id="po-photo-btn" hidden title="Photo mode (P)">Photo</button>
-    <button type="button" class="chip po-tools-btn" id="po-tools-btn" hidden aria-pressed="false">Tools</button>
-    <div class="po-tools-tray" id="po-tools-tray" hidden>
-      <button type="button" class="chip po-bestiary-btn" id="po-bestiary-btn" hidden title="Bestiary (K)">Bestiary</button>
-      <button type="button" class="chip po-binocs-btn" id="po-binocs-btn" hidden title="Binoculars (B)">Binoc</button>
-      <button type="button" class="chip po-focus-btn" id="po-focus-btn" hidden title="Focus next objective (hold V)">Focus</button>
-      <button type="button" class="chip po-spotter-btn" id="po-spotter-btn" hidden aria-pressed="false" title="Family spotter mode">Spotter</button>
-      <button type="button" class="chip po-auto-btn" id="po-auto-btn" hidden aria-pressed="false" title="One-thumb auto-walk">Auto</button>
-    </div>
     <button type="button" class="chip po-fs-btn" id="po-fs-btn" hidden aria-pressed="false">Full screen</button>
+    <!-- All in-game chrome sits in one bottom row (no corner stacking) -->
+    <div class="po-bottom-bar" id="po-bottom-bar">
+      <div class="po-bottom-actions">
+        <button type="button" class="chip po-menu-dock" id="po-menu-btn" hidden>Regions</button>
+        <button type="button" class="chip po-journal-btn" id="po-journal-btn" hidden>Journal</button>
+        <div class="po-tools-wrap">
+          <button type="button" class="chip po-tools-btn" id="po-tools-btn" hidden aria-pressed="false">Tools</button>
+          <div class="po-tools-tray" id="po-tools-tray" hidden>
+            <button type="button" class="chip po-bestiary-btn" id="po-bestiary-btn" hidden title="Bestiary (K)">Bestiary</button>
+            <button type="button" class="chip po-binocs-btn" id="po-binocs-btn" hidden title="Binoculars (B)">Binoc</button>
+            <button type="button" class="chip po-focus-btn" id="po-focus-btn" hidden title="Focus next objective (hold V)">Focus</button>
+            <button type="button" class="chip po-spotter-btn" id="po-spotter-btn" hidden aria-pressed="false" title="Family spotter mode">Spotter</button>
+            <button type="button" class="chip po-auto-btn" id="po-auto-btn" hidden aria-pressed="false" title="One-thumb auto-walk">Auto</button>
+          </div>
+        </div>
+        <button type="button" class="chip po-photo-btn" id="po-photo-btn" hidden title="Photo mode (P)">Photo</button>
+      </div>
+      <div class="po-hud" id="po-hud" hidden>
+        <div class="po-hud-l">
+          <div class="chip pulse" id="po-region-chip">Region</div>
+          <button type="button" class="chip" id="po-notes-chip" title="Expedition log">Notes 0/8</button>
+          <div class="chip" id="po-pos-chip">X 0 · Y 0</div>
+        </div>
+      </div>
+      <div class="po-audio po-audio-bar" id="po-audio-bar">
+        <button type="button" class="chip po-mute" id="po-mute" aria-pressed="false" title="Mute">Sound</button>
+        <label class="po-vol-lab">Vol <input type="range" class="po-vol" id="po-vol" min="0" max="100" value="55" aria-label="Music volume"></label>
+      </div>
+    </div>
     <div class="po-hint" id="po-hint" hidden>Drag to look · Tap animal for dossier · Regions menu</div>
     <div class="po-touch" id="po-touch" hidden aria-label="Mobile controls">
       <div class="po-stick-wrap">
@@ -218,11 +225,11 @@
   </div>
   <p class="po-credit">Primal Odyssey · Free &amp; Faithful Press / 8bitcrypto_44</p>
 </div>
-<script src="primal_data.js?v=52"></script>
-<script src="primal_sprites.js?v=52"></script>
-<script src="primal_snes_data.js?v=52"></script>
-<script src="primal_snes.js?v=52"></script>
-<script src="primal.js?v=52"></script>
+<script src="primal_data.js?v=53"></script>
+<script src="primal_sprites.js?v=53"></script>
+<script src="primal_snes_data.js?v=53"></script>
+<script src="primal_snes.js?v=53"></script>
+<script src="primal.js?v=53"></script>
 <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){})}</script>
 </body>
 </html>

@@ -3478,45 +3478,42 @@
     else if (rare && !rareFound) { tx = rare.x; ty = rare.y; col = "#e8a050"; tag = "RARE"; }
     if (tx == null) return;
     const ang = Math.atan2(ty - player.y, tx - player.x) - player.dir;
-    const sc = Math.min(hudCssW / W, hudCssH / H);
-    const cx = 28 * sc, cy = hudCssH - 28 * sc;
-    const r = 16 * sc;
+    // Fixed CSS-px dial (do not scale with world blow-up — was huge on large shells)
+    const cx = 20, cy = 20, r = 11;
     hctx.save();
     hctx.translate(cx, cy);
-    // soft glass dial
-    const g = hctx.createRadialGradient(0, 0, 2, 0, 0, r);
+    const g = hctx.createRadialGradient(0, 0, 1.5, 0, 0, r);
     g.addColorStop(0, "rgba(20,50,30,0.92)");
     g.addColorStop(1, "rgba(4,16,10,0.88)");
     hctx.fillStyle = g;
     hctx.beginPath(); hctx.arc(0, 0, r, 0, Math.PI * 2); hctx.fill();
     hctx.strokeStyle = "rgba(93,206,122,0.85)";
-    hctx.lineWidth = Math.max(1.5, 1.5 * sc);
+    hctx.lineWidth = 1.25;
     hctx.stroke();
     hctx.fillStyle = "#e8c86a";
-    hctx.font = "700 " + Math.max(9, 10 * sc) + "px Atkinson Hyperlegible,Segoe UI,sans-serif";
+    hctx.font = "700 8px Atkinson Hyperlegible,Segoe UI,sans-serif";
     hctx.textAlign = "center";
     hctx.textBaseline = "middle";
-    hctx.fillText("N", 0, -r + 7 * sc);
+    hctx.fillText("N", 0, -r + 5);
     hctx.rotate(ang);
     hctx.fillStyle = col;
     hctx.beginPath();
-    hctx.moveTo(0, -r + 5 * sc);
-    hctx.lineTo(5 * sc, 4 * sc);
-    hctx.lineTo(0, 1 * sc);
-    hctx.lineTo(-5 * sc, 4 * sc);
+    hctx.moveTo(0, -r + 3.5);
+    hctx.lineTo(3.2, 2.5);
+    hctx.lineTo(0, 0.6);
+    hctx.lineTo(-3.2, 2.5);
     hctx.closePath();
     hctx.fill();
     hctx.restore();
     if (tag) {
+      hctx.font = "600 9px Atkinson Hyperlegible,Segoe UI,sans-serif";
+      const labelW = Math.max(26, hctx.measureText(tag).width + 8);
       hctx.fillStyle = "rgba(4,20,10,0.85)";
-      const tw = hctx.measureText ? 0 : 0;
-      hctx.font = "600 " + Math.max(9, 10 * sc) + "px Atkinson Hyperlegible,Segoe UI,sans-serif";
-      const labelW = Math.max(28, hctx.measureText(tag).width + 10);
-      hctx.fillRect(cx - labelW / 2, cy + r + 3 * sc, labelW, 14 * sc);
+      hctx.fillRect(cx - labelW / 2, cy + r + 2, labelW, 12);
       hctx.fillStyle = col;
       hctx.textAlign = "center";
       hctx.textBaseline = "middle";
-      hctx.fillText(tag, cx, cy + r + 10 * sc);
+      hctx.fillText(tag, cx, cy + r + 8);
     }
   }
 
@@ -3661,8 +3658,8 @@
   function drawRangerMinimap(phase) {
     if (!hctx || !miniBase || mode === "title") return;
     const ppt = miniMeta.ppt || miniPpt;
-    // Compact hi-res chart (CSS px) — world stays pixel, this layer is crisp
-    const drawSz = 46;
+    // Readable hi-res chart (CSS px) — world stays pixel, this layer is crisp
+    const drawSz = Math.round(Math.min(118, Math.max(92, hudCssW * 0.16)));
     const pad = 10;
     const frame = 3;
     const ox = hudCssW - drawSz - pad - frame;
