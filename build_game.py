@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "33"
+ASSET_VER = "34"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -124,8 +124,16 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-brand span{{color:#7fa88c;font-weight:400;font-size:12px}}
 .po-gd-stage{{position:relative;width:100%;aspect-ratio:16/9;background:#041008;border:2px solid #1a3d28;border-radius:8px;overflow:hidden}}
 .po-gd-cover{{position:absolute;inset:0}}
-.po-gd-mosaic{{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;width:100%;height:100%;background:#041008}}
-.po-gd-mosaic img{{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.05) contrast(1.05)}}
+.po-gd-mosaic{{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;width:100%;height:100%;background:#041008}}
+.po-gd-mosaic button{{appearance:none;border:0;padding:0;margin:0;cursor:pointer;background:#041008;position:relative;overflow:hidden}}
+.po-gd-mosaic img{{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.05) contrast(1.05);transition:transform .8s ease}}
+.po-gd-mosaic button:hover img,.po-gd.is-trailer .po-gd-mosaic img{{transform:scale(1.08)}}
+.po-gd-mosaic .po-wet{{filter:hue-rotate(55deg) saturate(1.15) brightness(.92)}}
+.po-gd-promo{{margin:0;font-size:10px;color:#4a6b55;max-width:32em;line-height:1.35}}
+.po-gd-regions{{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}}
+.po-gd-regions button{{appearance:none;border:2px solid #2d6b45;border-radius:8px;padding:6px 10px;background:rgba(4,20,10,.85);color:#5dce7a;font:700 10px "Courier New",monospace;cursor:pointer}}
+@keyframes poTrail{{0%,100%{{opacity:.92}}50%{{opacity:1}}}}
+.po-gd.is-trailer .po-gd-veil{{animation:poTrail 2.4s ease-in-out infinite}}
 .po-gd-veil{{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;text-align:center;background:linear-gradient(180deg,rgba(2,10,6,.35) 0%,rgba(3,12,8,.72) 45%,rgba(3,6,5,.92) 100%)}}
 .po-gd-title{{margin:0;font-family:Papyrus,"Segoe Print","Bradley Hand ITC",fantasy;font-size:clamp(26px,5vw,40px);font-weight:400;letter-spacing:2px;color:#5dce7a;text-shadow:0 0 18px rgba(61,155,95,.55),3px 3px 0 #021208;line-height:1.1}}
 .po-gd-tag{{margin:0;font-size:clamp(11px,2.8vw,13px);color:#9ec9ad;letter-spacing:.5px;max-width:28em;line-height:1.4}}
@@ -192,16 +200,24 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     </div>
     <div class="po-gd-stage">
       <div class="po-gd-cover">
-        <div class="po-gd-mosaic" aria-hidden="true">
-          <img src="https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg" alt="" width="320" height="180" loading="lazy">
-          <img src="https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg" alt="" width="320" height="180" loading="lazy">
-          <img src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="" width="320" height="180" loading="lazy">
+        <div class="po-gd-mosaic" id="po-gd-mosaic">
+          <button type="button" data-region="africa" title="Play Africa"><img src="https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg" alt="Africa" width="320" height="180" loading="lazy"></button>
+          <button type="button" data-region="mountains" title="Play Mountains"><img src="https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg" alt="Mountains" width="320" height="180" loading="lazy"></button>
+          <button type="button" data-region="jungle" title="Play Jungle"><img src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="Jungle" width="320" height="180" loading="lazy"></button>
+          <button type="button" data-region="wetlands" title="Play Wetlands"><img class="po-wet" src="https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg" alt="Wetlands" width="320" height="180" loading="lazy"></button>
         </div>
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Tap ENTER - rotate to landscape for full screen</p>
+          <p class="po-gd-tip">Tap a biome tile or ENTER - landscape for full screen</p>
+          <div class="po-gd-regions" id="po-gd-regions">
+            <button type="button" data-region="africa">AFRICA</button>
+            <button type="button" data-region="mountains">MOUNTAINS</button>
+            <button type="button" data-region="jungle">JUNGLE</button>
+            <button type="button" data-region="wetlands">WETLANDS</button>
+          </div>
           <button type="button" class="po-gd-enter" id="po-gd-enter">ENTER EXPEDITION</button>
+          <p class="po-gd-promo">Also: Thank You For Your Service kids coloring books - Free &amp; Faithful Press</p>
         </div>
       </div>
       <div class="po-gd-play" id="po-gd-play">
@@ -269,19 +285,35 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
       }}catch(e){{}}
     }}
   }}
-  btn.addEventListener("click",function(){{
-    var src=frame.getAttribute("data-src");
-    if(src&&!frame.getAttribute("src"))frame.setAttribute("src",src);
+  var playing=false;
+  var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v={v}".replace(/&amp;/g,"&");
+  root.classList.add("is-trailer");
+  function openGame(region){{
+    var src=baseSrc+(region?("&region="+region):"");
+    frame.setAttribute("src",src);
     root.classList.add("is-open");
     root.classList.add("is-loading");
     root.classList.add("is-fading");
+    root.classList.remove("is-trailer");
     playing=true;
     btn.setAttribute("aria-expanded","true");
     syncLand();
     if(phone()&&land())enterFs();
     try{{frame.focus();}}catch(e){{}}
     setTimeout(function(){{root.classList.remove("is-fading");}},600);
+  }}
+  btn.addEventListener("click",function(){{
+    openGame(null);
   }});
+  function wireRegion(el){{
+    if(!el)return;
+    el.addEventListener("click",function(e){{
+      e.preventDefault();
+      e.stopPropagation();
+      openGame(el.getAttribute("data-region"));
+    }});
+  }}
+  document.querySelectorAll("#po-gd-mosaic [data-region], #po-gd-regions [data-region]").forEach(wireRegion);
   frame.addEventListener("load",function(){{
     root.classList.remove("is-loading");
   }});

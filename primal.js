@@ -130,7 +130,17 @@
     binocsBtn: document.getElementById("po-binocs-btn"),
     focusBtn: document.getElementById("po-focus-btn"),
     spotterBtn: document.getElementById("po-spotter-btn"),
-    cautionEl: document.getElementById("po-caution")
+    cautionEl: document.getElementById("po-caution"),
+    toolsBtn: document.getElementById("po-tools-btn"),
+    toolsTray: document.getElementById("po-tools-tray"),
+    autoBtn: document.getElementById("po-auto-btn"),
+    seasonBtn: document.getElementById("po-season"),
+    diffBtn: document.getElementById("po-diff"),
+    weeklyBtn: document.getElementById("po-weekly"),
+    recapImg: document.getElementById("po-recap-img"),
+    recapDl: document.getElementById("po-recap-dl"),
+    postcard: document.getElementById("po-postcard"),
+    questChip: document.getElementById("po-quest-chip")
   };
 
   const MUSIC_BASE = "https://incompetech.com/music/royalty-free/mp3-royaltyfree/";
@@ -169,6 +179,25 @@
   let stuckIdle = 0;
   let progressStamp = 0;
   let sessionSeed = (Date.now() / 86400000) | 0;
+  let weeklyMode = true;
+  let season = "wet"; // wet | dry
+  let difficulty = "explorer"; // kids | explorer
+  let autoWalk = false;
+  let questPhase = 0; // 0 start, 1 notes3, 2 rareTrail, 3 photoRare, 4 done
+  let runStart = 0;
+  let runNotesAtStart = 0;
+  let photoRareDone = false;
+  let toolsOpen = false;
+  let dens = [];
+  let herds = [];
+  let rangerCd = 0;
+  function isoWeekSeed() {
+    const d = new Date();
+    const onejan = new Date(d.getFullYear(), 0, 1);
+    const week = Math.ceil((((d - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+    return d.getFullYear() * 100 + week;
+  }
+  sessionSeed = isoWeekSeed();
   let scriptEvent = { id: null, t: 0, cd: 12 };
   let victoryPending = false;
   let victoryFlash = 0;
@@ -193,18 +222,24 @@
     wetlands: "https://i.postimg.cc/VvqTQ5qs/jungle-cover-image.jpg"
   };
   const RADIO_LINES = {
-    "WATERING HOLE": "Ranger net: watering hole active — keep distance from pods.",
-    "KOPJE LOOKOUT": "Ranger net: kopje lookout clear — good scan for dust trails.",
-    "RANGER POST": "Ranger net: Africa post online — log notes and watch for dust storms.",
-    "SNOW OVERLOOK": "Ranger net: ridge wind rising — watch footing on ice.",
-    "RIDGE TRAIL": "Ranger net: ridge trail open — lynx sign reported at dusk.",
-    "ICE CAIRN": "Ranger net: ice cairn marks the safe switchback — stay on trail.",
-    "CANOPY GAP": "Ranger net: canopy gap — light shaft useful for note hunting.",
-    "FERN THICKET": "Ranger net: fern thicket dense — move slow, watch for ocelot.",
-    "RIVER LOOKOUT": "Ranger net: river lookout wet — anaconda sign on the banks.",
-    "BOARDWALK": "Ranger net: boardwalk secure — glass water, watch for manatee boils.",
-    "REED BLIND": "Ranger net: reed blind ready — stay low, birds flush easy.",
-    "OXBOW LAKE": "Ranger net: oxbow lake deep — hippo channels marked."
+    "WATERING HOLE": "Ranger Asha: watering hole active — keep distance from pods.",
+    "KOPJE LOOKOUT": "Ranger Asha: kopje lookout clear — good scan for dust trails.",
+    "RANGER POST": "Ranger Asha at Post Alpha — log notes and watch for dust storms.",
+    "SNOW OVERLOOK": "Ranger Cole: ridge wind rising — watch footing on ice.",
+    "RIDGE TRAIL": "Ranger Cole: ridge trail open — lynx sign reported at dusk.",
+    "ICE CAIRN": "Ranger Cole: ice cairn marks the safe switchback — stay on trail.",
+    "CANOPY GAP": "Ranger Maya: canopy gap — light shaft useful for note hunting.",
+    "FERN THICKET": "Ranger Maya: fern thicket dense — move slow, watch for ocelot.",
+    "RIVER LOOKOUT": "Ranger Maya: river lookout wet — anaconda sign on the banks.",
+    "BOARDWALK": "Ranger Dion: boardwalk secure — glass water, watch for manatee boils.",
+    "REED BLIND": "Ranger Dion: reed blind ready — stay low, birds flush easy.",
+    "OXBOW LAKE": "Ranger Dion: oxbow lake deep — hippo channels marked."
+  };
+  const RANGER_CHAT = {
+    africa: ["Ranger Asha: pride tracks fresh southwest of camp.", "Ranger Asha: if dust rolls in, hug the kopje wall."],
+    mountains: ["Ranger Cole: eagle thermal over the overlook.", "Ranger Cole: lynx likes the dusk switchback."],
+    jungle: ["Ranger Maya: jaguar scrape under the fern wall.", "Ranger Maya: stay on the boardwalk roots."],
+    wetlands: ["Ranger Dion: manatee boils near the oxbow.", "Ranger Dion: boardwalk first — mud hides dens."]
   };
   const SAVE_KEY = "po_expedition_v1";
 
@@ -228,6 +263,11 @@
   function setAudioDuck(on) {
     audioDuck = on ? 0.28 : 1;
     sfxGain();
+  }
+  function haptic(ms) {
+    try {
+      if (navigator.vibrate) navigator.vibrate(ms || 18);
+    } catch (e) {}
   }
 
   function blip(freq, dur, type) {
@@ -287,7 +327,9 @@
       onboarded: false, lastRegion: null, regions: {}, shots: [],
       bigLook: false, reduceMotion: false,
       photoAnimals: 0, photoLandmark: false, photoDusk: false, tourDone: false,
-      bestiary: {}, binocs: false, spotter: false
+      bestiary: {}, binocs: false, spotter: false,
+      season: "wet", difficulty: "explorer", weekly: true, postcard: false,
+      weeklyBest: {}
     };
   }
   function loadSave() {
@@ -323,6 +365,9 @@
     s.bestiary = bestiary;
     s.binocs = !!binocsOwned;
     s.spotter = !!spotterOn;
+    s.season = season;
+    s.difficulty = difficulty;
+    s.weekly = !!weeklyMode;
     if (region) {
       s.lastRegion = region.id;
       const b = regionBucket(s, region.id);
@@ -441,8 +486,10 @@
     radioCall(RADIO_LINES[id] || ("Ranger net: " + id + " logged."));
     progressStamp = t;
     stuckIdle = 0;
+    haptic(22);
     persistProgress();
     syncObjectives();
+    syncQuest();
     checkRegionVictory();
   }
 
@@ -451,19 +498,123 @@
     if (!regionObjectivesDone()) return;
     victoryPending = true;
     victoryFlash = 3.2;
+    questPhase = 4;
     blip(520, 0.08, "sine");
     setTimeout(function () { blip(660, 0.1, "triangle"); }, 120);
     setTimeout(function () { blip(880, 0.14, "square"); }, 240);
+    haptic([30, 40, 30, 40, 80]);
+    const elapsed = Math.max(1, ((t - runStart) | 0));
+    const recap = buildRecapCard({
+      region: region.name,
+      badge: BADGE_LABEL[region.id] || "RANGER",
+      notes: notesFound.length,
+      animals: Object.keys(animalsSeen).length,
+      photos: photoShots.length,
+      seconds: elapsed,
+      tip: RANGER_TIPS[region.id] || ""
+    });
     if (ui.victory) {
       ui.victoryMeta.textContent = (BADGE_LABEL[region.id] || "RANGER") + " earned";
       ui.victoryBody.textContent = RANGER_TIPS[region.id] || "Expedition cleared.";
+      if (ui.recapImg) { ui.recapImg.src = recap; ui.recapImg.hidden = false; }
+      if (ui.recapDl) { ui.recapDl.href = recap; ui.recapDl.download = "primal-odyssey-" + region.id + ".png"; ui.recapDl.hidden = false; }
       ui.victory.classList.add("show");
       mode = "victory";
       clearInput();
     }
     if (ui.hint) ui.hint.textContent = "EXPEDITION CLEARED — " + (BADGE_LABEL[region.id] || "badge");
+    const s = loadSave();
+    const b = regionBucket(s, region.id);
+    b.complete = true;
+    b.bestTime = b.bestTime ? Math.min(b.bestTime, elapsed) : elapsed;
+    if (weeklyMode) {
+      s.weeklyBest = s.weeklyBest || {};
+      const key = sessionSeed + ":" + region.id;
+      if (!s.weeklyBest[key] || elapsed < s.weeklyBest[key]) s.weeklyBest[key] = elapsed;
+    }
+    const all = ["africa", "mountains", "jungle", "wetlands"].every(function (id) {
+      return s.regions[id] && s.regions[id].complete;
+    });
+    if (all) {
+      s.postcard = true;
+      document.documentElement.classList.add("po-postcard");
+      if (ui.postcard) ui.postcard.hidden = false;
+    }
+    writeSave(s);
     persistProgress();
     syncRegionStamps();
+    syncQuest();
+  }
+
+  function buildRecapCard(info) {
+    const c = document.createElement("canvas");
+    c.width = 720; c.height = 405;
+    const g = c.getContext("2d");
+    const grd = g.createLinearGradient(0, 0, 720, 405);
+    grd.addColorStop(0, "#041208");
+    grd.addColorStop(1, "#0a2a18");
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 720, 405);
+    g.strokeStyle = "#5dce7a";
+    g.lineWidth = 6;
+    g.strokeRect(12, 12, 696, 381);
+    g.fillStyle = "#5dce7a";
+    g.font = "bold 28px Courier New, monospace";
+    g.fillText("PRIMAL ODYSSEY", 36, 58);
+    g.fillStyle = "#e8c86a";
+    g.font = "bold 22px Courier New, monospace";
+    g.fillText(info.badge, 36, 92);
+    g.fillStyle = "#cfe8d6";
+    g.font = "16px Courier New, monospace";
+    g.fillText(info.region, 36, 124);
+    const mins = (info.seconds / 60) | 0;
+    const secs = info.seconds % 60;
+    const lines = [
+      "Time  " + mins + "m " + secs + "s",
+      "Notes  " + info.notes,
+      "Animals  " + info.animals,
+      "Photos  " + info.photos,
+      weeklyMode ? ("Weekly seed  " + sessionSeed) : "Session run"
+    ];
+    lines.forEach(function (ln, i) {
+      g.fillText(ln, 36, 170 + i * 28);
+    });
+    g.fillStyle = "#7fa88c";
+    g.font = "13px Courier New, monospace";
+    const tip = (info.tip || "").slice(0, 70);
+    g.fillText(tip, 36, 360);
+    g.fillStyle = "#5dce7a";
+    g.fillText("8bitcrypto_44", 520, 380);
+    return c.toDataURL("image/png");
+  }
+
+  function syncQuest() {
+    if (!region) return;
+    if (notesFound.length >= 3 && questPhase < 1) {
+      questPhase = 1;
+      radioCall((RANGER_CHAT[region.id] || ["Ranger net: good work."])[0]);
+      if (ui.hint) ui.hint.textContent = "QUEST: rare trail unlocked — follow gold RARE prints";
+      haptic(40);
+    }
+    if (questPhase >= 1 && (rareFound || animalsSeen[RARE_IDS[region.id]]) && questPhase < 2) {
+      questPhase = 2;
+      if (ui.hint) ui.hint.textContent = "QUEST: photograph the rare (PHOTO when IN FRAME)";
+    }
+    if (questPhase >= 2 && photoRareDone && questPhase < 3) {
+      questPhase = 3;
+      if (ui.hint) ui.hint.textContent = "QUEST complete — finish remaining objectives";
+    }
+    if (ui.questChip) {
+      const labels = [
+        "QUEST: collect 3 field notes",
+        "QUEST: follow rare trail",
+        "QUEST: photo the rare",
+        "QUEST: wrap objectives",
+        "QUEST: cleared"
+      ];
+      ui.questChip.textContent = labels[Math.min(questPhase, 4)];
+      ui.questChip.hidden = mode === "title";
+    }
   }
   function radioCall(line) {
     const ctxA = ensureAudio();
@@ -787,18 +938,20 @@
         const n = Math.sin(x * 0.55) * Math.cos(y * 0.47) + Math.sin((x + y) * 0.19);
         const n2 = Math.sin(x * 0.31 + 2.1) * Math.cos(y * 0.37 - 1.4);
         let f = 1;
+        const wetBias = season === "wet" ? -0.08 : 0.12;
         if (regionId === "africa") {
-          if (n > 0.62 || (n2 > 0.75 && n > 0.2)) f = 3;
+          if (n > (0.62 + wetBias) || (n2 > 0.75 && n > 0.2)) f = 3;
           else if (Math.abs(n) < 0.07 || Math.abs(n2) < 0.05) f = 0;
         } else if (regionId === "mountains") {
           if (n < -0.42 || n2 < -0.55) f = 2;
           else if (Math.abs(n) < 0.08) f = 0;
+          if (season === "wet" && n < -0.2 && Math.random() < 0.04) f = 3;
         } else if (regionId === "wetlands") {
-          if (n > 0.25 || n2 > 0.4) f = 3;
+          if (n > (0.25 + wetBias) || n2 > (0.4 + wetBias * 0.5)) f = 3;
           else if (Math.abs(n) < 0.1) f = 0;
           else if (n < -0.45) f = 2;
         } else {
-          if (n > 0.68) f = 3;
+          if (n > (0.68 + wetBias) ) f = 3;
           else if (n2 > 0.55) f = 0;
           else if (n < -0.35) f = 2;
         }
@@ -1004,6 +1157,32 @@
       }
     }
 
+    // Dens / territory heat
+    dens = [];
+    sprites.filter(function (s) { return s.kind === "animal" && !s.rare; }).forEach(function (a, i) {
+      if (seededRand(70 + i) > 0.55) return;
+      const dx = a.x + (seededRand(80 + i) - 0.5) * 3;
+      const dy = a.y + (seededRand(90 + i) - 0.5) * 3;
+      dens.push({ x: dx, y: dy, owner: a.id });
+      sprites.push({
+        x: dx, y: dy, kind: "prop", prop: "rock",
+        scale: worldScale("rock") * 0.5, bob: 0, den: true, track: true, trackTint: "den"
+      });
+      a.denX = dx; a.denY = dy;
+    });
+    // Distant herd billboards for scale
+    herds = [];
+    for (let h = 0; h < 5; h++) {
+      const hx = 8 + seededRand(110 + h) * (MAP - 16);
+      const hy = 8 + seededRand(120 + h) * (MAP - 16);
+      if (Math.hypot(hx - 4.5, hy - 4.5) < 8) continue;
+      herds.push({ x: hx, y: hy });
+      sprites.push({
+        x: hx, y: hy, kind: "prop", prop: regionId === "mountains" ? "pine" : (regionId === "africa" ? "acacia" : "tree"),
+        scale: worldScale("acacia") * 0.35, bob: 0, herd: true
+      });
+    }
+
     // Binoculars cache near camp
     sprites.push({
       x: 6.2, y: 5.4, kind: "prop", prop: "rock",
@@ -1162,7 +1341,7 @@
   function solidPropRadius(sp) {
     if (!sp || sp.kind !== "prop") return 0;
     const p = sp.prop || "";
-    if (p === "grass" || p === "fern" || p === "bush" || sp.track || sp.binocs) return 0;
+    if (p === "grass" || p === "fern" || p === "bush" || sp.track || sp.binocs || sp.den || sp.herd) return 0;
     if (p === "acacia" || p === "baobab" || p === "pine" || p === "tree") return 0.42;
     if (p === "wallafrica" || p === "walljungle" || p === "wallmountains") return 0.55;
     if (p === "rock" || p === "snowrock") return 0.38;
@@ -1228,6 +1407,10 @@
       }
     }
 
+    if (sp.denX != null && Math.random() < 0.28) {
+      const dd = Math.hypot(sp.denX - sp.x, sp.denY - sp.y);
+      if (dd > 1.5) ang = Math.atan2(sp.denY - sp.y, sp.denX - sp.x);
+    }
     if (sp.waterLove) {
       for (let t = 0; t < 10; t++) {
         const a = Math.random() * Math.PI * 2;
@@ -1330,8 +1513,10 @@
       notesFound.push({ id: sp.noteId, text: sp.text });
       noteFlash = 1.8;
       blip(660, 0.1, "triangle");
+      haptic(25);
       progressStamp = t;
       stuckIdle = 0;
+      syncQuest();
       if (tourStep === 1) {
         tourStep = 2;
         if (ui.hint) ui.hint.textContent = "TOUR: tap a nearby animal for its parchment dossier";
@@ -1417,6 +1602,32 @@
     if (keys.d || keys.D) strafe += 1;
     if (keys.ArrowUp || keys.r || keys.R || keys.i || keys.I) pitchIn += 1;
     if (keys.ArrowDown || keys.f || keys.F || keys.k || keys.K) pitchIn -= 1;
+    if (autoWalk && mode === "explore") {
+      let tx = null, ty = null;
+      sprites.forEach(function (sp) {
+        if (sp.kind === "note" && !sp.taken) {
+          if (tx == null || Math.hypot(sp.x - player.x, sp.y - player.y) < Math.hypot(tx - player.x, ty - player.y)) {
+            tx = sp.x; ty = sp.y;
+          }
+        }
+      });
+      if (tx == null) {
+        landmarks.forEach(function (lm) {
+          if (landmarksVisited[lm.id || lm.label]) return;
+          if (tx == null || Math.hypot(lm.x - player.x, lm.y - player.y) < Math.hypot(tx - player.x, ty - player.y)) {
+            tx = lm.x; ty = lm.y;
+          }
+        });
+      }
+      if (tx != null) {
+        const ang = Math.atan2(ty - player.y, tx - player.x);
+        let diff = ang - player.dir;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        turn += clamp(diff * 1.8, -1, 1);
+        fwd += 0.85;
+      }
+    }
     fwd += pad.fwd;
     strafe += pad.strafe;
     turn += pad.turn;
@@ -1460,15 +1671,18 @@
 
   function updateCaution() {
     let threat = 0;
+    const near = difficulty === "kids" ? 1.6 : 2.2;
+    const mid = difficulty === "kids" ? 3.2 : 4.2;
+    const far = difficulty === "kids" ? 5.0 : 6.5;
     for (let i = 0; i < sprites.length; i++) {
       const sp = sprites[i];
       if (sp.kind !== "animal") continue;
       const d = Math.hypot(sp.x - player.x, sp.y - player.y);
       const dangerous = sp.behavior === "apex" || sp.behavior === "ambush" || sp.aggroDist > 0;
       if (!dangerous) continue;
-      if (d < 2.2) threat = Math.max(threat, 1);
-      else if (d < 4.2) threat = Math.max(threat, 0.55);
-      else if (d < 6.5) threat = Math.max(threat, 0.25);
+      if (d < near) threat = Math.max(threat, 1);
+      else if (d < mid) threat = Math.max(threat, 0.55);
+      else if (d < far) threat = Math.max(threat, 0.25);
     }
     cautionLevel = threat;
     if (ui.cautionEl) {
@@ -1476,6 +1690,7 @@
         ui.cautionEl.hidden = false;
         ui.cautionEl.textContent = "CAUTION — TOO CLOSE";
         ui.cautionEl.className = "po-caution hot";
+        if (threat > cautionLevel) haptic(30);
       } else if (threat >= 0.4) {
         ui.cautionEl.hidden = false;
         ui.cautionEl.textContent = "CAUTION — WILDLIFE NEAR";
@@ -2096,7 +2311,7 @@
       ctx.save();
       ctx.globalAlpha = fogA;
       if (sp.kind === "note") {
-        const pulse = 0.35 + 0.25 * Math.sin(t * 4 + sp.bob);
+        const pulse = (difficulty === "kids" ? 0.55 : 0.35) + 0.25 * Math.sin(t * 4 + sp.bob);
         ctx.fillStyle = "rgba(93,206,122," + pulse + ")";
         ctx.beginPath();
         ctx.ellipse(spriteScreenX, floorY - 2, spriteW * 0.55, 5, 0, 0, Math.PI * 2);
@@ -2108,7 +2323,8 @@
         const pulse = sp.rareTrack ? (0.45 + 0.25 * Math.sin(t * 4 + sp.x)) : 0.55;
         ctx.fillStyle = sp.rareTrack
           ? ("rgba(200,140,40," + pulse + ")")
-          : (sp.trackTint === "rare" ? "rgba(180,120,40,0.6)" : "rgba(40,28,12,0.55)");
+          : (sp.trackTint === "rare" ? "rgba(180,120,40,0.6)"
+            : (sp.trackTint === "den" || sp.den ? "rgba(90,40,20,0.65)" : "rgba(40,28,12,0.55)"));
         ctx.beginPath();
         ctx.ellipse(spriteScreenX - tw * 0.35, floorY - 1, tw * 0.45, th, -0.25, 0, Math.PI * 2);
         ctx.ellipse(spriteScreenX + tw * 0.35, floorY - 1, tw * 0.45, th, 0.25, 0, Math.PI * 2);
@@ -2459,17 +2675,26 @@
     const ctxA = ensureAudio();
     if (!ctxA || muted) return;
     sfxGain();
+    const id = (sp && sp.id) || "";
     const o = ctxA.createOscillator();
     const g = ctxA.createGain();
-    o.type = sp.behavior === "soar" ? "sine" : "sawtooth";
-    o.frequency.value = sp.behavior === "soar" ? 900 : (120 + Math.random() * 80);
+    let type = "sawtooth", freq = 140, dur = 0.28, vol = 0.06;
+    if (sp.behavior === "soar" || id === "eagle") { type = "sine"; freq = 980; dur = 0.35; }
+    else if (id === "lion" || id === "tiger" || id === "jaguar") { type = "sawtooth"; freq = 90; dur = 0.4; vol = 0.08; }
+    else if (id === "wolf") { type = "triangle"; freq = 420; dur = 0.45; }
+    else if (id === "hippo" || id === "manatee" || id === "croc" || id === "anaconda") { type = "sine"; freq = 70; dur = 0.35; }
+    else if (id === "honeybadger") { type = "square"; freq = 220; dur = 0.2; }
+    else if (sp.behavior === "ambush") { type = "triangle"; freq = 180; dur = 0.25; }
+    o.type = type;
+    o.frequency.value = freq + Math.random() * 30;
     g.gain.value = 0.0001;
     o.connect(g); g.connect(masterGain);
     const now = ctxA.currentTime;
-    g.gain.exponentialRampToValueAtTime(0.06, now + 0.02);
-    o.frequency.exponentialRampToValueAtTime(o.frequency.value * 0.7, now + 0.2);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
-    o.start(now); o.stop(now + 0.3);
+    g.gain.exponentialRampToValueAtTime(vol, now + 0.02);
+    o.frequency.exponentialRampToValueAtTime(o.frequency.value * 0.65, now + dur * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.start(now); o.stop(now + dur + 0.02);
+    if (cautionLevel > 0.5) haptic(12);
   }
 
   function updateWeather(dt) {
@@ -2483,8 +2708,10 @@
     }
     weather.next -= dt;
     if (weather.next > 0) return;
-    weather.kind = region.id === "africa" ? "dust" : (region.id === "mountains" ? "snow" : "rain");
-    if (region.id === "wetlands") weather.kind = Math.random() < 0.55 ? "rain" : "dust";
+    if (region.id === "mountains") weather.kind = season === "wet" ? (Math.random() < 0.5 ? "snow" : "rain") : "snow";
+    else if (region.id === "africa") weather.kind = season === "dry" ? "dust" : (Math.random() < 0.45 ? "rain" : "dust");
+    else if (region.id === "wetlands") weather.kind = season === "dry" ? "dust" : "rain";
+    else weather.kind = season === "dry" ? "dust" : "rain";
     weather.t = 7 + Math.random() * 7;
     if (ui.hint && mode === "explore") {
       ui.hint.textContent = weather.kind === "dust" ? "Dust storm rolling in…"
@@ -2643,6 +2870,11 @@
       if (gotLm) photoLandmark = true;
       const phase = dayPhase();
       if (phase.name === "dusk" || phase.name === "night") photoDusk = true;
+      if (photoLock && photoLock.rare) {
+        photoRareDone = true;
+        syncQuest();
+      }
+      haptic(20);
       persistProgress();
       syncObjectives();
       let msg = "Sighting saved to JOURNAL";
@@ -2924,7 +3156,25 @@
     startAmbient(id);
     persistProgress();
     tryLandscapeFullscreen();
+    runStart = t;
+    questPhase = 0;
+    photoRareDone = false;
+    autoWalk = false;
+    if (ui.autoBtn) ui.autoBtn.setAttribute("aria-pressed", "false");
+    if (ui.toolsTray) ui.toolsTray.hidden = true;
+    toolsOpen = false;
+    if (ui.toolsBtn) ui.toolsBtn.hidden = false;
+    if (ui.autoBtn) ui.autoBtn.hidden = false;
+    if (ui.questChip) ui.questChip.hidden = false;
+    syncQuest();
     const s = loadSave();
+    season = s.season || season;
+    difficulty = s.difficulty || difficulty;
+    weeklyMode = s.weekly !== false;
+    if (weeklyMode) sessionSeed = isoWeekSeed();
+    document.documentElement.classList.toggle("po-kids", difficulty === "kids");
+    document.documentElement.classList.toggle("po-postcard", !!s.postcard);
+    if (ui.postcard) ui.postcard.hidden = !s.postcard;
     if (!s.onboarded) openHelp();
     else if (!s.tourDone) {
       tourStep = 1;
@@ -2933,6 +3183,7 @@
     if (region && s.regions[id] && s.regions[id].complete && ui.hint) {
       ui.hint.textContent = (BADGE_LABEL[id] || "RANGER") + " · " + (RANGER_TIPS[id] || "Region cleared");
     }
+    rangerCd = 10;
   }
 
   function showTitle() {
@@ -2948,6 +3199,10 @@
     if (ui.focusBtn) ui.focusBtn.hidden = true;
     if (ui.spotterBtn) ui.spotterBtn.hidden = true;
     if (ui.binocsBtn) ui.binocsBtn.hidden = true;
+    if (ui.toolsBtn) ui.toolsBtn.hidden = true;
+    if (ui.toolsTray) ui.toolsTray.hidden = true;
+    if (ui.autoBtn) ui.autoBtn.hidden = true;
+    if (ui.questChip) ui.questChip.hidden = true;
     if (ui.cautionEl) ui.cautionEl.hidden = true;
     if (ui.victory) ui.victory.classList.remove("show");
     if (ui.bestiary) ui.bestiary.classList.remove("show");
@@ -2993,6 +3248,12 @@
       updateWeather(dt);
       updateScripted(dt);
       updateStuck(dt);
+      rangerCd -= dt;
+      if (rangerCd <= 0 && region) {
+        rangerCd = 22 + Math.random() * 18;
+        const chat = RANGER_CHAT[region.id];
+        if (chat && Math.random() < 0.55) radioCall(chat[(Math.random() * chat.length) | 0]);
+      }
       movePlayer(dt);
       moveAnimals(dt);
       updateParticles(dt);
@@ -3184,6 +3445,22 @@
   syncContinueBtn();
   syncRegionStamps();
   applyA11yFromSave();
+  (function bootMeta() {
+    const s = loadSave();
+    season = s.season || "wet";
+    difficulty = s.difficulty || "explorer";
+    weeklyMode = s.weekly !== false;
+    if (weeklyMode) sessionSeed = isoWeekSeed();
+    document.documentElement.classList.toggle("po-kids", difficulty === "kids");
+    document.documentElement.classList.toggle("po-postcard", !!s.postcard);
+    if (ui.postcard) ui.postcard.hidden = !s.postcard;
+    if (ui.seasonBtn) ui.seasonBtn.textContent = "SEASON · " + season.toUpperCase();
+    if (ui.diffBtn) ui.diffBtn.textContent = difficulty === "kids" ? "KIDS MODE" : "EXPLORER";
+    if (ui.weeklyBtn) {
+      ui.weeklyBtn.setAttribute("aria-pressed", weeklyMode ? "true" : "false");
+      ui.weeklyBtn.textContent = weeklyMode ? ("WEEKLY · " + sessionSeed) : "SESSION SEED";
+    }
+  })();
   if (ui.journalBtn) ui.journalBtn.addEventListener("click", openJournal);
   if (ui.journalX) ui.journalX.addEventListener("click", function (e) {
     e.stopPropagation();
@@ -3219,6 +3496,71 @@
       persistProgress();
     });
   }
+  if (ui.toolsBtn) {
+    ui.toolsBtn.addEventListener("click", function () {
+      toolsOpen = !toolsOpen;
+      if (ui.toolsTray) ui.toolsTray.hidden = !toolsOpen;
+      ui.toolsBtn.setAttribute("aria-pressed", toolsOpen ? "true" : "false");
+    });
+  }
+  if (ui.autoBtn) {
+    ui.autoBtn.addEventListener("click", function () {
+      autoWalk = !autoWalk;
+      ui.autoBtn.setAttribute("aria-pressed", autoWalk ? "true" : "false");
+      if (ui.hint) ui.hint.textContent = autoWalk ? "ONE-THUMB: walking toward next goal" : "Auto-walk off";
+    });
+  }
+  if (ui.seasonBtn) {
+    ui.seasonBtn.addEventListener("click", function () {
+      season = season === "wet" ? "dry" : "wet";
+      ui.seasonBtn.textContent = "SEASON · " + season.toUpperCase();
+      persistProgress();
+      if (ui.hint) ui.hint.textContent = "Season set to " + season + " — applies on next region enter";
+    });
+  }
+  if (ui.diffBtn) {
+    ui.diffBtn.addEventListener("click", function () {
+      difficulty = difficulty === "kids" ? "explorer" : "kids";
+      document.documentElement.classList.toggle("po-kids", difficulty === "kids");
+      ui.diffBtn.textContent = difficulty === "kids" ? "KIDS MODE" : "EXPLORER";
+      persistProgress();
+    });
+  }
+  if (ui.weeklyBtn) {
+    ui.weeklyBtn.addEventListener("click", function () {
+      weeklyMode = !weeklyMode;
+      sessionSeed = weeklyMode ? isoWeekSeed() : ((Date.now() / 1000) | 0);
+      ui.weeklyBtn.setAttribute("aria-pressed", weeklyMode ? "true" : "false");
+      ui.weeklyBtn.textContent = weeklyMode ? ("WEEKLY · " + sessionSeed) : "SESSION SEED";
+      persistProgress();
+    });
+  }
+  // dossier swipe tabs
+  (function bindDossierSwipe() {
+    if (!ui.dossier) return;
+    let sx = 0;
+    ui.dossier.addEventListener("touchstart", function (e) {
+      if (!e.changedTouches || !e.changedTouches[0]) return;
+      sx = e.changedTouches[0].clientX;
+    }, { passive: true });
+    ui.dossier.addEventListener("touchend", function (e) {
+      if (!e.changedTouches || !e.changedTouches[0] || mode !== "dossier") return;
+      const dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) < 50) return;
+      const order = ["facts", "myths", "fun", "survive"];
+      let i = order.indexOf(tab);
+      if (i < 0) i = 0;
+      i = clamp(i + (dx < 0 ? 1 : -1), 0, order.length - 1);
+      tab = order[i];
+      document.querySelectorAll(".po-tabs button").forEach(function (b) {
+        b.classList.toggle("active", b.getAttribute("data-tab") === tab);
+      });
+      if (openAnimal) {
+        const lines = openAnimal.data[tab] || [];
+        ui.dBody.innerHTML = lines.map(function (p) { return "<p>" + p + "</p>"; }).join("");
+      }
+    }, { passive: true });
+  })();
   if (ui.bigLookBtn) {
     ui.bigLookBtn.addEventListener("click", function () {
       const on = !document.documentElement.classList.contains("po-big-look");

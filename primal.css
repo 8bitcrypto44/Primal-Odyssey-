@@ -312,15 +312,42 @@ html.po-land.po-touch-on:has(#po-help.show) .po-obj{visibility:hidden;pointer-ev
 .po-journal-btn{left:8px;bottom:48px}
 .po-photo-btn{right:8px;top:8px}
 .po-journal-btn[hidden],.po-photo-btn[hidden],.po-bestiary-btn[hidden],.po-binocs-btn[hidden],.po-focus-btn[hidden],.po-spotter-btn[hidden]{display:none!important}
-.po-bestiary-btn{position:absolute;z-index:7;left:8px;bottom:100px;pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);font-size:10px;padding:8px 10px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit;min-height:40px}
-.po-binocs-btn,.po-focus-btn,.po-spotter-btn{position:absolute;z-index:7;pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);font-size:10px;padding:8px 10px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit;min-height:40px}
-.po-binocs-btn{right:8px;top:56px}
-.po-focus-btn{right:8px;top:104px}
-.po-spotter-btn{right:8px;top:152px}
-html.po-touch-on .po-bestiary-btn{top:156px;bottom:auto}
-html.po-touch-on .po-binocs-btn{top:56px}
-html.po-touch-on .po-focus-btn{top:108px}
-html.po-touch-on .po-spotter-btn{top:160px}
+.po-bestiary-btn{position:relative;left:auto;bottom:auto;top:auto;right:auto;min-height:40px;font-size:10px;padding:8px 10px}
+.po-binocs-btn,.po-focus-btn,.po-spotter-btn,.po-auto-btn{position:relative;left:auto;top:auto;right:auto;bottom:auto;min-height:40px}
+.po-tools-btn{position:absolute;z-index:7;left:8px;bottom:100px;pointer-events:auto;background:var(--panel);border:2px solid var(--line);color:var(--text);font-size:11px;padding:10px 12px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit;min-height:44px}
+.po-tools-btn[hidden]{display:none!important}
+.po-tools-btn[aria-pressed="true"]{border-color:var(--line-hi);color:var(--line-hi)}
+.po-tools-tray{
+  position:absolute;z-index:8;left:8px;bottom:152px;display:flex;flex-direction:column;gap:6px;
+  pointer-events:auto;padding:8px;background:rgba(4,20,10,.92);border:2px solid #2d6b45;border-radius:10px
+}
+.po-tools-tray[hidden]{display:none!important}
+.po-tools-tray .chip{position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;display:block;width:100%}
+html.po-touch-on .po-tools-btn{top:104px;bottom:auto}
+html.po-touch-on .po-tools-tray{top:156px;bottom:auto;left:8px}
+.po-quest-chip{
+  position:absolute;left:50%;top:12px;transform:translateX(-50%);z-index:8;
+  pointer-events:none;background:rgba(4,20,10,.9);border:2px solid #e8c86a;color:#e8c86a;
+  font-size:10px;padding:6px 10px;border-radius:8px;font-weight:700;white-space:nowrap;max-width:92%
+}
+.po-quest-chip[hidden]{display:none!important}
+.po-wetlands-cover{filter:hue-rotate(55deg) saturate(1.15) brightness(.92) contrast(1.05)}
+.po-postcard{
+  text-align:center;margin:0 0 10px;padding:8px 10px;border:2px solid #e8c86a;border-radius:8px;
+  color:#e8c86a;font:700 11px "Courier New",monospace;background:rgba(40,30,8,.5)
+}
+.po-postcard[hidden]{display:none!important}
+.po-promo{text-align:center;font-size:10px;color:#4a6b55;margin:8px 12px 0;line-height:1.4}
+.po-recap-img{display:block;width:100%;max-width:360px;margin:8px auto;border:2px solid #8a6a38;border-radius:6px}
+.po-recap-img[hidden]{display:none!important}
+.po-recap-dl{display:block;text-align:center;text-decoration:none;margin-top:8px}
+.po-recap-dl[hidden]{display:none!important}
+.po-tabs button{min-height:44px;padding:10px 12px;font-size:12px}
+html.po-kids .po-quest-chip{border-color:#5dce7a;color:#8dffb0}
+html.po-postcard body,html.po-postcard #po-title{
+  background:radial-gradient(ellipse at top,#14301c 0%,#030605 55%)
+}
+html.po-postcard .po-brand{text-shadow:0 0 18px rgba(232,200,106,.45)}
 .po-caution{
   position:absolute;left:50%;top:52px;transform:translateX(-50%);z-index:8;
   padding:8px 14px;border:2px solid #c9a227;border-radius:8px;background:rgba(40,20,4,.9);
