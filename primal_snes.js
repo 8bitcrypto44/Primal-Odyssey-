@@ -1,4 +1,4 @@
-/* Primal Odyssey — SNES tilemap explore v47 */
+/* Primal Odyssey — SNES tilemap explore v48 */
 (function () {
   "use strict";
   if (!window.PO_SNES) window.PO_SNES = {};
@@ -367,7 +367,7 @@
           || S.frames["td_" + it.sp.id]
           || S.frames["td_" + (it.sp.id === "lion" ? "lioness" : it.sp.id)];
         if (S.animalImg && td) {
-          var dw = Math.min(48, td.w), dh = Math.min(40, td.h);
+          var dw = Math.min(56, td.w), dh = Math.min(48, td.h);
           ctx.drawImage(S.animalImg, td.x, td.y, td.w, td.h, (it.ax - dw / 2) | 0, (it.ay - dh + 2) | 0, dw, dh);
         } else if (getAnimalCanvas) {
           var img = getAnimalCanvas(it.sp.id, it.sp.frame | 0);
@@ -409,15 +409,15 @@
       }
     }
 
-    // canopy overhead (walk under leaves)
+    // canopy pass — always draw leaves (trunk-only pass was cutting trees off);
+    // fade slightly when standing under so you can still see the Agent
     for (i = 0; i < canopyQ.length; i++) {
       var c = canopyQ[i];
       var dist = Math.hypot(player.x * T - c.o.x, player.y * T - c.o.y);
-      if (dist < Math.max(28, c.fr.w * 0.7) && player.y * T > c.o.y - 4) {
-        ctx.globalAlpha = 0.92;
-        drawTileTop(ctx, atlas, c.fr, c.sx, c.sy, c.fr.canopyH);
-        ctx.globalAlpha = 1;
-      }
+      var under = dist < Math.max(28, c.fr.w * 0.7) && player.y * T > c.o.y - 4;
+      ctx.globalAlpha = under ? 0.72 : 1;
+      drawTileTop(ctx, atlas, c.fr, c.sx, c.sy, c.fr.canopyH);
+      ctx.globalAlpha = 1;
     }
 
     drawLocalLights(ctx, W, H, m, T, player, phase);

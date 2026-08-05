@@ -44,9 +44,9 @@
   // ImageData floor stays cheap — keep readable res for Digistracts / fullscreen
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
     (window.matchMedia && matchMedia("(pointer:coarse)").matches);
-  // Classic SNES 256x224 (Zelda/CT). Integer-scaled, nearest-neighbor only.
-  const W = 256;
-  const H = 224;
+  // Higher internal res (still integer-scaled nearest-neighbor). v48: 320x240.
+  const W = 320;
+  const H = 240;
   canvas.width = W;
   canvas.height = H;
   canvas.style.imageSmoothingEnabled = false;

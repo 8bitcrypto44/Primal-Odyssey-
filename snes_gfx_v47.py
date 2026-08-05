@@ -224,16 +224,22 @@ def load_biome_props():
             if not any(name.startswith(pref) or name == pref.rstrip("_") for pref in prefs):
                 continue
             im = Image.open(p).convert("RGBA")
-            # SNES-friendly scale
-            max_h = 56 if "tree" in name or "baobab" in name or "pine" in name or "fir" in name else 40
-            max_w = 48 if max_h >= 56 else 40
+            # Keep near-native prop art (was crushing 144px trees to 56px → cut-off look)
+            is_tree = any(t in name for t in ("tree", "baobab", "pine", "fir", "acacia"))
+            is_tall = is_tree or "vine" in name
+            if is_tall:
+                max_h, max_w = 120, 96
+            elif "rock" in name or "bush" in name:
+                max_h, max_w = 56, 56
+            else:
+                max_h, max_w = 48, 48
             fitted = _scale_fit(im, max_w, max_h)
             key = f"bp_{biome}_{name}"
             objs[key] = fitted
     return objs
 
 
-def copy_parallax():
+def copy_parallax(ver="48"):
     out.mkdir(parents=True, exist_ok=True)
     urls = {}
     for rid in ("africa", "mountains", "jungle", "wetlands"):
@@ -241,5 +247,5 @@ def copy_parallax():
         if src.exists():
             dest = out / f"parallax_{rid}.png"
             Image.open(src).convert("RGBA").save(dest)
-            urls[rid] = f"assets/snes/built/parallax_{rid}.png?v=47"
+            urls[rid] = f"assets/snes/built/parallax_{rid}.png?v={ver}"
     return urls

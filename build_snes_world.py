@@ -332,7 +332,7 @@ BIOME_TILE_SWAP = {
 
 def build_atlas(objs, player_frames):
     frames = {}
-    atlas_w, atlas_h = 640, 1600
+    atlas_w, atlas_h = 1024, 2400
     atlas = Image.new("RGBA", (atlas_w, atlas_h), (0, 0, 0, 0))
     x = y = 0
     row_h = TW
@@ -364,15 +364,15 @@ def build_atlas(objs, player_frames):
             or (name.startswith("bp_") and ("tree" in name or "rock" in name or "baobab" in name or "pine" in name or "fir" in name))
             or name in ("cave", "sign", "cairn", "camp_tent", "camp_crate")
         )
-        feet = max(6, min(14, h // 5))
+        feet = max(8, min(22, h // 5)) if h >= 64 else max(6, min(14, h // 5))
         canopy = (
             name.startswith("tree") or name.startswith("ptree")
-            or (name.startswith("bp_") and ("tree" in name or "baobab" in name or "pine" in name or "fir" in name))
+            or (name.startswith("bp_") and ("tree" in name or "baobab" in name or "pine" in name or "fir" in name or "acacia" in name))
         )
         frames[name] = {
             "x": x, "y": y, "w": w, "h": h, "solid": solid,
             "feet": feet, "anchor": h - feet // 2,
-            "canopy": canopy, "canopyH": int(h * 0.55) if canopy else 0,
+            "canopy": canopy, "canopyH": int(h * 0.58) if canopy else 0,
             "anim": name.startswith("bush") or name.startswith("detail") or "bush" in name or "grass" in name or name == "camp_fire",
             "biome": (
                 "mountains" if "pine" in name or "mountains" in name or name.startswith("ptree") else
@@ -778,21 +778,21 @@ def main():
         maps[rid] = gen_map(rid, frames, 5200 + i * 31)
         print(rid, "objs", len(maps[rid]["objects"]), "details", len(maps[rid]["details"]))
 
-    parallax = copy_parallax()
+    parallax = copy_parallax("48")
 
     js = []
-    js.append("// Auto-built SNES tilemap data v47 — LPC animals + biome props + parallax")
+    js.append("// Auto-built SNES tilemap data v48 — hi-res trees + full canopies")
     js.append("window.PO_SNES = window.PO_SNES || {};")
     js.append("PO_SNES.TILE = 16;")
     js.append("PO_SNES.frames = " + json.dumps(frames) + ";")
     js.append("PO_SNES.maps = " + json.dumps(maps) + ";")
     js.append("PO_SNES.atlas = {")
     for rid in ("africa", "mountains", "jungle", "wetlands"):
-        js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png?v=47",')
+        js.append(f'  {rid}: "assets/snes/built/atlas_{rid}.png?v=48",')
     js.append("};")
     js.append("PO_SNES.parallax = " + json.dumps(parallax) + ";")
-    js.append('PO_SNES.playerSheet = "assets/snes/built/player.png?v=47";')
-    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png?v=47";')
+    js.append('PO_SNES.playerSheet = "assets/snes/built/player.png?v=48";')
+    js.append('PO_SNES.animalSheet = "assets/snes/built/animals_td.png?v=48";')
     js.append("PO_SNES.waterAnim = [\"water\",\"water2\",\"water3\",\"water_a\"];")
     (root / "primal_snes_data.js").write_text("\n".join(js), encoding="utf-8")
 
