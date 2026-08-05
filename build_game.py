@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "35"
+ASSET_VER = "36"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -125,10 +125,10 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-stage{{position:relative;width:100%;aspect-ratio:16/9;background:#041008;border:2px solid #1a3d28;border-radius:8px;overflow:hidden}}
 .po-gd-cover{{position:absolute;inset:0}}
 .po-gd-mosaic{{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;width:100%;height:100%;background:#041008}}
-.po-gd-mosaic button{{appearance:none;border:0;padding:0;margin:0;cursor:pointer;background:#041008;position:relative;overflow:hidden}}
+.po-gd-mosaic button{{appearance:none;border:0;padding:0;margin:0;cursor:pointer;background:#041008;position:relative;overflow:hidden;opacity:0.7;transition:opacity .6s ease}}
 .po-gd-mosaic img{{width:100%;height:100%;object-fit:cover;display:block;filter:saturate(1.05) contrast(1.05);transition:transform .8s ease}}
 .po-gd-mosaic button:hover img,.po-gd.is-trailer .po-gd-mosaic img{{transform:scale(1.08)}}
-.po-gd-mosaic .po-wet{{filter:hue-rotate(55deg) saturate(1.15) brightness(.92)}}
+.po-gd-mosaic .po-wet{{filter:hue-rotate(75deg) saturate(1.3) brightness(.85) sepia(.2)}}.po-gd-mosaic button[data-region=wetlands]::after{{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(30,90,100,.2),rgba(10,50,60,.35));pointer-events:none}}
 .po-gd-promo{{margin:0;font-size:10px;color:#4a6b55;max-width:32em;line-height:1.35}}
 .po-gd-regions{{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}}
 .po-gd-regions button{{appearance:none;border:2px solid #2d6b45;border-radius:8px;padding:6px 10px;background:rgba(4,20,10,.85);color:#5dce7a;font:700 10px "Courier New",monospace;cursor:pointer}}
@@ -209,7 +209,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Tap a biome tile or ENTER — sharper world, wet water, photo film look</p>
+          <p class="po-gd-tip">Tap a biome — cinematic biomes, lightning, herd silhouettes, field cards</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">AFRICA</button>
             <button type="button" data-region="mountains">MOUNTAINS</button>
@@ -288,6 +288,15 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   var playing=false;
   var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v={v}".replace(/&amp;/g,"&");
   root.classList.add("is-trailer");
+  var tiles=root.querySelectorAll("#po-gd-mosaic button");
+  var ti=0;
+  if(tiles.length){{
+    setInterval(function(){{
+      if(!root.classList.contains("is-trailer"))return;
+      tiles.forEach(function(b,i){{b.style.opacity=i===ti?"1":"0.55";b.style.zIndex=i===ti?"2":"1";}});
+      ti=(ti+1)%tiles.length;
+    }},1600);
+  }}
   function openGame(region){{
     var src=baseSrc+(region?("&region="+region):"");
     frame.setAttribute("src",src);
