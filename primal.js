@@ -97,7 +97,14 @@
     noteBody: document.getElementById("po-note-body"),
     noteMeta: document.getElementById("po-note-meta"),
     noteFoot: document.getElementById("po-note-foot"),
-    noteX: document.getElementById("po-note-x")
+    noteX: document.getElementById("po-note-x"),
+    obj: document.getElementById("po-obj"),
+    objList: document.getElementById("po-obj-list"),
+    pausedEl: document.getElementById("po-paused"),
+    continueBtn: document.getElementById("po-continue"),
+    help: document.getElementById("po-help"),
+    helpX: document.getElementById("po-help-x"),
+    helpGo: document.getElementById("po-help-go")
   };
 
   const MUSIC_BASE = "https://incompetech.com/music/royalty-free/mp3-royaltyfree/";
@@ -113,6 +120,13 @@
   let notesFound = [];
   let notesTotal = 0;
   let noteFlash = 0;
+  let notePendingLog = false;
+  let gamePaused = false;
+  let ambientChirpT = 0;
+  let landmarksVisited = {};
+  let animalsSeen = {};
+  let rareFound = false;
+  const SAVE_KEY = "po_expedition_v1";
 
   function ensureAudio() {
     if (audioCtx) return audioCtx;
@@ -155,17 +169,175 @@
     sfxGain();
     const o = ctxA.createOscillator();
     const g = ctxA.createGain();
-    o.type = "triangle";
-    o.frequency.value = wetness ? 90 + Math.random() * 30 : 140 + Math.random() * 40;
+    const snow = region && region.id === "mountains" && !wetness;
+    const leaf = region && region.id === "jungle" && !wetness;
+    o.type = wetness ? "sine" : (snow ? "triangle" : (leaf ? "sine" : "triangle"));
+    o.frequency.value = wetness
+      ? (70 + Math.random() * 40)
+      : (snow ? (180 + Math.random() * 50) : (leaf ? (200 + Math.random() * 80) : (130 + Math.random() * 45)));
     g.gain.value = 0.0001;
     o.connect(g);
     g.connect(masterGain);
     const now = ctxA.currentTime;
-    g.gain.exponentialRampToValueAtTime(wetness ? 0.04 : 0.055, now + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+    const peak = wetness ? 0.05 : (snow ? 0.035 : 0.055);
+    g.gain.exponentialRampToValueAtTime(peak, now + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + (wetness ? 0.11 : 0.07));
     o.start(now);
-    o.stop(now + 0.09);
+    o.stop(now + 0.13);
+    if (wetness && Math.random() < 0.35) {
+      const o2 = ctxA.createOscillator();
+      const g2 = ctxA.createGain();
+      o2.type = "sine";
+      o2.frequency.value = 220 + Math.random() * 40;
+      g2.gain.value = 0.0001;
+      o2.connect(g2); g2.connect(masterGain);
+      g2.gain.exponentialRampToValueAtTime(0.02, now + 0.02);
+      g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.14);
+      o2.start(now + 0.02); o2.stop(now + 0.16);
+    }
   }
+
+  function emptySave() {
+    return { onboarded: false, lastRegion: null, regions: {} };
+  }
+  function loadSave() {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return emptySave();
+      const s = JSON.parse(raw);
+      if (!s || typeof s !== "object") return emptySave();
+      s.regions = s.regions || {};
+      return s;
+    } catch (e) { return emptySave(); }
+  }
+  function writeSave(s) {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(s)); } catch (e) {}
+  }
+  function regionBucket(s, id) {
+    if (!s.regions[id]) s.regions[id] = { notes: [], seen: [], landmarks: [], rare: false };
+    const b = s.regions[id];
+    b.notes = b.notes || [];
+    b.seen = b.seen || [];
+    b.landmarks = b.landmarks || [];
+    return b;
+  }
+  function persistProgress() {
+    if (!region) return;
+    const s = loadSave();
+    s.lastRegion = region.id;
+    const b = regionBucket(s, region.id);
+    b.notes = notesFound.map(function (n) { return n.id; });
+    b.seen = Object.keys(animalsSeen);
+    b.landmarks = Object.keys(landmarksVisited);
+    b.rare = !!rareFound;
+    writeSave(s);
+    syncContinueBtn();
+  }
+  function syncContinueBtn() {
+    if (!ui.continueBtn) return;
+    const s = loadSave();
+    const show = !!(s.lastRegion && PO_DATA[s.lastRegion]);
+    ui.continueBtn.hidden = !show;
+    if (show) ui.continueBtn.textContent = "CONTINUE · " + (PO_DATA[s.lastRegion].name || s.lastRegion).toUpperCase();
+  }
+  function restoreRegionProgress(regionId) {
+    const s = loadSave();
+    const b = regionBucket(s, regionId);
+    animalsSeen = {};
+    landmarksVisited = {};
+    rareFound = !!b.rare;
+    b.seen.forEach(function (id) { animalsSeen[id] = true; });
+    b.landmarks.forEach(function (id) { landmarksVisited[id] = true; });
+    const noteSet = {};
+    b.notes.forEach(function (id) { noteSet[id] = true; });
+    notesFound = [];
+    sprites.forEach(function (sp) {
+      if (sp.kind !== "note") return;
+      if (noteSet[sp.noteId]) {
+        sp.taken = true;
+        notesFound.push({ id: sp.noteId, text: sp.text });
+      }
+    });
+  }
+  function markAnimalSeen(id) {
+    if (!id) return;
+    animalsSeen[id] = true;
+    if (id === "honeybadger") rareFound = true;
+    persistProgress();
+    syncObjectives();
+  }
+  function markLandmark(id) {
+    if (!id || landmarksVisited[id]) return;
+    landmarksVisited[id] = true;
+    blip(490, 0.1, "sine");
+    persistProgress();
+    syncObjectives();
+  }
+  function objectiveState() {
+    const animalNeed = region && region.id === "africa" ? 5 : 4;
+    const seenN = Object.keys(animalsSeen).length;
+    const lmNeed = 1;
+    const lmN = Object.keys(landmarksVisited).length;
+    const list = [
+      { done: notesTotal > 0 && notesFound.length >= notesTotal, label: "Field notes " + notesFound.length + "/" + notesTotal },
+      { done: seenN >= animalNeed, label: "Open dossiers " + Math.min(seenN, animalNeed) + "/" + animalNeed },
+      { done: lmN >= lmNeed, label: "Visit a landmark " + Math.min(lmN, lmNeed) + "/" + lmNeed }
+    ];
+    if (region && region.id === "africa") {
+      list.push({ done: !!rareFound, label: "Find the honey badger" });
+    }
+    return list;
+  }
+  function syncObjectives() {
+    if (!ui.obj || !ui.objList) return;
+    const list = objectiveState();
+    ui.obj.hidden = mode === "title" || mode === "help";
+    ui.objList.innerHTML = list.map(function (o) {
+      return "<li class=\"" + (o.done ? "done" : "") + "\">" + o.label + "</li>";
+    }).join("");
+  }
+  function openHelp() {
+    if (!ui.help) return;
+    ui.help.classList.add("show");
+    mode = "help";
+    clearInput();
+    syncTouchUI();
+  }
+  function closeHelp(mark) {
+    if (ui.help) ui.help.classList.remove("show");
+    if (mode === "help") mode = "explore";
+    if (mark) {
+      const s = loadSave();
+      s.onboarded = true;
+      writeSave(s);
+    }
+    clearInput();
+    syncTouchUI();
+    syncObjectives();
+  }
+  function setPaused(on) {
+    gamePaused = !!on;
+    if (ui.pausedEl) ui.pausedEl.hidden = !gamePaused || mode === "title";
+  }
+  function birdChirp() {
+    const ctxA = ensureAudio();
+    if (!ctxA || muted) return;
+    sfxGain();
+    const o = ctxA.createOscillator();
+    const g = ctxA.createGain();
+    o.type = "sine";
+    const base = region && region.id === "jungle" ? 1400 : (region && region.id === "mountains" ? 1100 : 1600);
+    o.frequency.value = base + Math.random() * 400;
+    g.gain.value = 0.0001;
+    o.connect(g); g.connect(masterGain);
+    const now = ctxA.currentTime;
+    g.gain.exponentialRampToValueAtTime(0.03, now + 0.02);
+    o.frequency.exponentialRampToValueAtTime(base * 1.4, now + 0.08);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+    o.start(now); o.stop(now + 0.18);
+  }
+
+
 
   function stopAmbient() {
     if (!ambientNodes) return;
@@ -465,7 +637,7 @@
       if (!openSpot(x, y) && floor[y | 0][x | 0] !== 3) {
         x = clamp(x, 4, MAP - 4); y = clamp(y, 4, MAP - 4);
       }
-      landmarks.push({ label: label, x: x, y: y });
+      landmarks.push({ id: label, label: label, x: x, y: y });
       if (propKind) {
         sprites.push({
           x: x, y: y, kind: "prop", prop: propKind,
@@ -614,12 +786,30 @@
     return floor[iy][ix] === 3;
   }
 
+  function solidPropRadius(sp) {
+    if (!sp || sp.kind !== "prop") return 0;
+    const p = sp.prop || "";
+    if (p === "grass" || p === "fern" || p === "bush" || sp.track) return 0;
+    if (p === "acacia" || p === "baobab" || p === "pine" || p === "tree") return 0.42;
+    if (p === "wallafrica" || p === "walljungle" || p === "wallmountains") return 0.55;
+    if (p === "rock" || p === "snowrock") return 0.38;
+    return 0.28;
+  }
+  function propBlocked(x, y) {
+    for (let i = 0; i < sprites.length; i++) {
+      const sp = sprites[i];
+      const rad = solidPropRadius(sp);
+      if (!rad) continue;
+      if (Math.hypot(x - sp.x, y - sp.y) < rad) return true;
+    }
+    return false;
+  }
   function playerBlocked(x, y) {
-    return blocked(x, y) || wet(x, y);
+    return blocked(x, y) || wet(x, y) || propBlocked(x, y);
   }
 
   function animalBlocked(x, y, sp) {
-    if (blocked(x, y)) return true;
+    if (blocked(x, y) || propBlocked(x, y)) return true;
     if (sp && sp.waterLove) return false;
     return wet(x, y);
   }
@@ -714,8 +904,6 @@
     }
   }
 
-  let notePendingLog = false;
-
   function tryPickupNotes() {
     for (let i = 0; i < sprites.length; i++) {
       const sp = sprites[i];
@@ -726,6 +914,8 @@
       noteFlash = 1.8;
       blip(660, 0.1, "triangle");
       syncNotesUI();
+      persistProgress();
+      syncObjectives();
       const allDone = notesFound.length >= notesTotal && notesTotal > 0;
       openFieldNote(sp.text, notesFound.length, notesTotal, allDone);
       return;
@@ -761,6 +951,7 @@
     if (mode === "note") mode = "explore";
     clearInput();
     syncTouchUI();
+    syncObjectives();
     if (openLog) openExpeditionLog();
   }
 
@@ -828,6 +1019,10 @@
       }
     }
     tryPickupNotes();
+    for (let i = 0; i < landmarks.length; i++) {
+      const lm = landmarks[i];
+      if (Math.hypot(lm.x - player.x, lm.y - player.y) < 2.2) markLandmark(lm.id || lm.label);
+    }
   }
 
   function floorRgbAt(fx, fy, fog) {
@@ -1060,7 +1255,15 @@
     grizzly: "assets/walk/grizzly.png",
     honeybadger: "assets/walk/honeybadger.png",
     gorilla: "assets/walk/gorilla.png",
-    croc: "assets/walk/croc.png"
+    croc: "assets/walk/croc.png",
+    leopard: "assets/walk/leopard.png",
+    jaguar: "assets/walk/jaguar.png",
+    snowleopard: "assets/walk/snowleopard.png",
+    cougar: "assets/walk/cougar.png",
+    hippo: "assets/walk/hippo.png",
+    rhino: "assets/walk/rhino.png",
+    anaconda: "assets/walk/anaconda.png",
+    eagle: "assets/walk/eagle.png"
   };
 
   function makeGaitFrames(src) {
@@ -1104,7 +1307,7 @@
 
   function fitRemoteToCanvas(img, mode) {
     // Props keep foliage greens; animals only punch white/studio backdrops
-    const max = mode === "prop" ? 160 : 192;
+    const max = mode === "prop" ? 160 : 224;
     const scale = Math.min(1, max / Math.max(img.width, img.height));
     const w = Math.max(16, (img.width * scale) | 0);
     const h = Math.max(16, (img.height * scale) | 0);
@@ -1345,6 +1548,7 @@
       if (sp.kind === "note") sc = 0.55;
       if (sp.behavior === "soar") sc *= 1.05;
       if (sp.kind === "animal" && sp.squash) sc *= sp.squash;
+      if (sp.kind === "animal" && transformY < 5.5) sc *= 1.1;
       const bobOff = (sp.bob || 0) * (10 / Math.max(0.6, transformY));
       let spriteH = Math.abs((H / transformY) * sc) | 0;
       if (sp.kind === "note") spriteH = Math.max(18, spriteH);
@@ -1373,8 +1577,8 @@
         ctx.ellipse(spriteScreenX, floorY - 2, spriteW * 0.55, 5, 0, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.imageSmoothingEnabled = !!(img._photo) || sp.kind === "note";
-      ctx.imageSmoothingQuality = "high";
+      ctx.imageSmoothingEnabled = !!(img._photo) || sp.kind === "note" || (sp.kind === "animal" && transformY < 6);
+      ctx.imageSmoothingQuality = (sp.kind === "animal" && transformY < 5.5) ? "high" : "medium";
       if (flip) {
         ctx.translate(drawStartX + spriteW, drawStartY);
         ctx.scale(-1, 1);
@@ -1463,6 +1667,15 @@
     vg.addColorStop(1, "rgba(0,0,0," + (0.35 + (1 - phase.light) * 0.35) + ")");
     ctx.fillStyle = vg;
     ctx.fillRect(0, 0, W, H);
+    if (phase.name === "night" || phase.name === "dusk") {
+      const lg = ctx.createRadialGradient(W / 2, H * 0.58, 16, W / 2, H * 0.55, H * 0.62);
+      lg.addColorStop(0, "rgba(255,210,130," + (phase.name === "night" ? 0.16 : 0.08) + ")");
+      lg.addColorStop(0.4, "rgba(255,150,60,0.05)");
+      lg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = lg;
+      ctx.fillRect(0, 0, W, H);
+    }
+    drawWayPings();
     const ms = 2, msz = MAP * ms;
     const ox = W - msz - 6, oy = 6;
     ctx.fillStyle = "rgba(2,12,6,0.85)";
@@ -1482,6 +1695,11 @@
       ctx.fillStyle = sp.data.color || "#c9a227";
       ctx.fillRect((px - 1) | 0, (py - 1) | 0, 2, 2);
     });
+    landmarks.forEach(function (lm) {
+      if (landmarksVisited[lm.id || lm.label]) return;
+      ctx.fillStyle = "#e8c86a";
+      ctx.fillRect((ox + lm.x * ms) | 0, (oy + lm.y * ms) | 0, 2, 2);
+    });
     const ppx = ox + player.x * ms, ppy = oy + player.y * ms;
     ctx.fillStyle = "#5dce7a";
     ctx.beginPath();
@@ -1489,7 +1707,6 @@
     ctx.lineTo(ppx + Math.cos(player.dir + 2.4) * 2.5, ppy + Math.sin(player.dir + 2.4) * 2.5);
     ctx.lineTo(ppx + Math.cos(player.dir - 2.4) * 2.5, ppy + Math.sin(player.dir - 2.4) * 2.5);
     ctx.fill();
-    // Day phase chip on minimap bottom
     ctx.fillStyle = "rgba(4,20,10,0.85)";
     ctx.fillRect(ox - 3, oy + msz + 4, msz + 6, 10);
     ctx.fillStyle = "#9ec9ad";
@@ -1497,6 +1714,53 @@
     ctx.textAlign = "center";
     ctx.fillText(phase.name.toUpperCase(), ox + msz / 2, oy + msz + 11);
     ctx.textAlign = "left";
+  }
+
+  function drawWayPings() {
+    const dirX = Math.cos(player.dir), dirY = Math.sin(player.dir);
+    const planeX = -dirY * 0.66, planeY = dirX * 0.66;
+    function ping(wx, wy, col, tag) {
+      const spriteX = wx - player.x, spriteY = wy - player.y;
+      const invDet = 1 / (planeX * dirY - dirX * planeY);
+      const transformX = invDet * (dirY * spriteX - dirX * spriteY);
+      const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
+      let sx, sy;
+      if (transformY > 0.2) {
+        sx = (W / 2) * (1 + transformX / transformY);
+        sy = H / 2 + pitchPx() - 18 / transformY;
+        if (sx > 24 && sx < W - 24 && sy > 24 && sy < H - 24) return;
+      }
+      const ang = Math.atan2(spriteY, spriteX) - player.dir;
+      const edge = Math.min(W, H) * 0.42;
+      sx = W / 2 + Math.sin(ang) * edge;
+      sy = H / 2 - Math.cos(ang) * edge * 0.55 + pitchPx() * 0.25;
+      sx = clamp(sx, 18, W - 18);
+      sy = clamp(sy, 18, H - 18);
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy - 7);
+      ctx.lineTo(sx + 6, sy + 5);
+      ctx.lineTo(sx - 6, sy + 5);
+      ctx.fill();
+      ctx.font = "9px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText(tag, sx, sy + 16);
+      ctx.textAlign = "left";
+    }
+    let bestNote = null, bestNd = 1e9;
+    sprites.forEach(function (sp) {
+      if (sp.kind !== "note" || sp.taken) return;
+      const d = Math.hypot(sp.x - player.x, sp.y - player.y);
+      if (d < bestNd) { bestNd = d; bestNote = sp; }
+    });
+    if (bestNote) ping(bestNote.x, bestNote.y, "rgba(93,206,122,0.95)", "NOTE");
+    let bestLm = null, bestLd = 1e9;
+    landmarks.forEach(function (lm) {
+      if (landmarksVisited[lm.id || lm.label]) return;
+      const d = Math.hypot(lm.x - player.x, lm.y - player.y);
+      if (d < bestLd) { bestLd = d; bestLm = lm; }
+    });
+    if (bestLm) ping(bestLm.x, bestLm.y, "rgba(232,200,106,0.95)", "SITE");
   }
 
   function rebuildMiniBase() {
@@ -1582,7 +1846,7 @@
   }
 
   function inGameMode() {
-    return mode === "explore" || mode === "dossier" || mode === "log" || mode === "note";
+    return mode === "explore" || mode === "dossier" || mode === "log" || mode === "note" || mode === "help";
   }
 
   function notifyParentChrome() {
@@ -1697,6 +1961,8 @@
     document.querySelectorAll(".po-tabs button").forEach(function (b) {
       b.classList.toggle("active", b.dataset.tab === tab);
     });
+    markAnimalSeen(animal.id);
+    syncObjectives();
   }
 
   function renderTab() {
@@ -1716,20 +1982,28 @@
   function enterRegion(id) {
     closeLog();
     if (ui.note) ui.note.classList.remove("show");
+    if (ui.help) ui.help.classList.remove("show");
     notePendingLog = false;
+    setPaused(false);
     buildWorld(id);
+    restoreRegionProgress(id);
     mode = "explore";
     ui.title.classList.remove("show");
     ui.hud.hidden = false;
     ui.hint.hidden = false;
     if (ui.menuBtn) ui.menuBtn.hidden = false;
+    if (ui.obj) ui.obj.hidden = false;
     ui.regionChip.textContent = region.name;
     closeDossier();
     clearInput();
     syncNotesUI();
+    syncObjectives();
     syncTouchUI();
     playRegionMusic(id);
+    persistProgress();
     tryLandscapeFullscreen();
+    const s = loadSave();
+    if (!s.onboarded) openHelp();
   }
 
   function showTitle() {
@@ -1737,29 +2011,43 @@
     ui.title.classList.add("show");
     ui.hud.hidden = true;
     ui.hint.hidden = true;
+    if (ui.obj) ui.obj.hidden = true;
     if (ui.menuBtn) ui.menuBtn.hidden = true;
+    setPaused(false);
     stopMusic();
     closeDossier();
     closeLog();
     if (ui.note) ui.note.classList.remove("show");
+    if (ui.help) ui.help.classList.remove("show");
     notePendingLog = false;
     clearInput();
+    syncContinueBtn();
     syncTouchUI();
   }
 
   function loop(now) {
     const dt = Math.min(0.033, (now - (loop._last || now)) / 1000);
     loop._last = now;
+    if (gamePaused && (mode === "explore" || mode === "dossier" || mode === "log" || mode === "note" || mode === "help")) {
+      drawWorld();
+      requestAnimationFrame(loop);
+      return;
+    }
     t += dt;
     dayT += dt;
     if (noteFlash > 0) noteFlash = Math.max(0, noteFlash - dt);
+    ambientChirpT -= dt;
+    if (ambientChirpT <= 0 && mode === "explore") {
+      ambientChirpT = 4 + Math.random() * 7;
+      if (Math.random() < 0.65) birdChirp();
+    }
     if (mode === "explore") {
       movePlayer(dt);
       moveAnimals(dt);
       updateParticles(dt);
       ui.posChip.textContent = "POS " + player.x.toFixed(1) + "," + player.y.toFixed(1);
       drawWorld();
-    } else if (mode === "dossier" || mode === "log" || mode === "note") {
+    } else if (mode === "dossier" || mode === "log" || mode === "note" || mode === "help") {
       moveAnimals(dt);
       updateParticles(dt);
       drawWorld();
@@ -1774,6 +2062,7 @@
     if (e.key === "Escape") {
       if (mode === "dossier") closeDossier();
       else if (mode === "note") closeFieldNote();
+      else if (mode === "help") closeHelp(true);
       else if (mode === "log") closeLog();
       else if (mode === "explore") showTitle();
       return;
@@ -1791,7 +2080,25 @@
     if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].indexOf(e.key) >= 0) e.preventDefault();
   });
   window.addEventListener("keyup", function (e) { keys[e.key] = false; });
-  window.addEventListener("blur", function () { clearInput(); });
+  window.addEventListener("blur", function () {
+    clearInput();
+    if (mode !== "title") setPaused(true);
+  });
+  window.addEventListener("focus", function () {
+    setPaused(false);
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+      clearInput();
+      if (mode !== "title") setPaused(true);
+    } else setPaused(false);
+  });
+  window.addEventListener("message", function (e) {
+    const d = e.data;
+    if (!d || typeof d !== "object") return;
+    if (d.type === "po-pause") setPaused(true);
+    if (d.type === "po-resume") setPaused(false);
+  });
 
   canvas.addEventListener("mousedown", function (e) {
     if (mode !== "explore") return;
@@ -1882,6 +2189,21 @@
   });
 
   ui.menuBtn.addEventListener("click", showTitle);
+  if (ui.continueBtn) {
+    ui.continueBtn.addEventListener("click", function () {
+      const s = loadSave();
+      if (s.lastRegion && PO_DATA[s.lastRegion]) enterRegion(s.lastRegion);
+    });
+  }
+  function closeHelpAndGo() { closeHelp(true); }
+  if (ui.helpX) ui.helpX.addEventListener("click", function (e) { e.stopPropagation(); closeHelpAndGo(); });
+  if (ui.helpGo) ui.helpGo.addEventListener("click", closeHelpAndGo);
+  if (ui.help) {
+    ui.help.addEventListener("click", function (e) {
+      if (e.target === ui.help) closeHelpAndGo();
+    });
+  }
+  syncContinueBtn();
   if (ui.fsBtn) {
     ui.fsBtn.addEventListener("click", function (e) {
       e.preventDefault();
