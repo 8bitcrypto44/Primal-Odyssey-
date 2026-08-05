@@ -44,20 +44,38 @@
   // ImageData floor stays cheap — keep readable res for Digistracts / fullscreen
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
     (window.matchMedia && matchMedia("(pointer:coarse)").matches);
-  const W = IS_MOBILE ? 560 : 720;
-  const H = IS_MOBILE ? 315 : 405;
+  // SMB3 / NES pixel mode: 256x240 screen, nearest-neighbor only
+  const W = 256;
+  const H = 240;
   canvas.width = W;
   canvas.height = H;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
+  canvas.style.imageRendering = "pixelated";
+  canvas.style.imageRendering = "crisp-edges";
+  ctx.imageSmoothingEnabled = false;
   const MAP = 36;
   const FOV = Math.PI / 3;
-  const TEX = IS_MOBILE ? 96 : 128;
-  const FLOOR_STEP_X = IS_MOBILE ? 2 : 2;
-  const FLOOR_STEP_Y = IS_MOBILE ? 2 : 1;
+  const TEX = 64;
+  const FLOOR_STEP_X = 2;
+  const FLOOR_STEP_Y = 2;
   const UNIT_FT = 11;
   const HT_FT = {
     acacia: 36, baobab: 58, pine: 85, tree: 110,
+    africa_tree1: 36, africa_tree2: 42, africa_tree3: 38,
+    mountains_tree1: 85, mountains_tree2: 78, mountains_tree3: 90,
+    jungle_tree1: 110, jungle_tree2: 100, jungle_tree3: 120,
+    wetlands_tree1: 48, wetlands_tree2: 55, wetlands_tree3: 44,
+    africa_rock1: 6.5, africa_rock2: 5.5, africa_rock3: 7.5, africa_rock4: 6, africa_rock5: 8,
+    mountains_rock1: 6.5, mountains_rock2: 5.5, mountains_rock3: 7.5, mountains_rock4: 6, mountains_rock5: 8,
+    jungle_rock1: 6.5, jungle_rock2: 5.5, jungle_rock3: 7.5, jungle_rock4: 6, jungle_rock5: 8,
+    wetlands_rock1: 6.5, wetlands_rock2: 5.5, wetlands_rock3: 7.5, wetlands_rock4: 6, wetlands_rock5: 8,
+    africa_grass1: 3.8, africa_grass2: 3.2, africa_grass3: 4.5,
+    mountains_grass1: 3.8, mountains_grass2: 3.2, mountains_grass3: 4.5,
+    jungle_grass1: 3.8, jungle_grass2: 3.2, jungle_grass3: 4.5,
+    wetlands_grass1: 3.8, wetlands_grass2: 3.2, wetlands_grass3: 4.5,
+    africa_bush1: 4, africa_bush2: 4.2,
+    mountains_bush1: 4, mountains_bush2: 4.2,
+    jungle_bush1: 4, jungle_bush2: 4.2,
+    wetlands_bush1: 4, wetlands_bush2: 4.2,
     rock: 6.5, snowrock: 6.5, grass: 3.8, fern: 4.2, bush: 4,
     wallrock: 14, reed: 4, africa_thorn: 3.2, jungle_vine: 12, wet_lily: 1.2, mtn_fir: 40,
     lm_watering_hole: 10, lm_cairn: 8, lm_boardwalk: 7, lm_reed_blind: 8, lm_ranger_post: 9, lm_canopy_gap: 14, bird: 1.2,
@@ -1055,34 +1073,37 @@
       });
     }
 
-    const trees = regionId === "africa" ? ["acacia", "baobab", "acacia", "acacia"]
-      : regionId === "mountains" ? ["pine", "pine"] : ["tree", "tree", "tree"];
-    const treeN = regionId === "mountains" ? 22 : (regionId === "jungle" ? 20 : 16);
+    const rid = regionId;
+    const trees = [rid + "_tree1", rid + "_tree2", rid + "_tree3"];
+    const rocks = [rid + "_rock1", rid + "_rock2", rid + "_rock3", rid + "_rock4", rid + "_rock5"];
+    const grasses = [rid + "_grass1", rid + "_grass2", rid + "_grass3"];
+    const bushes = [rid + "_bush1", rid + "_bush2"];
+    const treeN = rid === "mountains" ? 22 : (rid === "jungle" ? 20 : 16);
     for (let i = 0; i < treeN; i++) placeProp(trees[rnd(trees.length)]);
-    const rocks = regionId === "mountains" ? ["snowrock"] : ["rock"];
-    const rockN = regionId === "mountains" ? 16 : 12;
-    for (let i = 0; i < rockN; i++) placeProp(rocks[0]);
-    if (regionId === "mountains") {
-      for (let i = 0; i < 20; i++) placeProp("grass");
-      for (let i = 0; i < 12; i++) placeProp("bush");
-      for (let i = 0; i < 10; i++) placeProp("mtn_fir");
-    } else if (regionId === "africa") {
-      for (let i = 0; i < 28; i++) placeProp("grass");
-      for (let i = 0; i < 10; i++) placeProp("bush");
-      for (let i = 0; i < 14; i++) placeProp("africa_thorn");
-    } else if (regionId === "wetlands") {
-      for (let i = 0; i < 16; i++) placeProp("reed");
-      for (let i = 0; i < 12; i++) placeProp("fern");
+    const rockN = rid === "mountains" ? 16 : 12;
+    for (let i = 0; i < rockN; i++) placeProp(rocks[rnd(rocks.length)]);
+    if (rid === "mountains") {
+      for (let i = 0; i < 20; i++) placeProp(grasses[rnd(grasses.length)]);
+      for (let i = 0; i < 12; i++) placeProp(bushes[rnd(bushes.length)]);
+      for (let i = 0; i < 10; i++) placeProp("mountains_tree2");
+    } else if (rid === "africa") {
+      for (let i = 0; i < 28; i++) placeProp(grasses[rnd(grasses.length)]);
+      for (let i = 0; i < 10; i++) placeProp(bushes[rnd(bushes.length)]);
+      for (let i = 0; i < 14; i++) placeProp("africa_bush2");
+    } else if (rid === "wetlands") {
+      for (let i = 0; i < 16; i++) placeProp("wetlands_grass3");
+      for (let i = 0; i < 12; i++) placeProp(grasses[rnd(grasses.length)]);
       for (let i = 0; i < 10; i++) placeProp("wet_lily");
+      for (let i = 0; i < 10; i++) placeProp(bushes[rnd(bushes.length)]);
     } else {
-      for (let i = 0; i < 20; i++) placeProp("fern");
-      for (let i = 0; i < 14; i++) placeProp("bush");
-      for (let i = 0; i < 10; i++) placeProp("jungle_vine");
-      for (let i = 0; i < 10; i++) placeProp("grass");
+      for (let i = 0; i < 20; i++) placeProp(grasses[rnd(grasses.length)]);
+      for (let i = 0; i < 14; i++) placeProp(bushes[rnd(bushes.length)]);
+      for (let i = 0; i < 10; i++) placeProp("jungle_tree3");
+      for (let i = 0; i < 10; i++) placeProp(grasses[rnd(grasses.length)]);
     }
 
-    const rimRock = regionId === "mountains" ? "snowrock" : "rock";
-    const rimTall = regionId === "africa" ? "acacia" : (regionId === "mountains" ? "pine" : "tree");
+    const rimRock = rocks[0];
+    const rimTall = trees[0];
     for (let i = 1; i < MAP - 1; i += 3) {
       const j = i + 0.5;
       placeEdgeProp(i % 4 === 1 ? rimTall : rimRock, j, 1.15);
@@ -1424,11 +1445,11 @@
   function solidPropRadius(sp) {
     if (!sp || sp.kind !== "prop") return 0;
     const p = sp.prop || "";
-    if (p === "grass" || p === "fern" || p === "bush" || p === "reed" || p === "africa_thorn" || p === "wet_lily" || p === "bird" || p === "bug" || sp.track || sp.binocs || sp.den || sp.herd || sp.bird) return 0;
+    if (p.indexOf("_grass") >= 0 || p.indexOf("_bush") >= 0 || p === "grass" || p === "fern" || p === "bush" || p === "reed" || p === "africa_thorn" || p === "wet_lily" || p === "bird" || p === "bug" || sp.track || sp.binocs || sp.den || sp.herd || sp.bird) return 0;
     if (p.indexOf("lm_") === 0) return 0.5;
-    if (p === "acacia" || p === "baobab" || p === "pine" || p === "tree" || p === "jungle_vine" || p === "mtn_fir") return 0.42;
+    if (p.indexOf("_tree") >= 0 || p === "acacia" || p === "baobab" || p === "pine" || p === "tree" || p === "jungle_vine" || p === "mtn_fir") return 0.42;
     if (p === "wallafrica" || p === "walljungle" || p === "wallmountains") return 0.55;
-    if (p === "rock" || p === "snowrock") return 0.38;
+    if (p.indexOf("_rock") >= 0 || p === "rock" || p === "snowrock") return 0.38;
     return 0.28;
   }
   function propBlocked(x, y) {
@@ -1997,7 +2018,7 @@
     const skyImg = remoteSky[R.id];
     if (skyImg) {
       const scroll = ((player.dir * 120) % skyImg.width + skyImg.width) % skyImg.width;
-      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingEnabled = false;
       ctx.drawImage(skyImg, -scroll, 0, skyImg.width, horizon);
       ctx.drawImage(skyImg, -scroll + skyImg.width, 0, skyImg.width, horizon);
       ctx.fillStyle = "rgba(" +
@@ -2151,6 +2172,19 @@
   }
 
   function drawPropBillboard(ctx2, prop, size) {
+    // Map SMB3 variant ids onto classic procedural silhouettes
+    if (prop.indexOf("_tree") >= 0) {
+      if (prop.indexOf("africa") === 0) prop = prop.indexOf("2") >= 0 ? "baobab" : "acacia";
+      else if (prop.indexOf("mountains") === 0) prop = "pine";
+      else if (prop.indexOf("wetlands") === 0) prop = "acacia";
+      else prop = "tree";
+    } else if (prop.indexOf("_rock") >= 0) {
+      prop = prop.indexOf("mountains") === 0 ? "snowrock" : "rock";
+    } else if (prop.indexOf("_grass") >= 0) {
+      prop = prop.indexOf("wetlands") === 0 && prop.indexOf("3") >= 0 ? "reed" : "grass";
+    } else if (prop.indexOf("_bush") >= 0) {
+      prop = "bush";
+    }
     const s = size;
     const px = function (x, y, w, h, col) {
       ctx2.fillStyle = col;
@@ -2384,7 +2418,59 @@
     jungle_vine: "assets/props/jungle_vine.png", wet_lily: "assets/props/wet_lily.png",
     mtn_fir: "assets/props/mtn_fir.png", bird: "assets/props/bird.png", bug: "assets/props/bug.png",
     wallafrica: "assets/props/wallafrica.png", walljungle: "assets/props/walljungle.png",
-    wallmountains: "assets/props/wallmountains.png"
+    wallmountains: "assets/props/wallmountains.png",
+    africa_tree1: "assets/props/africa_tree1.png",
+    africa_tree2: "assets/props/africa_tree2.png",
+    africa_tree3: "assets/props/africa_tree3.png",
+    africa_rock1: "assets/props/africa_rock1.png",
+    africa_rock2: "assets/props/africa_rock2.png",
+    africa_rock3: "assets/props/africa_rock3.png",
+    africa_rock4: "assets/props/africa_rock4.png",
+    africa_rock5: "assets/props/africa_rock5.png",
+    africa_grass1: "assets/props/africa_grass1.png",
+    africa_grass2: "assets/props/africa_grass2.png",
+    africa_grass3: "assets/props/africa_grass3.png",
+    africa_bush1: "assets/props/africa_bush1.png",
+    africa_bush2: "assets/props/africa_bush2.png",
+    mountains_tree1: "assets/props/mountains_tree1.png",
+    mountains_tree2: "assets/props/mountains_tree2.png",
+    mountains_tree3: "assets/props/mountains_tree3.png",
+    mountains_rock1: "assets/props/mountains_rock1.png",
+    mountains_rock2: "assets/props/mountains_rock2.png",
+    mountains_rock3: "assets/props/mountains_rock3.png",
+    mountains_rock4: "assets/props/mountains_rock4.png",
+    mountains_rock5: "assets/props/mountains_rock5.png",
+    mountains_grass1: "assets/props/mountains_grass1.png",
+    mountains_grass2: "assets/props/mountains_grass2.png",
+    mountains_grass3: "assets/props/mountains_grass3.png",
+    mountains_bush1: "assets/props/mountains_bush1.png",
+    mountains_bush2: "assets/props/mountains_bush2.png",
+    jungle_tree1: "assets/props/jungle_tree1.png",
+    jungle_tree2: "assets/props/jungle_tree2.png",
+    jungle_tree3: "assets/props/jungle_tree3.png",
+    jungle_rock1: "assets/props/jungle_rock1.png",
+    jungle_rock2: "assets/props/jungle_rock2.png",
+    jungle_rock3: "assets/props/jungle_rock3.png",
+    jungle_rock4: "assets/props/jungle_rock4.png",
+    jungle_rock5: "assets/props/jungle_rock5.png",
+    jungle_grass1: "assets/props/jungle_grass1.png",
+    jungle_grass2: "assets/props/jungle_grass2.png",
+    jungle_grass3: "assets/props/jungle_grass3.png",
+    jungle_bush1: "assets/props/jungle_bush1.png",
+    jungle_bush2: "assets/props/jungle_bush2.png",
+    wetlands_tree1: "assets/props/wetlands_tree1.png",
+    wetlands_tree2: "assets/props/wetlands_tree2.png",
+    wetlands_tree3: "assets/props/wetlands_tree3.png",
+    wetlands_rock1: "assets/props/wetlands_rock1.png",
+    wetlands_rock2: "assets/props/wetlands_rock2.png",
+    wetlands_rock3: "assets/props/wetlands_rock3.png",
+    wetlands_rock4: "assets/props/wetlands_rock4.png",
+    wetlands_rock5: "assets/props/wetlands_rock5.png",
+    wetlands_grass1: "assets/props/wetlands_grass1.png",
+    wetlands_grass2: "assets/props/wetlands_grass2.png",
+    wetlands_grass3: "assets/props/wetlands_grass3.png",
+    wetlands_bush1: "assets/props/wetlands_bush1.png",
+    wetlands_bush2: "assets/props/wetlands_bush2.png"
   };
   const LOCAL_WALLS = {
     africa: "assets/walls/africa.png", mountains: "assets/walls/mountains.png",
@@ -2427,7 +2513,7 @@
       c.width = src.width + 18;
       c.height = src.height + 14;
       const g = c.getContext("2d");
-      g.imageSmoothingEnabled = true;
+      g.imageSmoothingEnabled = false;
       g.translate(c.width / 2 + p.shift, c.height - 2);
       g.transform(1, 0, p.lean, p.squash, 0, 0);
       // upper body
@@ -2457,16 +2543,19 @@
   }
 
   function fitRemoteToCanvas(img, mode) {
-    // Props keep foliage greens; animals only punch white/studio backdrops
-    const max = mode === "prop" ? 256 : 256;
-    const scale = Math.min(1, max / Math.max(img.width, img.height));
-    const w = Math.max(16, (img.width * scale) | 0);
-    const h = Math.max(16, (img.height * scale) | 0);
+    // SMB3 nearest-neighbor: props stay crisp; animals get chunky pixel downsample
+    const max = mode === "prop" ? 64 : 48;
+    let tw = img.width, th = img.height;
+    const scale = Math.min(1, max / Math.max(tw, th));
+    let w = Math.max(8, (tw * scale) | 0);
+    let h = Math.max(8, (th * scale) | 0);
+    // Snap to even NES-ish sizes
+    w = Math.max(8, w - (w % 2));
+    h = Math.max(8, h - (h % 2));
     const tmp = document.createElement("canvas");
     tmp.width = w; tmp.height = h;
     const tctx = tmp.getContext("2d");
-    tctx.imageSmoothingEnabled = true;
-    tctx.imageSmoothingQuality = "high";
+    tctx.imageSmoothingEnabled = false;
     tctx.drawImage(img, 0, 0, w, h);
     let minX = 0, minY = 0, maxX = w - 1, maxY = h - 1;
     try {
@@ -2512,9 +2601,9 @@
     const off = document.createElement("canvas");
     off.width = cw; off.height = ch;
     const octx = off.getContext("2d");
-    octx.imageSmoothingEnabled = true;
-    octx.imageSmoothingQuality = "high";
+    octx.imageSmoothingEnabled = false;
     octx.drawImage(tmp, minX, minY, cw, ch, 0, 0, cw, ch);
+    off._pixel = true;
     off._photo = true;
     return off;
   }
@@ -2564,6 +2653,8 @@
     });
     Object.keys(REMOTE_PROPS).forEach(function (kind) {
       if (remoteProps[kind]) return;
+      // Skip soft photo flora — SMB3 pixel local props are the source of truth
+      if (/tree|rock|grass|bush|acacia|baobab|pine|fern|snowrock|reed|thorn|vine|fir|lily/i.test(kind)) return;
       loadImg(REMOTE_PROPS[kind], function (img) {
         if (remoteProps[kind]) return;
         remoteProps[kind] = fitRemoteToCanvas(img, "prop");
@@ -2609,7 +2700,7 @@
         const c = document.createElement("canvas");
         c.width = c.height = TEX;
         const g = c.getContext("2d");
-        g.imageSmoothingEnabled = true;
+        g.imageSmoothingEnabled = false;
         g.drawImage(img, 0, 0, TEX, TEX);
         remoteGround[rid] = g.getImageData(0, 0, TEX, TEX);
       });
@@ -2620,7 +2711,7 @@
         c.width = W;
         c.height = Math.ceil(H * 0.55);
         const g = c.getContext("2d");
-        g.imageSmoothingEnabled = true;
+        g.imageSmoothingEnabled = false;
         g.drawImage(img, 0, 0, c.width, c.height);
         remoteSky[rid] = c;
       });
@@ -2697,10 +2788,10 @@
     if (remoteProps[prop]) return remoteProps[prop];
     if (propCache[prop]) return propCache[prop];
     const off = document.createElement("canvas");
-    off.width = off.height = 160;
+    off.width = off.height = 64;
     const octx = off.getContext("2d");
-    octx.imageSmoothingEnabled = true;
-    drawPropBillboard(octx, prop, 160);
+    octx.imageSmoothingEnabled = false;
+    drawPropBillboard(octx, prop, 64);
     propCache[prop] = off;
     return off;
   }
@@ -2900,8 +2991,7 @@
         ctx.ellipse(spriteScreenX + leanX * 0.2, floorY - 1, spriteW * 0.36, Math.max(3, spriteH * 0.04), 0, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.imageSmoothingEnabled = !!(img._photo) || sp.kind === "note" || (sp.kind === "animal" && transformY < 6);
-      ctx.imageSmoothingQuality = (sp.kind === "animal" && transformY < 5.5) ? "high" : "medium";
+      ctx.imageSmoothingEnabled = false;
       if (sp.herdSil) {
         ctx.globalAlpha = fogA * 0.55;
         ctx.filter = "brightness(0.15) contrast(1.2)";
@@ -3310,9 +3400,9 @@
     sprites.forEach(function (sp) {
       if (sp.kind !== "prop") return;
       const p = sp.prop;
-      if (p === "grass" || p === "bush" || p === "fern") return;
-      if (p === "pine" || p === "tree" || p === "acacia" || p === "baobab") m.fillStyle = "#2a8a40";
-      else m.fillStyle = p === "snowrock" ? "#e8eef4" : "#6a6868";
+      if (p.indexOf("_grass") >= 0 || p.indexOf("_bush") >= 0 || p === "grass" || p === "bush" || p === "fern" || p === "reed") return;
+      if (p.indexOf("_tree") >= 0 || p === "pine" || p === "tree" || p === "acacia" || p === "baobab") m.fillStyle = "#2a8a40";
+      else m.fillStyle = (p.indexOf("mountains_rock") === 0 || p === "snowrock") ? "#e8eef4" : "#6a6868";
       m.fillRect((sp.x * ms) | 0, (sp.y * ms) | 0, 1, 1);
     });
   }
