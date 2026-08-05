@@ -67,8 +67,11 @@
         </div>
       </div>
     </div>
-    <div id="po-dossier" class="po-overlay" role="dialog" aria-label="Animal dossier">
-      <div class="po-dossier">
+    <div id="po-dossier" class="po-overlay po-note-overlay" role="dialog" aria-label="Animal dossier" aria-modal="true">
+      <div class="po-paper po-paper-dossier">
+        <button type="button" class="po-paper-x" id="po-d-close" aria-label="Close dossier">×</button>
+        <div class="po-paper-seal">D</div>
+        <p class="po-paper-label">ANIMAL DOSSIER</p>
         <div class="po-dossier-top">
           <canvas id="po-dossier-art" width="96" height="96"></canvas>
           <div>
@@ -84,7 +87,6 @@
           <button type="button" data-tab="survive">SURVIVE</button>
         </div>
         <div class="panel-body" id="po-d-body"></div>
-        <button type="button" class="po-close" id="po-d-close">CLOSE DOSSIER</button>
       </div>
     </div>
     <div id="po-note" class="po-overlay po-note-overlay" role="dialog" aria-label="Field note" aria-modal="true">

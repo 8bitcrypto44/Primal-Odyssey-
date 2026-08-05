@@ -1681,7 +1681,7 @@
     blip(440, 0.08, "sine");
     const dctx = ui.dArt.getContext("2d");
     dctx.imageSmoothingEnabled = false;
-    dctx.fillStyle = "#020805";
+    dctx.fillStyle = "#f3e6c4";
     dctx.fillRect(0, 0, 96, 96);
     const remote = remoteArt[animal.id];
     if (remote) {
@@ -1897,7 +1897,15 @@
   }
   document.addEventListener("fullscreenchange", onFsChange);
   document.addEventListener("webkitfullscreenchange", onFsChange);
-  ui.dClose.addEventListener("click", closeDossier);
+  ui.dClose.addEventListener("click", function (e) {
+    e.stopPropagation();
+    closeDossier();
+  });
+  if (ui.dossier) {
+    ui.dossier.addEventListener("click", function (e) {
+      if (e.target === ui.dossier) closeDossier();
+    });
+  }
   if (ui.logClose) ui.logClose.addEventListener("click", closeLog);
   if (ui.noteX) ui.noteX.addEventListener("click", function (e) {
     e.stopPropagation();
