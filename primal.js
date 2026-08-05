@@ -110,26 +110,32 @@
     const touchOn = document.documentElement.classList.contains("po-touch-on") &&
       touchEl && !touchEl.hidden;
     const land = document.documentElement.classList.contains("po-land");
+    const fs = document.documentElement.classList.contains("po-fs") || isNativeFullscreen() || likelyParentFullscreen();
     // Only lift above sticks when touch pads are actually showing
-    const lift = touchOn ? (land ? Math.min(100, box.height * 0.22) : Math.min(132, box.height * 0.3)) : 0;
+    const stickLift = touchOn ? (land ? Math.min(100, box.height * 0.22) : Math.min(132, box.height * 0.3)) : 0;
+    // Fullscreen / land: pull chrome up so it isn't clipped under the screen edge
+    const edgePad = (fs || land)
+      ? Math.max(14, Math.round(box.height * 0.035))
+      : 4;
+    const bottom = box.bottomGap + stickLift + edgePad;
     const bar = document.getElementById("po-bottom-bar");
     if (bar) {
       bar.style.left = Math.round(box.left) + "px";
       bar.style.width = Math.round(box.width) + "px";
       bar.style.right = "auto";
-      bar.style.bottom = Math.round(box.bottomGap + lift) + "px";
+      bar.style.bottom = Math.round(bottom) + "px";
     }
     if (touchEl) {
       touchEl.style.left = Math.round(box.left) + "px";
       touchEl.style.width = Math.round(box.width) + "px";
       touchEl.style.right = "auto";
-      touchEl.style.bottom = Math.round(box.bottomGap) + "px";
+      touchEl.style.bottom = Math.round(box.bottomGap + (fs || land ? 8 : 0)) + "px";
     }
     const hintEl = document.getElementById("po-hint");
     if (hintEl) {
       hintEl.style.left = Math.round(box.left + box.width / 2) + "px";
       hintEl.style.right = "auto";
-      hintEl.style.bottom = Math.round(box.bottomGap + lift + (touchOn ? 44 : 52)) + "px";
+      hintEl.style.bottom = Math.round(bottom + (touchOn ? 40 : 36)) + "px";
     }
     const objEl = document.getElementById("po-obj");
     if (objEl) {
@@ -4367,6 +4373,20 @@
     return !!(document.fullscreenElement || document.webkitFullscreenElement);
   }
 
+  function likelyParentFullscreen() {
+    // Digistracts fullscreen is on the parent page — iframe rarely gets document.fullscreenElement
+    if (!isEmbed) return false;
+    try {
+      if (window.matchMedia && window.matchMedia("(display-mode: fullscreen)").matches) return true;
+    } catch (e) {}
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    const target = Math.min(
+      (window.screen && (window.screen.availHeight || window.screen.height)) || vh,
+      vh + 80
+    );
+    return vh >= target * 0.86;
+  }
+
   function askParentFullscreen(exit) {
     try {
       if (window.parent && window.parent !== window) {
@@ -4404,7 +4424,7 @@
     if (!ui.fsBtn) return;
     // Always available while exploring (PC, mobile, embed, fullscreen)
     const show = mode === "explore";
-    const fs = isNativeFullscreen();
+    const fs = isNativeFullscreen() || likelyParentFullscreen();
     ui.fsBtn.hidden = !show;
     ui.fsBtn.setAttribute("aria-pressed", fs ? "true" : "false");
     ui.fsBtn.textContent = fs ? "Exit FS" : "FS";

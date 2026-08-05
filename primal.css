@@ -79,14 +79,19 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-vol{width:52px;max-width:18vw;accent-color:var(--line-hi);cursor:pointer;height:14px}
 .po-mute[aria-pressed="true"]{border-color:#8a3a3a;color:#ffb4b4;background:#1a0a0a}
 .po-pos-chip{display:none}
-/* Roomier chips only while native fullscreen */
-html.po-fs .po-bottom-bar{padding:6px 8px 8px;gap:6px}
+/* Fullscreen: keep chrome clear of the bottom edge / OS safe area */
+html.po-fs .po-bottom-bar{
+  padding:6px 8px max(12px, env(safe-area-inset-bottom, 12px));gap:6px
+}
 html.po-fs .po-hud .chip,html.po-fs .po-audio-bar .chip,html.po-fs .po-menu-dock,
 html.po-fs .po-journal-btn,html.po-fs .po-photo-btn,html.po-fs .po-tools-btn,html.po-fs .po-fs-btn{
   font-size:12px;padding:5px 9px;min-height:30px;height:30px;border-radius:8px
 }
 html.po-fs .po-audio-bar{height:30px;padding:3px 8px}
 html.po-fs .po-vol{width:64px}
+html.po-land .po-bottom-bar{
+  padding-bottom:max(10px, env(safe-area-inset-bottom, 10px))
+}
 .po-hint{
   position:absolute;left:50%;bottom:58px;transform:translateX(-50%);z-index:5;
   background:rgba(4,16,10,.96);border:2px solid var(--line);padding:9px 16px;
