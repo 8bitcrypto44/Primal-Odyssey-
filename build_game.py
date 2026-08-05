@@ -199,7 +199,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
         </div>
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
-          <p class="po-gd-tag">Africa · Mountains · Jungle — explore apex animals &amp; field dossiers</p>
+          <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
           <p class="po-gd-tip">Tap ENTER - rotate to landscape for full screen</p>
           <button type="button" class="po-gd-enter" id="po-gd-enter">ENTER EXPEDITION</button>
         </div>
