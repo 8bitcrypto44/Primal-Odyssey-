@@ -180,21 +180,23 @@ def bark(img, x0, y0, w, h, cols, seed):
         for x in range(x0, x0 + w):
             u = (x - x0) / max(1, w - 1)
             c = cols[1]
-            if u < 0.2:
+            if u < 0.22:
                 c = cols[0]
-            elif u > 0.8:
+            elif u > 0.78:
                 c = cols[2]
-            if y % 4 == 0:
+            # vertical bark grain (not ladder rings)
+            if (x + seed) % 3 == 0:
                 c = cols[3]
-            if rng.random() < 0.06:
-                c = cols[3]
+            if rng.random() < 0.04:
+                c = cols[0]
             px(img, x, y, c)
-    for _ in range(max(2, h // 12)):
+    for _ in range(max(2, h // 14)):
         kx = x0 + rng.randint(1, max(1, w - 2))
         ky = y0 + rng.randint(3, max(4, h - 3))
         px(img, kx, ky, cols[3])
         px(img, kx + 1, ky, cols[2])
         px(img, kx, ky + 1, cols[2])
+        px(img, kx - 1, ky + 1, cols[1])
 
 
 BIOMES = {
@@ -243,15 +245,8 @@ BIOMES = {
 
 def make_ground(region):
     b = BIOMES[region]
-    tiles = []
-    for v in range(6):
-        tiles.append(tile_grass(b["grass"], v, hash(region) + v * 17))
-    for v in range(3):
-        tiles.append(tile_dirt(b["dirt"], hash(region) + 100 + v))
-    for v in range(2):
-        tiles.append(tile_stone(b["stone"], hash(region) + 200 + v))
-    # weight grass heavier by duplicating
-    tiles = tiles[:6] * 2 + tiles[6:]
+    # Mostly grass variants — dirt pockets live inside tiles, not whole path strips
+    tiles = [tile_grass(b["grass"], v, hash(region) + v * 17) for v in range(8)]
     return stamp_atlas(tiles, 256)
 
 
