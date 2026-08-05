@@ -1350,6 +1350,11 @@
       sprites = sprites.filter(function (sp) {
         return sp.kind !== "prop" || sp.track || sp.binocs || sp.den || (sp.kind === "note");
       });
+      if (sm.landmarks && sm.landmarks.length) {
+        landmarks = sm.landmarks.map(function (lm) {
+          return { id: lm.id, label: lm.label || lm.id, x: lm.x, y: lm.y };
+        });
+      }
     }
     window.region = region;
     rebuildMiniBase();
@@ -1491,6 +1496,9 @@
   }
 
   function wet(x, y) {
+    if (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps && PO_SNES.wetWorld) {
+      return PO_SNES.wetWorld(x, y);
+    }
     const ix = x | 0, iy = y | 0;
     if (ix < 0 || iy < 0 || ix >= MAP || iy >= MAP) return true;
     return floor[iy][ix] === 3;
@@ -1863,6 +1871,7 @@
       player.x = clamp(player.x, 1.5, mapMax);
       player.y = clamp(player.y, 1.5, mapMax);
     }
+    player._snesMoving = !!(Math.abs(fwd) > 0.01 || Math.abs(strafe) > 0.01);
     if (fwd || strafe) {
       player.bob += dt * 10;
       footTimer -= dt;
@@ -3145,18 +3154,29 @@
 
   function drawHUDOverlay() {
     const phase = dayPhase();
-    ctx.strokeStyle = "rgba(93,206,122,0.7)";
-    ctx.beginPath();
-    ctx.moveTo(W / 2 - 8, H / 2);
-    ctx.lineTo(W / 2 + 8, H / 2);
-    ctx.moveTo(W / 2, H / 2 - 8);
-    ctx.lineTo(W / 2, H / 2 + 8);
-    ctx.stroke();
-    const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, H * 0.8);
-    vg.addColorStop(0, "rgba(0,0,0,0)");
-    vg.addColorStop(1, "rgba(0,0,0," + (0.35 + (1 - phase.light) * 0.35) + ")");
-    ctx.fillStyle = vg;
-    ctx.fillRect(0, 0, W, H);
+    const snesOn = !!(window.PO_SNES && PO_SNES.enabled && PO_SNES.maps);
+    if (!snesOn) {
+      ctx.strokeStyle = "rgba(93,206,122,0.7)";
+      ctx.beginPath();
+      ctx.moveTo(W / 2 - 8, H / 2);
+      ctx.lineTo(W / 2 + 8, H / 2);
+      ctx.moveTo(W / 2, H / 2 - 8);
+      ctx.lineTo(W / 2, H / 2 + 8);
+      ctx.stroke();
+      const vg = ctx.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, H * 0.8);
+      vg.addColorStop(0, "rgba(0,0,0,0)");
+      vg.addColorStop(1, "rgba(0,0,0," + (0.35 + (1 - phase.light) * 0.35) + ")");
+      ctx.fillStyle = vg;
+      ctx.fillRect(0, 0, W, H);
+    } else {
+      ctx.fillStyle = "rgba(8,20,12,0.82)";
+      ctx.fillRect(4, H - 18, 92, 14);
+      ctx.strokeStyle = "rgba(93,206,122,0.55)";
+      ctx.strokeRect(4.5, H - 17.5, 91, 13);
+      ctx.fillStyle = "#9ec9ad";
+      ctx.font = "8px monospace";
+      ctx.fillText((region && region.name ? region.name : "EXPLORE").slice(0, 14).toUpperCase(), 8, H - 7);
+    }
     if (phase.name === "night" || phase.name === "dusk") {
       const lg = ctx.createRadialGradient(W / 2, H * 0.58, 16, W / 2, H * 0.55, H * 0.62);
       lg.addColorStop(0, "rgba(255,210,130," + (phase.name === "night" ? 0.16 : 0.08) + ")");
@@ -3166,31 +3186,39 @@
       ctx.fillRect(0, 0, W, H);
     }
     drawWayPings();
-    const ms = 2, msz = MAP * ms;
-    const ox = W - msz - 6, oy = 6;
+    const snesMap = (window.PO_SNES && PO_SNES.enabled && PO_SNES.current && PO_SNES.current()) || null;
+    const mapCells = snesMap ? snesMap.w : MAP;
+    const ms = snesMap ? 1 : 2, msz = mapCells * ms;
+    const ox = W - Math.min(msz, 72) - 6, oy = 6;
+    const drawSz = Math.min(msz, 72);
+    const scale = drawSz / msz;
     ctx.fillStyle = "rgba(2,12,6,0.85)";
-    ctx.fillRect(ox - 3, oy - 3, msz + 6, msz + 6);
+    ctx.fillRect(ox - 3, oy - 3, drawSz + 6, drawSz + 6);
     ctx.strokeStyle = "#2d6b45";
     ctx.lineWidth = 1;
-    ctx.strokeRect(ox - 3.5, oy - 3.5, msz + 6, msz + 6);
-    if (miniBase) ctx.drawImage(miniBase, ox, oy);
+    ctx.strokeRect(ox - 3.5, oy - 3.5, drawSz + 6, drawSz + 6);
+    if (miniBase) {
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(miniBase, ox, oy, drawSz, drawSz);
+    }
+    const mm = ms * scale;
     sprites.forEach(function (sp) {
       if (sp.kind === "note" && !sp.taken) {
         ctx.fillStyle = "#5dce7a";
-        ctx.fillRect((ox + sp.x * ms) | 0, (oy + sp.y * ms) | 0, 2, 2);
+        ctx.fillRect((ox + sp.x * mm) | 0, (oy + sp.y * mm) | 0, 2, 2);
         return;
       }
       if (sp.kind !== "animal") return;
-      const px = ox + sp.x * ms, py = oy + sp.y * ms;
+      const px = ox + sp.x * mm, py = oy + sp.y * mm;
       ctx.fillStyle = sp.data.color || "#c9a227";
       ctx.fillRect((px - 1) | 0, (py - 1) | 0, 2, 2);
     });
     landmarks.forEach(function (lm) {
       if (landmarksVisited[lm.id || lm.label]) return;
       ctx.fillStyle = "#e8c86a";
-      ctx.fillRect((ox + lm.x * ms) | 0, (oy + lm.y * ms) | 0, 2, 2);
+      ctx.fillRect((ox + lm.x * mm) | 0, (oy + lm.y * mm) | 0, 2, 2);
     });
-    const ppx = ox + player.x * ms, ppy = oy + player.y * ms;
+    const ppx = ox + player.x * mm, ppy = oy + player.y * mm;
     ctx.fillStyle = "#5dce7a";
     ctx.beginPath();
     ctx.moveTo(ppx + Math.cos(player.dir) * 4, ppy + Math.sin(player.dir) * 4);
@@ -3198,11 +3226,11 @@
     ctx.lineTo(ppx + Math.cos(player.dir - 2.4) * 2.5, ppy + Math.sin(player.dir - 2.4) * 2.5);
     ctx.fill();
     ctx.fillStyle = "rgba(4,20,10,0.85)";
-    ctx.fillRect(ox - 3, oy + msz + 4, msz + 6, 10);
+    ctx.fillRect(ox - 3, oy + drawSz + 4, drawSz + 6, 10);
     ctx.fillStyle = "#9ec9ad";
     ctx.font = "7px monospace";
     ctx.textAlign = "center";
-    ctx.fillText(phase.name.toUpperCase(), ox + msz / 2, oy + msz + 11);
+    ctx.fillText(phase.name.toUpperCase(), ox + drawSz / 2, oy + drawSz + 11);
     ctx.textAlign = "left";
     drawPhotoAssist();
     if (binocsOn) {
@@ -3249,6 +3277,7 @@
 
   function drawExplorerHands() {
     if (mode !== "explore") return;
+    if (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps) return;
     const bob = viewBob() * 0.35;
     const run = Math.abs(pad.fwd) > 0.2 || keys["w"] || keys["ArrowUp"];
     const sway = run ? Math.sin(t * 10) * 6 : Math.sin(t * 2) * 2;
@@ -3404,6 +3433,34 @@
   }
 
   function rebuildMiniBase() {
+    const snesMap = (window.PO_SNES && PO_SNES.enabled && PO_SNES.maps && region && PO_SNES.maps[region.id]) || null;
+    if (snesMap) {
+      const ms = 1, msz = snesMap.w * ms;
+      miniBase = document.createElement("canvas");
+      miniBase.width = miniBase.height = msz;
+      const m = miniBase.getContext("2d");
+      m.imageSmoothingEnabled = false;
+      for (let y = 0; y < snesMap.h; y++) {
+        for (let x = 0; x < snesMap.w; x++) {
+          const t = snesMap.ground[y][x];
+          let col = "#3a6a30";
+          if (t.indexOf("cliff") === 0) col = "#3a3a38";
+          else if (t.indexOf("water") === 0 || t.charAt(0) === "w" || t.indexOf("sw") === 0) col = "#2a6a88";
+          else if (t.indexOf("path") === 0 || t.indexOf("dirt") === 0) col = "#8a6b35";
+          else if (t.indexOf("sand") === 0) col = "#c2a060";
+          else if (t.indexOf("snow") === 0) col = "#d8e4f0";
+          else if (t.indexOf("mud") === 0 || t.indexOf("dark") === 0) col = "#2a4a28";
+          m.fillStyle = col;
+          m.fillRect(x * ms, y * ms, ms, ms);
+        }
+      }
+      (snesMap.objects || []).forEach(function (o) {
+        if (!o.id || o.id.indexOf("detail") === 0) return;
+        m.fillStyle = o.id.indexOf("rock") === 0 ? "#6a6868" : "#2a8a40";
+        m.fillRect((o.x / snesMap.tile) | 0, (o.y / snesMap.tile) | 0, 1, 1);
+      });
+      return;
+    }
     const ms = 2, msz = MAP * ms;
     miniBase = document.createElement("canvas");
     miniBase.width = miniBase.height = msz;
