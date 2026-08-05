@@ -57,8 +57,8 @@
   const FLOOR_STEP_Y = IS_MOBILE ? 2 : 1;
   const UNIT_FT = 11;
   const HT_FT = {
-    acacia: 30, baobab: 50, pine: 75, tree: 100,
-    rock: 5, snowrock: 5, grass: 3, fern: 3.5, bush: 3.2,
+    acacia: 36, baobab: 58, pine: 85, tree: 110,
+    rock: 6.5, snowrock: 6.5, grass: 3.8, fern: 4.2, bush: 4,
     wallrock: 14, reed: 4, africa_thorn: 3.2, jungle_vine: 12, wet_lily: 1.2, mtn_fir: 40,
     lm_watering_hole: 10, lm_cairn: 8, lm_boardwalk: 7, lm_reed_blind: 8, lm_ranger_post: 9, lm_canopy_gap: 14, bird: 1.2,
     lion: 4.8, tiger: 4.5, leopard: 3, jaguar: 3.2, snowleopard: 2.8,
@@ -1115,7 +1115,7 @@
       if (propKind) {
         sprites.push({
           x: x, y: y, kind: "prop", prop: propKind,
-          scale: worldScale(propKind) * 1.35, bob: 0, landmark: true
+          scale: worldScale(propKind) * 1.65, bob: 0, landmark: true
         });
       }
     }
@@ -2152,78 +2152,151 @@
 
   function drawPropBillboard(ctx2, prop, size) {
     const s = size;
-    // Soft contact shadow baked into prop canvas
-    ctx2.fillStyle = "rgba(0,0,0,0.28)";
+    const px = function (x, y, w, h, col) {
+      ctx2.fillStyle = col;
+      ctx2.fillRect(x, y, Math.max(1, w), Math.max(1, h));
+    };
+    ctx2.fillStyle = "rgba(0,0,0,0.32)";
     ctx2.beginPath();
-    ctx2.ellipse(s * 0.5, s * 0.92, s * 0.32, s * 0.07, 0, 0, Math.PI * 2);
+    ctx2.ellipse(s * 0.5, s * 0.93, s * 0.34, s * 0.08, 0, 0, Math.PI * 2);
     ctx2.fill();
-    if (prop === "acacia" || prop === "baobab" || prop === "tree") {
-      ctx2.fillStyle = "#2a1a08";
-      ctx2.fillRect(s * 0.46, s * 0.38, s * 0.08, s * 0.5);
-      ctx2.fillStyle = "#3a2a10";
-      ctx2.fillRect(s * 0.44, s * 0.35, s * 0.12, s * 0.55);
-      if (prop === "tree") {
-        ctx2.strokeStyle = "#2a1a08";
-        ctx2.lineWidth = Math.max(1, s * 0.03);
-        ctx2.beginPath();
-        ctx2.moveTo(s * 0.5, s * 0.45); ctx2.lineTo(s * 0.28, s * 0.28);
-        ctx2.moveTo(s * 0.5, s * 0.5); ctx2.lineTo(s * 0.72, s * 0.3);
-        ctx2.stroke();
-      }
-      const canopy = prop === "baobab" ? "#5a3a18" : (prop === "acacia" ? "#2a6a34" : "#1a5a28");
-      ctx2.fillStyle = canopy;
+    if (prop === "acacia" || prop === "baobab" || prop === "tree" || prop === "jungle_vine") {
+      const thick = prop === "baobab" ? 0.18 : 0.1;
+      px(s * (0.5 - thick / 2), s * 0.4, s * thick, s * 0.52, "#2a1a08");
+      px(s * (0.5 - thick / 2 + 0.02), s * 0.4, s * (thick - 0.04), s * 0.52, "#4a3214");
+      for (let y = 0.42; y < 0.9; y += 0.04) px(s * (0.5 - thick / 2), s * y, s * thick, 1, "#1a1006");
+      ctx2.strokeStyle = "#2a1a08";
+      ctx2.lineWidth = Math.max(2, s * 0.035);
       ctx2.beginPath();
-      ctx2.ellipse(s * 0.5, s * 0.3, s * (prop === "acacia" ? 0.42 : 0.3), s * (prop === "acacia" ? 0.17 : 0.3), 0, 0, Math.PI * 2);
-      ctx2.fill();
-      ctx2.fillStyle = prop === "baobab" ? "#6a4a22" : "#3a8a44";
-      ctx2.beginPath();
-      ctx2.ellipse(s * 0.42, s * 0.26, s * 0.16, s * 0.1, -0.3, 0, Math.PI * 2);
-      ctx2.fill();
-    } else if (prop === "pine") {
-      ctx2.fillStyle = "#3a2a18";
-      ctx2.fillRect(s * 0.46, s * 0.55, s * 0.1, s * 0.4);
-      for (let i = 0; i < 4; i++) {
-        ctx2.fillStyle = i % 2 ? "#1a4a28" : "#245830";
+      ctx2.moveTo(s * 0.5, s * 0.48); ctx2.lineTo(s * 0.2, s * 0.28);
+      ctx2.moveTo(s * 0.5, s * 0.5); ctx2.lineTo(s * 0.8, s * 0.26);
+      ctx2.moveTo(s * 0.5, s * 0.55); ctx2.lineTo(s * 0.15, s * 0.42);
+      ctx2.moveTo(s * 0.5, s * 0.52); ctx2.lineTo(s * 0.85, s * 0.4);
+      ctx2.stroke();
+      const clusters = prop === "acacia"
+        ? [[0.5, 0.28, 0.4, 0.14, "#2a6a34"], [0.32, 0.26, 0.18, 0.1, "#3a8a44"], [0.68, 0.25, 0.2, 0.1, "#1a5a28"], [0.5, 0.22, 0.16, 0.08, "#4aaa50"]]
+        : (prop === "baobab"
+          ? [[0.5, 0.28, 0.3, 0.26, "#5a3a18"], [0.35, 0.22, 0.16, 0.14, "#6a4a22"], [0.65, 0.24, 0.16, 0.14, "#4a2a10"]]
+          : [[0.5, 0.22, 0.26, 0.2, "#1a5a28"], [0.32, 0.3, 0.18, 0.16, "#2a7a38"], [0.7, 0.28, 0.18, 0.16, "#0a4020"],
+             [0.42, 0.14, 0.14, 0.1, "#3a8a44"], [0.6, 0.16, 0.12, 0.1, "#1a5a28"], [0.5, 0.36, 0.2, 0.12, "#245830"]]);
+      for (let i = 0; i < clusters.length; i++) {
+        const c = clusters[i];
+        ctx2.fillStyle = c[4];
         ctx2.beginPath();
-        ctx2.moveTo(s * 0.5, s * (0.06 + i * 0.15));
-        ctx2.lineTo(s * (0.12 + i * 0.04), s * (0.38 + i * 0.15));
-        ctx2.lineTo(s * (0.88 - i * 0.04), s * (0.38 + i * 0.15));
+        ctx2.ellipse(s * c[0], s * c[1], s * c[2], s * c[3], 0, 0, Math.PI * 2);
         ctx2.fill();
       }
-    } else if (prop === "reed" || prop === "fern" || prop === "grass" || prop === "bush") {
-      const cols = prop === "fern" ? ["#1a6a38", "#2a8a50", "#3aaa60"]
-        : (prop === "reed" ? ["#3a6a40", "#4a7a48", "#2a5a30"]
-          : (prop === "bush" ? ["#3a6a20", "#4a7a28", "#5a8a30"] : ["#5a8a28", "#6a9a30", "#7aaa38"]));
-      for (let i = 0; i < 7; i++) {
-        ctx2.fillStyle = cols[i % cols.length];
-        const bx = s * (0.18 + i * 0.1);
-        const bh = s * (0.45 + (i % 3) * 0.12);
-        ctx2.fillRect(bx, s * 0.92 - bh, s * 0.05, bh);
-        if (prop === "reed" || prop === "fern") {
+      for (let i = 0; i < 18; i++) px(s * (0.25 + (i % 6) * 0.08), s * (0.14 + ((i / 6) | 0) * 0.08), 2, 2, "rgba(160,220,100,0.5)");
+      if (prop === "jungle_vine" || prop === "tree") {
+        ctx2.strokeStyle = "#1a4a20";
+        ctx2.lineWidth = 2;
+        for (let i = 0; i < 4; i++) {
           ctx2.beginPath();
-          ctx2.ellipse(bx + s * 0.02, s * 0.92 - bh, s * 0.08, s * 0.04, 0, 0, Math.PI * 2);
+          ctx2.moveTo(s * (0.35 + i * 0.1), s * 0.4);
+          ctx2.lineTo(s * (0.35 + i * 0.1 + 0.02), s * 0.75);
+          ctx2.stroke();
+        }
+      }
+    } else if (prop === "pine" || prop === "mtn_fir") {
+      px(s * 0.46, s * 0.62, s * 0.08, s * 0.32, "#3a2a18");
+      for (let i = 0; i < 5; i++) {
+        ctx2.fillStyle = i % 2 ? "#1a4a28" : "#2a6a38";
+        ctx2.beginPath();
+        ctx2.moveTo(s * 0.5, s * (0.05 + i * 0.12));
+        ctx2.lineTo(s * (0.1 + i * 0.04), s * (0.32 + i * 0.12));
+        ctx2.lineTo(s * (0.9 - i * 0.04), s * (0.32 + i * 0.12));
+        ctx2.fill();
+      }
+    } else if (prop === "reed" || prop === "fern" || prop === "grass" || prop === "bush" || prop === "africa_thorn") {
+      if (prop === "bush") {
+        const blobs = [[0.5, 0.55, 0.32], [0.3, 0.6, 0.2], [0.7, 0.58, 0.2], [0.5, 0.4, 0.18]];
+        for (let i = 0; i < blobs.length; i++) {
+          ctx2.fillStyle = ["#3a6a20", "#4a7a28", "#5a8a30", "#2a5a18"][i];
+          ctx2.beginPath();
+          ctx2.ellipse(s * blobs[i][0], s * blobs[i][1], s * blobs[i][2], s * blobs[i][2] * 0.7, 0, 0, Math.PI * 2);
+          ctx2.fill();
+        }
+      } else {
+        for (let i = 0; i < 12; i++) {
+          const cols = prop === "fern" ? ["#1a6a38", "#2a8a50", "#3aaa60"]
+            : (prop === "reed" ? ["#3a6a40", "#4a7a48", "#2a5a30"]
+              : (prop === "africa_thorn" ? ["#8a7a30", "#6a5a20", "#9a8a40"] : ["#5a8a28", "#6a9a30", "#7aaa38"]));
+          ctx2.fillStyle = cols[i % cols.length];
+          const bx = s * (0.12 + i * 0.065);
+          const bh = s * (0.4 + (i % 4) * 0.1);
+          ctx2.beginPath();
+          ctx2.moveTo(bx, s * 0.92);
+          ctx2.quadraticCurveTo(bx + s * 0.02, s * 0.92 - bh * 0.5, bx + (i % 3 - 1) * s * 0.02, s * 0.92 - bh);
+          ctx2.lineTo(bx + s * 0.04, s * 0.92);
+          ctx2.fill();
+          if (prop === "reed" || prop === "fern") {
+            ctx2.beginPath();
+            ctx2.ellipse(bx + s * 0.02, s * 0.92 - bh, s * 0.07, s * 0.04, 0, 0, Math.PI * 2);
+            ctx2.fill();
+          }
+        }
+      }
+    } else if (prop === "wet_lily") {
+      ctx2.fillStyle = "#2a6a40";
+      ctx2.beginPath(); ctx2.ellipse(s * 0.5, s * 0.65, s * 0.4, s * 0.18, 0, 0, Math.PI * 2); ctx2.fill();
+      ctx2.fillStyle = "#e8d070";
+      for (let a = 0; a < 8; a++) {
+        const ang = (a / 8) * Math.PI * 2;
+        ctx2.beginPath();
+        ctx2.ellipse(s * 0.5 + Math.cos(ang) * s * 0.1, s * 0.42 + Math.sin(ang) * s * 0.06, s * 0.06, s * 0.04, ang, 0, Math.PI * 2);
+        ctx2.fill();
+      }
+      ctx2.fillStyle = "#d09020";
+      ctx2.beginPath(); ctx2.arc(s * 0.5, s * 0.42, s * 0.04, 0, Math.PI * 2); ctx2.fill();
+    } else if (prop === "bird") {
+      ctx2.fillStyle = "#2a2a30";
+      ctx2.beginPath(); ctx2.ellipse(s * 0.5, s * 0.5, s * 0.22, s * 0.12, 0, 0, Math.PI * 2); ctx2.fill();
+      ctx2.fillStyle = "#c89030";
+      ctx2.beginPath(); ctx2.moveTo(s * 0.28, s * 0.48); ctx2.lineTo(s * 0.18, s * 0.42); ctx2.lineTo(s * 0.28, s * 0.52); ctx2.fill();
+      ctx2.fillStyle = "#f0f0e0";
+      ctx2.beginPath(); ctx2.arc(s * 0.58, s * 0.45, 2, 0, Math.PI * 2); ctx2.fill();
+    } else {
+      const snow = prop === "snowrock";
+      ctx2.fillStyle = snow ? "#a8b0b8" : "#5a5858";
+      ctx2.beginPath();
+      ctx2.moveTo(s * 0.15, s * 0.88);
+      ctx2.lineTo(s * 0.22, s * 0.45);
+      ctx2.lineTo(s * 0.4, s * 0.22);
+      ctx2.lineTo(s * 0.62, s * 0.15);
+      ctx2.lineTo(s * 0.82, s * 0.35);
+      ctx2.lineTo(s * 0.9, s * 0.88);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.fillStyle = snow ? "#e8eef4" : "#8a8888";
+      ctx2.beginPath();
+      ctx2.moveTo(s * 0.22, s * 0.45);
+      ctx2.lineTo(s * 0.4, s * 0.22);
+      ctx2.lineTo(s * 0.55, s * 0.4);
+      ctx2.lineTo(s * 0.35, s * 0.55);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.fillStyle = snow ? "#788090" : "#3a3838";
+      ctx2.beginPath();
+      ctx2.moveTo(s * 0.62, s * 0.15);
+      ctx2.lineTo(s * 0.82, s * 0.35);
+      ctx2.lineTo(s * 0.75, s * 0.6);
+      ctx2.lineTo(s * 0.55, s * 0.4);
+      ctx2.closePath();
+      ctx2.fill();
+      ctx2.strokeStyle = snow ? "#606878" : "#2a2828";
+      ctx2.lineWidth = 1;
+      ctx2.beginPath();
+      ctx2.moveTo(s * 0.35, s * 0.4); ctx2.lineTo(s * 0.48, s * 0.7); ctx2.lineTo(s * 0.42, s * 0.85);
+      ctx2.moveTo(s * 0.6, s * 0.35); ctx2.lineTo(s * 0.7, s * 0.75);
+      ctx2.stroke();
+      if (!snow) {
+        ctx2.fillStyle = "rgba(45,100,45,0.55)";
+        for (let i = 0; i < 6; i++) {
+          ctx2.beginPath();
+          ctx2.ellipse(s * (0.3 + i * 0.08), s * (0.7 + (i % 2) * 0.05), 4, 3, 0, 0, Math.PI * 2);
           ctx2.fill();
         }
       }
-    } else {
-      const snow = prop === "snowrock";
-      ctx2.fillStyle = snow ? "#a8b0b8" : "#3a3838";
-      ctx2.beginPath();
-      ctx2.moveTo(s * 0.2, s * 0.88);
-      ctx2.lineTo(s * 0.28, s * 0.55);
-      ctx2.lineTo(s * 0.48, s * 0.42);
-      ctx2.lineTo(s * 0.72, s * 0.5);
-      ctx2.lineTo(s * 0.82, s * 0.88);
-      ctx2.closePath();
-      ctx2.fill();
-      ctx2.fillStyle = snow ? "#e0e8f0" : "#6a6868";
-      ctx2.beginPath();
-      ctx2.moveTo(s * 0.28, s * 0.55);
-      ctx2.lineTo(s * 0.48, s * 0.42);
-      ctx2.lineTo(s * 0.55, s * 0.62);
-      ctx2.lineTo(s * 0.35, s * 0.7);
-      ctx2.closePath();
-      ctx2.fill();
     }
   }
 
@@ -2309,7 +2382,9 @@
     grass: "assets/props/grass.png", bush: "assets/props/bush.png", rock: "assets/props/rock.png",
     snowrock: "assets/props/snowrock.png", africa_thorn: "assets/props/africa_thorn.png",
     jungle_vine: "assets/props/jungle_vine.png", wet_lily: "assets/props/wet_lily.png",
-    mtn_fir: "assets/props/mtn_fir.png", bird: "assets/props/bird.png", bug: "assets/props/bug.png"
+    mtn_fir: "assets/props/mtn_fir.png", bird: "assets/props/bird.png", bug: "assets/props/bug.png",
+    wallafrica: "assets/props/wallafrica.png", walljungle: "assets/props/walljungle.png",
+    wallmountains: "assets/props/wallmountains.png"
   };
   const LOCAL_WALLS = {
     africa: "assets/walls/africa.png", mountains: "assets/walls/mountains.png",
@@ -2383,7 +2458,7 @@
 
   function fitRemoteToCanvas(img, mode) {
     // Props keep foliage greens; animals only punch white/studio backdrops
-    const max = mode === "prop" ? 160 : 224;
+    const max = mode === "prop" ? 256 : 256;
     const scale = Math.min(1, max / Math.max(img.width, img.height));
     const w = Math.max(16, (img.width * scale) | 0);
     const h = Math.max(16, (img.height * scale) | 0);
@@ -2622,10 +2697,10 @@
     if (remoteProps[prop]) return remoteProps[prop];
     if (propCache[prop]) return propCache[prop];
     const off = document.createElement("canvas");
-    off.width = off.height = 96;
+    off.width = off.height = 160;
     const octx = off.getContext("2d");
-    octx.imageSmoothingEnabled = false;
-    drawPropBillboard(octx, prop, 96);
+    octx.imageSmoothingEnabled = true;
+    drawPropBillboard(octx, prop, 160);
     propCache[prop] = off;
     return off;
   }
