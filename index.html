@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="description" content="Primal Odyssey — explore biomes, meet apex animals, open field dossiers.">
 <title>Primal Odyssey</title>
-<link rel="stylesheet" href="primal.css?v=31">
+<link rel="stylesheet" href="primal.css?v=32">
 <style>html,body{{margin:0;height:100%;min-height:100%;background:#030605;}}</style>
 </head>
 <body>
@@ -56,7 +56,7 @@
         <p class="po-tag">Explore wild regions · Meet apex animals · Collect field notes · Open dossiers</p>
         <p class="po-wip" title="Work in progress - unfinished build">WIP · ALPHA · LIVING WORLD</p>
         <h2>CHOOSE YOUR EXPEDITION</h2>
-        <p class="lead">Three living biomes. Weather, day cycle, animal behavior, landmarks, and field notes. Each region hides a rare animal.</p>
+        <p class="lead">Three living biomes. Weather, day cycle, animal behavior, landmarks, and field notes. Each region hides a rare animal. Photo challenges and ranger badges await.</p>
         <button type="button" class="po-continue" id="po-continue" hidden>
           <img class="po-continue-art" id="po-continue-art" alt="" width="120" height="48" hidden>
           <span id="po-continue-label">CONTINUE EXPEDITION</span>
@@ -93,6 +93,13 @@
               <div class="meta"><span class="go">START</span> 5 animals + rare ocelot</div>
             </div>
           </button>
+          <div class="po-card po-card-soon" aria-disabled="true">
+            <div class="body">
+              <h3>COMING SOON</h3>
+              <p>A fourth bonus expedition is scouting routes. Clear the three biomes for ranger badges first.</p>
+              <div class="meta"><span class="go">LOCKED</span> bonus world</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -104,10 +111,10 @@
         <div class="po-help-body">
           <p><b>Move</b> with WASD or the MOVE stick. Water slows you (wade).</p>
           <p><b>Look</b> by dragging the view, using LOOK buttons, or arrow keys (up/down tilt).</p>
-          <p><b>Field notes</b> glow as notebooks - follow print trails from camp.</p>
-          <p><b>Animals</b> - tap or click for a parchment dossier. They react when you get close.</p>
-          <p><b>JOURNAL / J</b> opens your log. <b>PHOTO / P</b> saves a sighting.</p>
-          <p><b>Goals</b> show under OBJECTIVES. REGIONS returns to the map.</p>
+          <p><b>Field notes</b> - follow the soft compass and green NOTE arrow from camp.</p>
+          <p><b>Animals</b> - tap for a dossier. They react, flee, and pose for photos.</p>
+          <p><b>JOURNAL / J</b> map + log. <b>PHOTO / P</b> challenges (animals, landmark, dusk).</p>
+          <p><b>Goals</b> under OBJECTIVES. Rare gold prints lead to the region rare.</p>
         </div>
         <button type="button" class="po-help-go" id="po-help-go">GOT IT - EXPLORE</button>
       </div>
@@ -165,8 +172,8 @@
   <div class="po-frame" aria-hidden="true"></div>
   <p class="po-credit">Primal Odyssey · WIP/alpha · music CC BY Kevin MacLeod · 8bitcrypto_44</p>
 </div>
-<script src="primal_data.js?v=31"></script>
-<script src="primal_sprites.js?v=31"></script>
-<script src="primal.js?v=31"></script>
+<script src="primal_data.js?v=32"></script>
+<script src="primal_sprites.js?v=32"></script>
+<script src="primal.js?v=32"></script>
 </body>
 </html>

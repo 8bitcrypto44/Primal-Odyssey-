@@ -142,7 +142,18 @@
   let photoShots = [];
   let photoFlashT = 0;
   let reduceMotion = false;
+  let tourStep = 0; // 0 off, 1 note, 2 animal, 3 done
+  let photoAnimals = 0;
+  let photoLandmark = false;
+  let photoDusk = false;
+  let audioDuck = 1;
   const RARE_IDS = { africa: "honeybadger", mountains: "lynx", jungle: "ocelot" };
+  const RANGER_TIPS = {
+    africa: "Ranger tip: honey badgers dig near termite mounds at midday — follow loose dirt.",
+    mountains: "Ranger tip: lynx prints look like soft snowshoes — check dusk ridgelines.",
+    jungle: "Ranger tip: ocelots love fern edges after rain — move quiet near thickets."
+  };
+  const BADGE_LABEL = { africa: "SAVANNA RANGER", mountains: "ALPINE SCOUT", jungle: "CANOPY GUIDE" };
   const COVER = {
     africa: "https://i.postimg.cc/D0kDM1Xb/african-cover-image.jpg",
     mountains: "https://i.postimg.cc/L5K7bj11/mountains-cover-image.jpg",
@@ -151,10 +162,13 @@
   const RADIO_LINES = {
     "WATERING HOLE": "Ranger net: watering hole active — keep distance from pods.",
     "KOPJE LOOKOUT": "Ranger net: kopje lookout clear — good scan for dust trails.",
+    "RANGER POST": "Ranger net: Africa post online — log notes and watch for dust storms.",
     "SNOW OVERLOOK": "Ranger net: ridge wind rising — watch footing on ice.",
     "RIDGE TRAIL": "Ranger net: ridge trail open — lynx sign reported at dusk.",
+    "ICE CAIRN": "Ranger net: ice cairn marks the safe switchback — stay on trail.",
     "CANOPY GAP": "Ranger net: canopy gap — light shaft useful for note hunting.",
-    "FERN THICKET": "Ranger net: fern thicket dense — move slow, watch for ocelot."
+    "FERN THICKET": "Ranger net: fern thicket dense — move slow, watch for ocelot.",
+    "RIVER LOOKOUT": "Ranger net: river lookout wet — anaconda sign on the banks."
   };
   const SAVE_KEY = "po_expedition_v1";
 
@@ -172,7 +186,12 @@
   function sfxGain() {
     ensureAudio();
     if (!masterGain) return;
-    masterGain.gain.value = muted ? 0 : musicVol * 0.55;
+    masterGain.gain.value = muted ? 0 : musicVol * 0.55 * audioDuck;
+  }
+
+  function setAudioDuck(on) {
+    audioDuck = on ? 0.28 : 1;
+    sfxGain();
   }
 
   function blip(freq, dur, type) {
@@ -228,7 +247,11 @@
   }
 
   function emptySave() {
-    return { onboarded: false, lastRegion: null, regions: {}, shots: [], bigLook: false, reduceMotion: false };
+    return {
+      onboarded: false, lastRegion: null, regions: {}, shots: [],
+      bigLook: false, reduceMotion: false,
+      photoAnimals: 0, photoLandmark: false, photoDusk: false, tourDone: false
+    };
   }
   function loadSave() {
     try {
@@ -256,6 +279,10 @@
     s.shots = photoShots.slice(0, 24);
     s.bigLook = document.documentElement.classList.contains("po-big-look");
     s.reduceMotion = !!reduceMotion;
+    s.photoAnimals = photoAnimals;
+    s.photoLandmark = !!photoLandmark;
+    s.photoDusk = !!photoDusk;
+    s.tourDone = tourStep >= 3 || !!s.tourDone;
     if (region) {
       s.lastRegion = region.id;
       const b = regionBucket(s, region.id);
@@ -290,6 +317,7 @@
       const id = el.getAttribute("data-stamp");
       const done = !!(s.regions[id] && s.regions[id].complete);
       el.hidden = !done;
+      if (done) el.textContent = "CLEARED · " + (BADGE_LABEL[id] || "RANGER");
     });
   }
   function applyA11yFromSave() {
@@ -307,6 +335,10 @@
   function restoreRegionProgress(regionId) {
     const s = loadSave();
     photoShots = Array.isArray(s.shots) ? s.shots.slice(0, 24) : [];
+    photoAnimals = s.photoAnimals | 0;
+    photoLandmark = !!s.photoLandmark;
+    photoDusk = !!s.photoDusk;
+    tourStep = s.tourDone ? 3 : 0;
     const b = regionBucket(s, regionId);
     animalsSeen = {};
     landmarksVisited = {};
@@ -363,7 +395,7 @@
     const seenN = Object.keys(animalsSeen).filter(function (id) {
       return id !== "honeybadger" && id !== "lynx" && id !== "ocelot";
     }).length;
-    const lmNeed = 1;
+    const lmNeed = 2;
     const lmN = Object.keys(landmarksVisited).length;
     const list = [
       { done: notesTotal > 0 && notesFound.length >= notesTotal, label: "Field notes " + notesFound.length + "/" + notesTotal },
@@ -375,6 +407,9 @@
       const names = { honeybadger: "honey badger", lynx: "lynx", ocelot: "ocelot" };
       if (rid) list.push({ done: !!rareFound || !!animalsSeen[rid], label: "Find the rare " + (names[rid] || rid) });
     }
+    list.push({ done: photoAnimals >= 3, label: "Photo animals " + Math.min(photoAnimals, 3) + "/3" });
+    list.push({ done: !!photoLandmark, label: "Photo a landmark " + (photoLandmark ? "1" : "0") + "/1" });
+    list.push({ done: !!photoDusk, label: "Photo at dusk/night " + (photoDusk ? "1" : "0") + "/1" });
     return list;
   }
   function syncObjectives() {
@@ -399,10 +434,15 @@
       const s = loadSave();
       s.onboarded = true;
       writeSave(s);
+      if (!s.tourDone) {
+        tourStep = 1;
+        if (ui.hint) ui.hint.textContent = "TOUR: follow the green NOTE arrow to your first field note";
+      }
     }
     clearInput();
     syncTouchUI();
     syncObjectives();
+    setAudioDuck(false);
   }
   function setPaused(on) {
     gamePaused = !!on;
@@ -442,7 +482,7 @@
   function startAmbient(regionId) {
     stopAmbient();
     const ctxA = ensureAudio();
-    if (!ctxA) return;
+    if (!ctxA || muted || reduceMotion) return;
     sfxGain();
     ambientNodes = [];
     function tone(freq, vol, type) {
@@ -450,12 +490,30 @@
       const g = ctxA.createGain();
       o.type = type || "sine";
       o.frequency.value = freq;
-      g.gain.value = vol;
+      g.gain.value = vol * audioDuck;
       o.connect(g);
       g.connect(masterGain);
       o.start();
       ambientNodes.push(o, g);
     }
+    try {
+      const bufLen = Math.floor(ctxA.sampleRate * 2);
+      const buf = ctxA.createBuffer(1, bufLen, ctxA.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufLen; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+      const src = ctxA.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+      const filter = ctxA.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = regionId === "jungle" ? 900 : (regionId === "mountains" ? 380 : 620);
+      filter.Q.value = 0.55;
+      const ng = ctxA.createGain();
+      ng.gain.value = (regionId === "jungle" ? 0.03 : (regionId === "mountains" ? 0.024 : 0.018)) * audioDuck;
+      src.connect(filter); filter.connect(ng); ng.connect(masterGain);
+      src.start();
+      ambientNodes.push(src, filter, ng);
+    } catch (e) {}
     if (regionId === "africa") {
       tone(180, 0.008, "sine");
       tone(420 + Math.random() * 40, 0.004, "triangle");
@@ -737,23 +795,30 @@
     if (regionId === "africa") {
       addLandmark("WATERING HOLE", 18.5, 12.5, "baobab");
       addLandmark("KOPJE LOOKOUT", 26.5, 24.5, "rock");
+      addLandmark("RANGER POST", 8.5, 18.5, "rock");
     } else if (regionId === "mountains") {
       addLandmark("SNOW OVERLOOK", 22.5, 10.5, "pine");
       addLandmark("RIDGE TRAIL", 12.5, 22.5, "snowrock");
+      addLandmark("ICE CAIRN", 28.5, 18.5, "snowrock");
     } else {
       addLandmark("CANOPY GAP", 16.5, 16.5, "tree");
       addLandmark("FERN THICKET", 27.5, 20.5, "fern");
+      addLandmark("RIVER LOOKOUT", 8.5, 12.5, "tree");
     }
 
     animalsPlace(R, [[17, 8], [28, 20], [10, 26], [24, 29], [20, 15]]);
+    let rareXY = null;
     if (regionId === "africa" && window.PO_BONUS && PO_BONUS.honeybadger) {
       spawnAnimal(PO_BONUS.honeybadger, 14.5, 22.5, true);
+      rareXY = { x: 14.5, y: 22.5 };
     }
     if (regionId === "mountains" && window.PO_BONUS && PO_BONUS.lynx) {
       spawnAnimal(PO_BONUS.lynx, 26.5, 14.5, true);
+      rareXY = { x: 26.5, y: 14.5 };
     }
     if (regionId === "jungle" && window.PO_BONUS && PO_BONUS.ocelot) {
       spawnAnimal(PO_BONUS.ocelot, 12.5, 24.5, true);
+      rareXY = { x: 12.5, y: 24.5 };
     }
     placeFieldNotes(regionId);
     // Track/scat props near animals
@@ -764,9 +829,23 @@
       if (!openSpot(tx, ty)) return;
       sprites.push({
         x: tx, y: ty, kind: "prop", prop: "grass",
-        scale: worldScale("grass") * 0.55, bob: 0, track: true
+        scale: worldScale("grass") * 0.55, bob: 0, track: true,
+        trackTint: a.rare ? "rare" : (a.id || "wild")
       });
     });
+    // Rare hunt trail from camp toward rare
+    if (rareXY) {
+      for (let s = 1; s <= 7; s++) {
+        const u = s / 8;
+        const tx = 4.5 + (rareXY.x - 4.5) * u + (Math.random() - 0.5) * 0.4;
+        const ty = 4.5 + (rareXY.y - 4.5) * u + (Math.random() - 0.5) * 0.4;
+        if (wall[ty | 0] && wall[ty | 0][tx | 0]) continue;
+        sprites.push({
+          x: tx, y: ty, kind: "prop", prop: "grass",
+          scale: worldScale("grass") * 0.4, bob: 0, track: true, rareTrack: true, trackTint: "rare"
+        });
+      }
+    }
 
     player.x = 4.5;
     player.y = 4.5;
@@ -806,7 +885,9 @@
       idleBob: a.idleBob || 0.2,
       rare: !!rare,
       alertT: 0,
-      alertCd: 1 + Math.random() * 2
+      alertCd: 1 + Math.random() * 2,
+      poseT: 0,
+      nocturnal: !!(a.nocturnal || rare || a.id === "cougar" || a.id === "leopard" || a.id === "jaguar" || a.id === "wolf" || a.id === "snowleopard" || a.id === "lynx" || a.id === "ocelot" || a.id === "honeybadger")
     });
   }
 
@@ -932,15 +1013,26 @@
     const dist = Math.hypot(dx, dy) || 0.001;
     let ang = Math.random() * Math.PI * 2;
     let spd = (sp.speed || 0.55) * (0.75 + Math.random() * 0.5);
+    const phase = dayPhase();
+    if (sp.poseT > 0) {
+      sp.vx = 0; sp.vy = 0; sp.walkT = Math.max(sp.walkT, 0.35); return;
+    }
+    if (weather.kind === "snow" && region && region.id === "mountains") spd *= 0.72;
+    if (weather.kind === "rain" && sp.waterLove) spd *= 1.25;
+    if (weather.kind === "dust") spd *= 0.88;
+    if ((phase.name === "night" || phase.name === "dusk") && sp.nocturnal) spd *= 1.28;
+    if (phase.name === "day" && sp.nocturnal && !sp.waterLove) spd *= 0.72;
 
     if (sp.fleeDist > 0 && dist < sp.fleeDist) {
       ang = Math.atan2(sp.y - player.y, sp.x - player.x) + (Math.random() - 0.5) * 0.6;
-      spd *= 1.35;
+      spd *= 1.45;
+      sp.alertT = Math.max(sp.alertT, 0.8);
     } else if (sp.behavior === "ambush" && sp.aggroDist > 0 && dist < sp.aggroDist && dist > 1.2) {
       ang = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.4;
-      spd *= 0.85;
+      spd *= 0.95;
     } else if (sp.behavior === "apex" && sp.aggroDist > 0 && dist < sp.aggroDist * 0.7) {
       ang = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.8;
+      spd *= 1.1;
     } else if (sp.packId) {
       let sx = 0, sy = 0, n = 0;
       for (let i = 0; i < sprites.length; i++) {
@@ -951,7 +1043,8 @@
       if (n) {
         const cx = sx / n, cy = sy / n;
         const pd = Math.hypot(cx - sp.x, cy - sp.y);
-        if (pd > 3.5) ang = Math.atan2(cy - sp.y, cx - sp.x);
+        if (pd > 2.8) { ang = Math.atan2(cy - sp.y, cx - sp.x); spd *= 1.05; }
+        else if (pd < 1.1) ang = Math.atan2(sp.y - cy, sp.x - cx);
       }
     }
 
@@ -1001,14 +1094,26 @@
       sp.walkFrame = moving ? ((sp.gait / (Math.PI / 2)) | 0) : 0;
       const pdist = Math.hypot(player.x - sp.x, player.y - sp.y);
       if (sp.alertT > 0) sp.alertT -= dt;
+      if (sp.poseT > 0) {
+        sp.poseT -= dt;
+        sp.vx = 0; sp.vy = 0;
+        sp.bob = Math.sin(sp.animT * 3) * 0.08;
+        sp.squash = 1.05;
+        sp.walkFrame = 0;
+        continue;
+      }
       sp.alertCd = (sp.alertCd || 0) - dt;
       if (pdist < 4.2 && sp.alertCd <= 0 && mode === "explore") {
         sp.alertT = 1.4;
         sp.alertCd = 5 + Math.random() * 4;
         animalReact(sp);
+        if (sp.fleeDist > 0) retargetAnimal(sp);
       }
-      const nx = sp.x + sp.vx * dt;
-      const ny = sp.y + sp.vy * dt;
+      let moveMul = 1;
+      if (weather.kind === "snow" && region && region.id === "mountains") moveMul *= 0.78;
+      if (weather.kind === "rain" && sp.waterLove) moveMul *= 1.2;
+      const nx = sp.x + sp.vx * dt * moveMul;
+      const ny = sp.y + sp.vy * dt * moveMul;
       if (!animalBlocked(nx, sp.y, sp)) sp.x = nx;
       else {
         sp.vx *= -1;
@@ -1034,6 +1139,10 @@
       notesFound.push({ id: sp.noteId, text: sp.text });
       noteFlash = 1.8;
       blip(660, 0.1, "triangle");
+      if (tourStep === 1) {
+        tourStep = 2;
+        if (ui.hint) ui.hint.textContent = "TOUR: tap a nearby animal for its parchment dossier";
+      }
       syncNotesUI();
       persistProgress();
       syncObjectives();
@@ -1062,6 +1171,7 @@
     mode = "note";
     clearInput();
     syncTouchUI();
+    setAudioDuck(true);
     blip(520, 0.1, "sine");
   }
 
@@ -1073,6 +1183,7 @@
     clearInput();
     syncTouchUI();
     syncObjectives();
+    setAudioDuck(false);
     if (openLog) openExpeditionLog();
   }
 
@@ -1125,7 +1236,10 @@
     const c = Math.cos(player.dir), s = Math.sin(player.dir);
     let spMul = 1;
     if (wet(player.x, player.y)) spMul *= 0.48;
-    if (weather.kind) spMul *= 0.78;
+    if (weather.kind === "snow") spMul *= 0.7;
+    else if (weather.kind === "dust") spMul *= 0.82;
+    else if (weather.kind === "rain") spMul *= 0.88;
+    else if (weather.kind) spMul *= 0.78;
     const sp = 2.6 * spMul * dt;
     const mx = (c * fwd + -s * strafe) * sp;
     const my = (s * fwd + c * strafe) * sp;
@@ -1670,7 +1784,8 @@
       const invDet = 1 / (planeX * dirY - dirX * planeY);
       const transformX = invDet * (dirY * spriteX - dirX * spriteY);
       const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
-      if (transformY <= 0.15 || transformY > 22) continue;
+      const sightMax = (weather.kind === "dust") ? 11 : ((weather.kind === "rain") ? 16 : 22);
+      if (transformY <= 0.15 || transformY > sightMax) continue;
       const spriteScreenX = ((W / 2) * (1 + transformX / transformY)) | 0;
       let sc = sp.scale || worldScale(sp.id || sp.prop);
       if (sp.kind === "note") sc = 0.55;
@@ -1708,11 +1823,21 @@
       if (sp.track) {
         const tw = Math.max(4, spriteW * 0.45);
         const th = Math.max(2, spriteH * 0.12);
-        ctx.fillStyle = "rgba(40,28,12,0.55)";
+        const pulse = sp.rareTrack ? (0.45 + 0.25 * Math.sin(t * 4 + sp.x)) : 0.55;
+        ctx.fillStyle = sp.rareTrack
+          ? ("rgba(200,140,40," + pulse + ")")
+          : (sp.trackTint === "rare" ? "rgba(180,120,40,0.6)" : "rgba(40,28,12,0.55)");
         ctx.beginPath();
         ctx.ellipse(spriteScreenX - tw * 0.35, floorY - 1, tw * 0.45, th, -0.25, 0, Math.PI * 2);
         ctx.ellipse(spriteScreenX + tw * 0.35, floorY - 1, tw * 0.45, th, 0.25, 0, Math.PI * 2);
         ctx.fill();
+        if (sp.rareTrack && transformY < 8) {
+          ctx.fillStyle = "rgba(232,200,106,0.85)";
+          ctx.font = "9px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("RARE", spriteScreenX, drawStartY - 2);
+          ctx.textAlign = "left";
+        }
         ctx.restore();
         continue;
       }
@@ -1907,6 +2032,44 @@
       if (d < bestLd) { bestLd = d; bestLm = lm; }
     });
     if (bestLm) ping(bestLm.x, bestLm.y, "rgba(232,200,106,0.95)", "SITE");
+    let bestRare = null, bestRd = 1e9;
+    sprites.forEach(function (sp) {
+      if (sp.kind !== "animal" || !sp.rare || animalsSeen[sp.id]) return;
+      const d = Math.hypot(sp.x - player.x, sp.y - player.y);
+      if (d < bestRd && d < 18) { bestRd = d; bestRare = sp; }
+    });
+    if (bestRare && rareFound === false) ping(bestRare.x, bestRare.y, "rgba(232,160,80,0.9)", "RARE");
+    drawSoftCompass(bestNote, bestLm, bestRare);
+  }
+
+  function drawSoftCompass(note, lm, rare) {
+    let tx = null, ty = null, col = "#5dce7a", tag = "";
+    if (tourStep === 1 && note) { tx = note.x; ty = note.y; tag = "NOTE"; }
+    else if (tourStep === 2) {
+      const a = sprites.find(function (sp) { return sp.kind === "animal" && !sp.rare; });
+      if (a) { tx = a.x; ty = a.y; col = "#c9a227"; tag = "ANIMAL"; }
+    } else if (note) { tx = note.x; ty = note.y; tag = "NOTE"; }
+    else if (lm) { tx = lm.x; ty = lm.y; col = "#e8c86a"; tag = "SITE"; }
+    else if (rare && !rareFound) { tx = rare.x; ty = rare.y; col = "#e8a050"; tag = "RARE"; }
+    if (tx == null) return;
+    const ang = Math.atan2(ty - player.y, tx - player.x) - player.dir;
+    const cx = 36, cy = H - 36;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.fillStyle = "rgba(4,20,10,0.75)";
+    ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = "#2d6b45"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.rotate(ang);
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(0, -16); ctx.lineTo(8, 10); ctx.lineTo(0, 5); ctx.lineTo(-8, 10);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = col;
+    ctx.font = "8px monospace";
+    ctx.textAlign = "center";
+    ctx.fillText(tag, cx, cy + 30);
+    ctx.textAlign = "left";
   }
 
   function rebuildMiniBase() {
@@ -2010,6 +2173,32 @@
     }
   }
 
+  function journalMapDataUrl() {
+    const ms = 4, msz = MAP * ms;
+    const c = document.createElement("canvas");
+    c.width = c.height = msz;
+    const g = c.getContext("2d");
+    g.fillStyle = "#e8d9b8";
+    g.fillRect(0, 0, msz, msz);
+    if (miniBase) g.drawImage(miniBase, 0, 0, msz, msz);
+    sprites.forEach(function (sp) {
+      if (sp.kind === "note") {
+        g.fillStyle = sp.taken ? "#6a8a5a" : "#1f7a3e";
+        g.fillRect((sp.x * ms) | 0, (sp.y * ms) | 0, 3, 3);
+      }
+    });
+    landmarks.forEach(function (lm) {
+      const id = lm.id || lm.label;
+      g.fillStyle = landmarksVisited[id] ? "#8a6a20" : "#c9a227";
+      g.fillRect((lm.x * ms) | 0, (lm.y * ms) | 0, 3, 3);
+    });
+    g.fillStyle = "#bf0a30";
+    g.beginPath();
+    g.arc(player.x * ms, player.y * ms, 3, 0, Math.PI * 2);
+    g.fill();
+    return c.toDataURL("image/png");
+  }
+
   function openJournal() {
     if (!ui.journal) return;
     if (mode === "dossier") closeDossier();
@@ -2017,6 +2206,10 @@
     const s = loadSave();
     if (ui.journalMeta) ui.journalMeta.textContent = (region ? region.name : "EXPEDITION") + " · field journal";
     let html = "";
+    html += "<h3>EXPEDITION MAP</h3>";
+    html += "<p class=\"map-legend\">Green = notes · Gold = landmarks · Red = you</p>";
+    html += "<img class=\"jmap\" src=\"" + journalMapDataUrl() + "\" alt=\"field map\">";
+    if (region && RANGER_TIPS[region.id]) html += "<p><i>" + RANGER_TIPS[region.id] + "</i></p>";
     html += "<h3>NOTES</h3><ul>";
     if (!notesFound.length) html += "<li>No field notes yet — follow the print trails.</li>";
     notesFound.forEach(function (n, i) { html += "<li>✓ " + (i + 1) + ". " + n.text + "</li>"; });
@@ -2028,6 +2221,10 @@
     const seen = Object.keys(animalsSeen);
     if (!seen.length) html += "<li>No dossiers opened yet.</li>";
     seen.forEach(function (id) { html += "<li>✓ " + id + "</li>"; });
+    html += "</ul><h3>PHOTO CHALLENGES</h3><ul>";
+    html += "<li class=\"" + (photoAnimals >= 3 ? "done" : "") + "\">Animals " + Math.min(photoAnimals, 3) + "/3</li>";
+    html += "<li class=\"" + (photoLandmark ? "done" : "") + "\">Landmark " + (photoLandmark ? "1" : "0") + "/1</li>";
+    html += "<li class=\"" + (photoDusk ? "done" : "") + "\">Dusk/night " + (photoDusk ? "1" : "0") + "/1</li>";
     html += "</ul><h3>PHOTOS</h3>";
     if (!photoShots.length) html += "<p>Press PHOTO or P to snap a sighting.</p>";
     else {
@@ -2036,12 +2233,16 @@
       });
     }
     const stamp = s.regions[region ? region.id : ""] && s.regions[region.id].complete;
-    if (stamp) html += "<p><b>REGION CLEARED</b> — stamp earned on the title map.</p>";
+    if (stamp) {
+      html += "<p><b>REGION CLEARED</b> — badge: " + (BADGE_LABEL[region.id] || "RANGER") + "</p>";
+      if (RANGER_TIPS[region.id]) html += "<p>" + RANGER_TIPS[region.id] + "</p>";
+    }
     if (ui.journalBody) ui.journalBody.innerHTML = html;
     ui.journal.classList.add("show");
     mode = "journal";
     clearInput();
     syncTouchUI();
+    setAudioDuck(true);
     blip(500, 0.1, "sine");
   }
   function closeJournal() {
@@ -2049,6 +2250,7 @@
     if (mode === "journal") mode = "explore";
     clearInput();
     syncTouchUI();
+    setAudioDuck(false);
   }
   function takePhoto() {
     if (mode !== "explore") return;
@@ -2059,8 +2261,30 @@
       photoFlashT = 0.18;
       if (ui.photoFlash) { ui.photoFlash.hidden = false; ui.photoFlash.classList.add("on"); }
       blip(880, 0.06, "square");
+      const hits = drawSprites._screen || [];
+      let gotAnimal = false, gotLm = false;
+      for (let i = 0; i < hits.length; i++) {
+        const h = hits[i];
+        if (h.dist > 9) continue;
+        if (h.a && h.a.kind === "animal") {
+          gotAnimal = true;
+          h.a.poseT = 1.6;
+          h.a.alertT = Math.max(h.a.alertT, 0.6);
+        }
+      }
+      landmarks.forEach(function (lm) {
+        if (Math.hypot(lm.x - player.x, lm.y - player.y) < 5.5) gotLm = true;
+      });
+      if (gotAnimal) photoAnimals = Math.min(3, photoAnimals + 1);
+      if (gotLm) photoLandmark = true;
+      const phase = dayPhase();
+      if (phase.name === "dusk" || phase.name === "night") photoDusk = true;
       persistProgress();
-      if (ui.hint) ui.hint.textContent = "Sighting saved to JOURNAL";
+      syncObjectives();
+      let msg = "Sighting saved to JOURNAL";
+      if (gotAnimal) msg = "Animal pose captured · JOURNAL";
+      else if (gotLm) msg = "Landmark shot logged · JOURNAL";
+      if (ui.hint) ui.hint.textContent = msg;
     } catch (e) {
       if (ui.hint) ui.hint.textContent = "Photo failed (try again)";
     }
@@ -2211,6 +2435,14 @@
       notePendingLog = false;
       if (ui.note) ui.note.classList.remove("show");
     }
+    if (tourStep === 2) {
+      tourStep = 3;
+      const s = loadSave();
+      s.tourDone = true;
+      writeSave(s);
+      if (ui.hint) ui.hint.textContent = "Tour complete — explore freely. J journal · P photo";
+    }
+    setAudioDuck(true);
     openAnimal = animal;
     tab = "facts";
     mode = "dossier";
@@ -2254,6 +2486,7 @@
     clearInput();
     if (mode === "dossier") mode = "explore";
     syncTouchUI();
+    setAudioDuck(false);
   }
 
   function enterRegion(id) {
@@ -2279,10 +2512,18 @@
     syncObjectives();
     syncTouchUI();
     playRegionMusic(id);
+    startAmbient(id);
     persistProgress();
     tryLandscapeFullscreen();
     const s = loadSave();
     if (!s.onboarded) openHelp();
+    else if (!s.tourDone) {
+      tourStep = 1;
+      if (ui.hint) ui.hint.textContent = "Follow the compass to the nearest field note";
+    }
+    if (region && s.regions[id] && s.regions[id].complete && ui.hint) {
+      ui.hint.textContent = (BADGE_LABEL[id] || "RANGER") + " · " + (RANGER_TIPS[id] || "Region cleared");
+    }
   }
 
   function showTitle() {
@@ -2584,7 +2825,7 @@
       renderTab();
     });
   });
-  document.querySelectorAll(".po-card").forEach(function (card) {
+  document.querySelectorAll(".po-card[data-region]").forEach(function (card) {
     card.addEventListener("click", function () {
       enterRegion(card.dataset.region);
     });
@@ -2687,6 +2928,15 @@
   syncMuteUI();
   syncTouchUI();
   preloadRemoteArt();
+  (function deepLinkRegion() {
+    try {
+      const q = new URLSearchParams(location.search || "");
+      const rid = (q.get("region") || "").toLowerCase();
+      if (rid && PO_DATA[rid]) {
+        setTimeout(function () { enterRegion(rid); }, 80);
+      }
+    } catch (e) {}
+  })();
   requestAnimationFrame(function () {
     document.documentElement.classList.remove("po-loading");
     requestAnimationFrame(loop);
