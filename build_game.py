@@ -133,6 +133,12 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-enter:active{{transform:scale(.98)}}
 .po-gd-play{{display:none;position:absolute;inset:0;background:#030605;line-height:0}}
 .po-gd-play iframe{{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#030605}}
+.po-gd-load{{
+  display:none;position:absolute;inset:0;z-index:15;align-items:center;justify-content:center;
+  background:rgba(3,6,5,.92);color:#5dce7a;font:700 14px "Courier New",Courier,monospace;
+  letter-spacing:2px;text-align:center;padding:20px
+}}
+.po-gd.is-loading .po-gd-load{{display:flex}}
 .po-gd.is-open .po-gd-cover{{display:none}}
 .po-gd.is-open .po-gd-play{{display:block}}
 .po-gd-fs{{
@@ -194,6 +200,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
         </div>
       </div>
       <div class="po-gd-play" id="po-gd-play">
+        <div class="po-gd-load" id="po-gd-load" aria-live="polite">LOADING EXPEDITION…</div>
         <button type="button" class="po-gd-fs" id="po-gd-fs" aria-pressed="false">FULL SCREEN</button>
         <iframe
           id="po-gd-frame"
@@ -261,12 +268,17 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     var src=frame.getAttribute("data-src");
     if(src&&!frame.getAttribute("src"))frame.setAttribute("src",src);
     root.classList.add("is-open");
+    root.classList.add("is-loading");
     playing=true;
     btn.setAttribute("aria-expanded","true");
     syncLand();
     if(phone()&&land())enterFs();
     try{{frame.focus();}}catch(e){{}}
   }});
+  frame.addEventListener("load",function(){{
+    root.classList.remove("is-loading");
+  }});
+  setTimeout(function(){{root.classList.remove("is-loading");}},8000);
   if(fsBtn){{
     fsBtn.addEventListener("click",function(e){{
       e.preventDefault();
