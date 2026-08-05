@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="description" content="Primal Odyssey — explore biomes, meet apex animals, open field dossiers.">
 <title>Primal Odyssey</title>
-<link rel="stylesheet" href="primal.css?v=27">
+<link rel="stylesheet" href="primal.css?v=28">
 <style>html,body{{margin:0;height:100%;min-height:100%;background:#030605;}}</style>
 </head>
 <body>
@@ -98,6 +98,16 @@
         <button type="button" class="po-close" id="po-d-close">CLOSE DOSSIER</button>
       </div>
     </div>
+    <div id="po-note" class="po-overlay po-note-overlay" role="dialog" aria-label="Field note" aria-modal="true">
+      <div class="po-paper">
+        <button type="button" class="po-paper-x" id="po-note-x" aria-label="Close field note">×</button>
+        <div class="po-paper-seal">N</div>
+        <p class="po-paper-label">FIELD NOTE</p>
+        <p class="po-paper-meta" id="po-note-meta"></p>
+        <p class="po-paper-body" id="po-note-body"></p>
+        <p class="po-paper-foot" id="po-note-foot"></p>
+      </div>
+    </div>
     <div id="po-log" class="po-overlay" role="dialog" aria-label="Expedition log">
       <div class="po-dossier">
         <h2 style="color:var(--line-hi);margin:0 0 8px">EXPEDITION LOG</h2>
@@ -109,8 +119,8 @@
   <div class="po-frame" aria-hidden="true"></div>
   <p class="po-credit">Primal Odyssey · WIP/alpha · music CC BY Kevin MacLeod · 8bitcrypto_44</p>
 </div>
-<script src="primal_data.js?v=27"></script>
-<script src="primal_sprites.js?v=27"></script>
-<script src="primal.js?v=27"></script>
+<script src="primal_data.js?v=28"></script>
+<script src="primal_sprites.js?v=28"></script>
+<script src="primal.js?v=28"></script>
 </body>
 </html>

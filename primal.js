@@ -92,7 +92,12 @@
     dBody: document.getElementById("po-d-body"),
     dClose: document.getElementById("po-d-close"),
     logBody: document.getElementById("po-log-body"),
-    logClose: document.getElementById("po-log-close")
+    logClose: document.getElementById("po-log-close"),
+    note: document.getElementById("po-note"),
+    noteBody: document.getElementById("po-note-body"),
+    noteMeta: document.getElementById("po-note-meta"),
+    noteFoot: document.getElementById("po-note-foot"),
+    noteX: document.getElementById("po-note-x")
   };
 
   const MUSIC_BASE = "https://incompetech.com/music/royalty-free/mp3-royaltyfree/";
@@ -709,6 +714,8 @@
     }
   }
 
+  let notePendingLog = false;
+
   function tryPickupNotes() {
     for (let i = 0; i < sprites.length; i++) {
       const sp = sprites[i];
@@ -719,17 +726,51 @@
       noteFlash = 1.8;
       blip(660, 0.1, "triangle");
       syncNotesUI();
-      if (ui.hint) ui.hint.textContent = "Field note: " + sp.text;
-      if (notesFound.length >= notesTotal && notesTotal > 0) {
-        blip(880, 0.18, "sine");
-        setTimeout(function () { openExpeditionLog(); }, 400);
-      }
+      const allDone = notesFound.length >= notesTotal && notesTotal > 0;
+      openFieldNote(sp.text, notesFound.length, notesTotal, allDone);
+      return;
     }
+  }
+
+  function openFieldNote(text, found, total, allDone) {
+    if (!ui.note) return;
+    if (mode === "dossier") closeDossier();
+    if (mode === "log") closeLog();
+    notePendingLog = !!allDone;
+    if (ui.noteMeta) {
+      ui.noteMeta.textContent = (region ? region.name : "EXPEDITION") +
+        " · note " + found + " of " + total;
+    }
+    if (ui.noteBody) ui.noteBody.textContent = text;
+    if (ui.noteFoot) {
+      ui.noteFoot.textContent = allDone
+        ? "All notes recovered — close to open the expedition log"
+        : "Press × or Esc to continue exploring";
+    }
+    ui.note.classList.add("show");
+    mode = "note";
+    clearInput();
+    syncTouchUI();
+    blip(520, 0.1, "sine");
+  }
+
+  function closeFieldNote() {
+    if (ui.note) ui.note.classList.remove("show");
+    const openLog = notePendingLog;
+    notePendingLog = false;
+    if (mode === "note") mode = "explore";
+    clearInput();
+    syncTouchUI();
+    if (openLog) openExpeditionLog();
   }
 
   function openExpeditionLog() {
     if (!ui.log || !ui.logBody) return;
     if (mode === "dossier") closeDossier();
+    if (mode === "note") {
+      if (ui.note) ui.note.classList.remove("show");
+      notePendingLog = false;
+    }
     ui.logBody.innerHTML = "<p><b>" + (region ? region.name : "EXPEDITION") + "</b> — " +
       notesFound.length + "/" + notesTotal + " field notes recovered.</p>" +
       notesFound.map(function (n, i) {
@@ -1541,7 +1582,7 @@
   }
 
   function inGameMode() {
-    return mode === "explore" || mode === "dossier" || mode === "log";
+    return mode === "explore" || mode === "dossier" || mode === "log" || mode === "note";
   }
 
   function notifyParentChrome() {
@@ -1625,6 +1666,10 @@
   function openDossier(animal) {
     clearInput();
     closeLog();
+    if (mode === "note") {
+      notePendingLog = false;
+      if (ui.note) ui.note.classList.remove("show");
+    }
     openAnimal = animal;
     tab = "facts";
     mode = "dossier";
@@ -1670,6 +1715,8 @@
 
   function enterRegion(id) {
     closeLog();
+    if (ui.note) ui.note.classList.remove("show");
+    notePendingLog = false;
     buildWorld(id);
     mode = "explore";
     ui.title.classList.remove("show");
@@ -1694,6 +1741,8 @@
     stopMusic();
     closeDossier();
     closeLog();
+    if (ui.note) ui.note.classList.remove("show");
+    notePendingLog = false;
     clearInput();
     syncTouchUI();
   }
@@ -1710,7 +1759,7 @@
       updateParticles(dt);
       ui.posChip.textContent = "POS " + player.x.toFixed(1) + "," + player.y.toFixed(1);
       drawWorld();
-    } else if (mode === "dossier" || mode === "log") {
+    } else if (mode === "dossier" || mode === "log" || mode === "note") {
       moveAnimals(dt);
       updateParticles(dt);
       drawWorld();
@@ -1724,6 +1773,7 @@
   window.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       if (mode === "dossier") closeDossier();
+      else if (mode === "note") closeFieldNote();
       else if (mode === "log") closeLog();
       else if (mode === "explore") showTitle();
       return;
@@ -1849,6 +1899,15 @@
   document.addEventListener("webkitfullscreenchange", onFsChange);
   ui.dClose.addEventListener("click", closeDossier);
   if (ui.logClose) ui.logClose.addEventListener("click", closeLog);
+  if (ui.noteX) ui.noteX.addEventListener("click", function (e) {
+    e.stopPropagation();
+    closeFieldNote();
+  });
+  if (ui.note) {
+    ui.note.addEventListener("click", function (e) {
+      if (e.target === ui.note) closeFieldNote();
+    });
+  }
   if (ui.notesChip) {
     ui.notesChip.addEventListener("click", function () {
       if (mode === "explore" && notesFound.length) openExpeditionLog();
