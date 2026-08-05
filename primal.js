@@ -40,20 +40,20 @@
   }
   const canvas = document.getElementById("po-canvas");
   const ctx = canvas.getContext("2d", { alpha: false });
-  // Balanced res — 720×405 + 1px floor fillRect was tanking phones
+  // ImageData floor stays cheap — keep readable res for Digistracts / fullscreen
   const IS_MOBILE = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ||
     (window.matchMedia && matchMedia("(pointer:coarse)").matches);
-  const W = IS_MOBILE ? 480 : 640;
-  const H = IS_MOBILE ? 270 : 360;
+  const W = IS_MOBILE ? 560 : 720;
+  const H = IS_MOBILE ? 315 : 405;
   canvas.width = W;
   canvas.height = H;
   ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "medium";
+  ctx.imageSmoothingQuality = "high";
   const MAP = 36;
   const FOV = Math.PI / 3;
-  const TEX = 64;
-  const FLOOR_STEP_X = IS_MOBILE ? 3 : 2;
-  const FLOOR_STEP_Y = IS_MOBILE ? 2 : 2;
+  const TEX = IS_MOBILE ? 96 : 128;
+  const FLOOR_STEP_X = IS_MOBILE ? 2 : 2;
+  const FLOOR_STEP_Y = IS_MOBILE ? 2 : 1;
   const UNIT_FT = 11;
   const HT_FT = {
     acacia: 30, baobab: 50, pine: 75, tree: 100,
@@ -976,9 +976,9 @@
   const remoteGround = {};
   const remoteSky = {};
 
-  function fitRemoteToCanvas(img) {
-    // Keep more source detail; smooth downsample (photos look soft, not blocky)
-    const max = 128;
+  function fitRemoteToCanvas(img, mode) {
+    // Props keep foliage greens; animals only punch white/studio backdrops
+    const max = mode === "prop" ? 160 : 192;
     const scale = Math.min(1, max / Math.max(img.width, img.height));
     const w = Math.max(16, (img.width * scale) | 0);
     const h = Math.max(16, (img.height * scale) | 0);
@@ -1000,15 +1000,20 @@
       for (let c = 0; c < 4; c++) { br += corners[c][0]; bg += corners[c][1]; bb += corners[c][2]; }
       br = (br / 4) | 0; bg = (bg / 4) | 0; bb = (bb / 4) | 0;
       const brightBackdrop = br > 200 && bg > 200 && bb > 200;
+      const keyGreen = mode === "animal" && bg > br + 25 && bg > bb + 25 && bg > 140;
       for (let i = 0; i < px.length; i += 4) {
         const r = px[i], g = px[i + 1], b = px[i + 2];
         const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-        if (r > 220 && g > 220 && b > 220 && mx - mn < 32) { px[i + 3] = 0; continue; }
+        // Near-white / paper studio
+        if (r > 228 && g > 228 && b > 228 && mx - mn < 28) { px[i + 3] = 0; continue; }
         if (brightBackdrop) {
           const dr = r - br, dg = g - bg, db = b - bb;
-          if (dr * dr + dg * dg + db * db < 1400 && mx > 170) { px[i + 3] = 0; continue; }
+          if (dr * dr + dg * dg + db * db < 1100 && mx > 185) { px[i + 3] = 0; continue; }
         }
-        if (g > 160 && g > r * 1.25 && g > b * 1.25 && r < 140) px[i + 3] = 0;
+        // Only animals on green-screen style plates — never props (trees/grass)
+        if (keyGreen && g > 155 && g > r * 1.35 && g > b * 1.35 && r < 120 && b < 130) {
+          px[i + 3] = 0;
+        }
       }
       minX = w; minY = h; maxX = 0; maxY = 0;
       let any = false;
@@ -1060,13 +1065,13 @@
   function preloadRemoteArt() {
     Object.keys(REMOTE).forEach(function (id) {
       loadImg(REMOTE[id], function (img) {
-        remoteArt[id] = fitRemoteToCanvas(img);
+        remoteArt[id] = fitRemoteToCanvas(img, "animal");
         delete propCache["a:" + id];
       });
     });
     Object.keys(REMOTE_PROPS).forEach(function (kind) {
       loadImg(REMOTE_PROPS[kind], function (img) {
-        remoteProps[kind] = fitRemoteToCanvas(img);
+        remoteProps[kind] = fitRemoteToCanvas(img, "prop");
         delete propCache[kind];
       });
     });
@@ -1124,6 +1129,57 @@
     return off;
   }
 
+  function getNoteCanvas() {
+    if (propCache.note) return propCache.note;
+    const off = document.createElement("canvas");
+    off.width = 72;
+    off.height = 96;
+    const c = off.getContext("2d");
+    c.imageSmoothingEnabled = false;
+    // ground glow
+    c.fillStyle = "rgba(70, 200, 110, 0.4)";
+    c.beginPath();
+    c.ellipse(36, 88, 24, 7, 0, 0, Math.PI * 2);
+    c.fill();
+    // notebook body
+    c.fillStyle = "#dcc896";
+    c.fillRect(16, 10, 42, 58);
+    c.fillStyle = "#c9b078";
+    c.fillRect(16, 10, 8, 58);
+    c.strokeStyle = "#6a4a22";
+    c.lineWidth = 2;
+    c.strokeRect(16, 10, 42, 58);
+    // page lines
+    c.strokeStyle = "rgba(90, 60, 30, 0.4)";
+    c.lineWidth = 1;
+    for (let y = 24; y < 60; y += 8) {
+      c.beginPath();
+      c.moveTo(28, y);
+      c.lineTo(52, y);
+      c.stroke();
+    }
+    // green field-note seal
+    c.fillStyle = "#1f7a3e";
+    c.beginPath();
+    c.arc(37, 30, 9, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "#e8ffe8";
+    c.font = "bold 11px monospace";
+    c.textAlign = "center";
+    c.textBaseline = "middle";
+    c.fillText("N", 37, 31);
+    // folded corner
+    c.fillStyle = "#b9a06a";
+    c.beginPath();
+    c.moveTo(50, 10);
+    c.lineTo(58, 10);
+    c.lineTo(58, 18);
+    c.closePath();
+    c.fill();
+    propCache.note = off;
+    return off;
+  }
+
   function drawSprites() {
     const bobY = Math.sin(player.bob) * 6;
     const phase = dayPhase();
@@ -1144,47 +1200,38 @@
       const invDet = 1 / (planeX * dirY - dirX * planeY);
       const transformX = invDet * (dirY * spriteX - dirX * spriteY);
       const transformY = invDet * (-planeY * spriteX + planeX * spriteY);
-      if (transformY <= 0.15 || transformY > 18) continue;
+      if (transformY <= 0.15 || transformY > 22) continue;
       const spriteScreenX = ((W / 2) * (1 + transformX / transformY)) | 0;
       let sc = sp.scale || worldScale(sp.id || sp.prop);
-      if (sp.kind === "note") sc = 0.45;
+      if (sp.kind === "note") sc = 0.55;
       if (sp.behavior === "soar") sc *= 1.05;
       const bobOff = (sp.bob || 0) * (8 / Math.max(0.6, transformY));
-      const spriteH = Math.abs((H / transformY) * sc) | 0;
+      let spriteH = Math.abs((H / transformY) * sc) | 0;
+      if (sp.kind === "note") spriteH = Math.max(18, spriteH);
       if (spriteH < 3) continue;
 
-      if (sp.kind === "note") {
-        const floorY = (H / 2 + bobY + (H * 0.5) / transformY) | 0;
-        const y0 = floorY - spriteH - 6 + (Math.sin(t * 3 + sp.bob) * 3) | 0;
-        ctx.fillStyle = "rgba(93,206,122,0.9)";
-        ctx.fillRect(spriteScreenX - 4, y0, 8, 8);
-        ctx.fillStyle = "#041208";
-        ctx.fillRect(spriteScreenX - 2, y0 + 2, 4, 4);
-        if (transformY < 6) {
-          ctx.fillStyle = "rgba(4,20,10,0.8)";
-          ctx.fillRect(spriteScreenX - 28, y0 - 12, 56, 10);
-          ctx.fillStyle = "#5dce7a";
-          ctx.font = "11px monospace";
-          ctx.textAlign = "center";
-          ctx.fillText("NOTE · walk close", spriteScreenX, y0 - 4);
-          ctx.textAlign = "left";
-        }
-        continue;
-      }
-
-      const img = sp.kind === "animal" ? getAnimalCanvas(sp.id) : getPropCanvas(sp.prop);
+      const img = sp.kind === "note" ? getNoteCanvas()
+        : (sp.kind === "animal" ? getAnimalCanvas(sp.id) : getPropCanvas(sp.prop));
       const spriteW = Math.max(4, (spriteH * (img.width / img.height)) | 0);
       const floorY = (H / 2 + bobY + (H * 0.5) / transformY) | 0;
-      const drawStartY = floorY - spriteH - (bobOff | 0);
+      const floatY = sp.kind === "note" ? ((Math.sin(t * 3 + sp.bob) * 4) | 0) : 0;
+      const drawStartY = floorY - spriteH - (bobOff | 0) + floatY;
       const drawStartX = (-spriteW / 2 + spriteScreenX) | 0;
       const drawEndX = drawStartX + spriteW;
       if (drawEndX < 0 || drawStartX >= W || drawStartY >= H || drawStartY + spriteH < 0) continue;
       const flip = sp.kind === "animal" && sp.face < 0;
-      const fogA = clamp(1.15 - transformY / 18, 0.35, 1);
+      const fogA = clamp(1.15 - transformY / 20, 0.4, 1);
       ctx.save();
       ctx.globalAlpha = fogA;
-      ctx.imageSmoothingEnabled = !!(img._photo);
-      ctx.imageSmoothingQuality = "medium";
+      if (sp.kind === "note") {
+        const pulse = 0.35 + 0.25 * Math.sin(t * 4 + sp.bob);
+        ctx.fillStyle = "rgba(93,206,122," + pulse + ")";
+        ctx.beginPath();
+        ctx.ellipse(spriteScreenX, floorY - 2, spriteW * 0.55, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.imageSmoothingEnabled = !!(img._photo) || sp.kind === "note";
+      ctx.imageSmoothingQuality = "high";
       if (flip) {
         ctx.translate(drawStartX + spriteW, drawStartY);
         ctx.scale(-1, 1);
@@ -1193,6 +1240,19 @@
         ctx.drawImage(img, 0, 0, img.width, img.height, drawStartX, drawStartY, spriteW, spriteH);
       }
       ctx.restore();
+
+      if (sp.kind === "note") {
+        if (transformY < 7) {
+          ctx.fillStyle = "rgba(4,20,10,0.82)";
+          ctx.fillRect(spriteScreenX - 34, drawStartY - 14, 68, 12);
+          ctx.fillStyle = "#8dffb0";
+          ctx.font = "11px monospace";
+          ctx.textAlign = "center";
+          ctx.fillText("FIELD NOTE", spriteScreenX, drawStartY - 5);
+          ctx.textAlign = "left";
+        }
+        continue;
+      }
 
       if (sp.kind === "animal") {
         drawSprites._screen.push({
@@ -1441,7 +1501,7 @@
     if (ui.touch) ui.touch.hidden = !exploring;
     if (ui.hint && mode === "explore" && exploring) {
       ui.hint.textContent = land
-        ? "FULL SCREEN · Stick · LOOK · Notes glow green · Tap animals"
+        ? "FULL SCREEN · Stick · LOOK · Notebooks glow · Tap animals"
         : "Stick · LOOK · Walk onto glowing NOTES · Tap animals · FULL SCREEN";
     } else if (ui.hint && mode === "explore") {
       ui.hint.textContent = "WASD move · Drag look · Tap animal · Walk onto NOTES · L log · Esc regions";
