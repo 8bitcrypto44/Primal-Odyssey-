@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "55"
+ASSET_VER = "56"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -164,7 +164,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   color:#fff;background:rgba(4,20,10,.92);box-shadow:0 0 18px rgba(93,206,122,.35);
   -webkit-tap-highlight-color:transparent;white-space:nowrap
 }}
-.po-gd.is-open.is-land .po-gd-fs{{display:block}}
+.po-gd.is-open .po-gd-fs{{display:block}}
 .po-gd.is-fs .po-gd-fs{{opacity:.85;font-size:12px;padding:8px 12px;min-height:36px;border-color:#7fa88c;color:#9ec9ad;box-shadow:none}}
 .po-gd.is-open.is-land{{
   position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;height:100dvh;margin:0;
@@ -213,7 +213,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Enter → choose biome · chrome pins to canvas (v55)</p>
+          <p class="po-gd-tip">Enter → choose biome · full-frame + FS (v56)</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">Africa</button>
             <button type="button" data-region="mountains">Mountains</button>

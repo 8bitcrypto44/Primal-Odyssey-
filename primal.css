@@ -19,8 +19,12 @@ body{background:radial-gradient(ellipse 70% 45% at 50% -5%,#0d2818 0%,transparen
 .po-wip{display:block;width:fit-content;max-width:92%;margin:0 auto 18px;padding:6px 12px;border:1px dashed var(--line);border-radius:6px;color:#d4f08a;font-size:13px;font-weight:700;letter-spacing:.4px;text-align:center;background:rgba(61,155,95,.14)}
 @keyframes poPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 @keyframes poGo{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-.po-shell{position:relative;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #0a1f12,0 0 28px rgba(61,155,95,.18),0 16px 36px rgba(0,0,0,.6);touch-action:none;display:flex;align-items:center;justify-content:center;min-height:min(70vh,520px)}
-#po-canvas{display:block;width:auto;height:auto;max-width:100%;margin:0 auto;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor;cursor:crosshair;background:#050a06;touch-action:none;vertical-align:top}
+.po-shell{position:relative;border:3px solid var(--line);border-radius:12px;overflow:hidden;background:#000;box-shadow:0 0 0 2px #0a1f12,0 0 28px rgba(61,155,95,.18),0 16px 36px rgba(0,0,0,.6);touch-action:none;width:100%;aspect-ratio:16/9;min-height:min(56vw,420px);max-height:min(78vh,720px)}
+#po-canvas{
+  position:absolute;inset:0;width:100%!important;height:100%!important;max-width:none;margin:0;
+  object-fit:fill;image-rendering:pixelated;image-rendering:crisp-edges;-ms-interpolation-mode:nearest-neighbor;
+  cursor:crosshair;background:#050a06;touch-action:none;display:block
+}
 .po-hud-canvas{
   position:absolute;left:0;top:0;transform:none;
   pointer-events:none;z-index:4;image-rendering:auto;
@@ -116,7 +120,7 @@ html.po-land .po-shell{
   position:absolute;inset:0;border:0;border-radius:0;box-shadow:none;height:100%
 }
 html.po-land #po-canvas{
-  position:absolute;inset:0;width:100%!important;height:100%!important;object-fit:contain;background:#050a06
+  position:absolute;inset:0;width:100%!important;height:100%!important;object-fit:fill;background:#050a06
 }
 html.po-land .po-credit,html.po-land .po-frame{display:none}
 html.po-land.po-touch-on .po-touch{
@@ -444,11 +448,12 @@ html.po-embed .po-frame{
 }
 html.po-embed .po-shell{
   position:absolute;inset:0;width:100%;height:100%;margin:0;
-  border:0;border-radius:0;box-shadow:none;overflow:hidden;background:#000
+  border:0;border-radius:0;box-shadow:none;overflow:hidden;background:#000;
+  aspect-ratio:auto;min-height:0;max-height:none
 }
 html.po-embed #po-canvas{
   position:absolute;inset:0;width:100%!important;height:100%!important;max-height:none;min-height:0;
-  object-fit:contain;object-position:center center;display:block;background:#050a06
+  object-fit:fill;object-position:center center;display:block;background:#050a06
 }
 html.po-embed .po-credit{display:none}
 html.po-embed .po-overlay{

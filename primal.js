@@ -62,34 +62,11 @@
   function canvasContentBox(shellRect) {
     const rect = canvas.getBoundingClientRect();
     const s = shellRect || (canvas.parentElement && canvas.parentElement.getBoundingClientRect()) || rect;
-    let left = rect.left;
-    let top = rect.top;
-    let width = Math.max(1, rect.width);
-    let height = Math.max(1, rect.height);
-    const cs = window.getComputedStyle(canvas);
-    const contain = cs.objectFit === "contain" ||
-      document.documentElement.classList.contains("po-embed") ||
-      document.documentElement.classList.contains("po-land");
-    if (contain) {
-      const ar = W / H;
-      const rar = width / height;
-      let cw, ch, ox, oy;
-      if (rar > ar) {
-        ch = height;
-        cw = height * ar;
-        ox = (width - cw) / 2;
-        oy = 0;
-      } else {
-        cw = width;
-        ch = width / ar;
-        ox = 0;
-        oy = (height - ch) / 2;
-      }
-      left += ox;
-      top += oy;
-      width = cw;
-      height = ch;
-    }
+    // Game stretches to fill the whole player frame — chrome uses the full canvas box
+    const left = rect.left;
+    const top = rect.top;
+    const width = Math.max(1, rect.width);
+    const height = Math.max(1, rect.height);
     return {
       left: left - s.left,
       top: top - s.top,
@@ -178,13 +155,19 @@
   function poIntegerScale() {
     const shell = canvas.parentElement;
     if (!shell) return;
-    const maxW = shell.clientWidth || W;
-    const maxH = shell.clientHeight || H;
-    const s = Math.max(1, Math.floor(Math.min(maxW / W, maxH / H)));
-    canvas.style.width = (W * s) + "px";
-    canvas.style.height = (H * s) + "px";
+    // Stretch pixel world to fill the entire player frame (PC / mobile / fullscreen)
+    canvas.style.position = "absolute";
+    canvas.style.left = "0";
+    canvas.style.top = "0";
+    canvas.style.right = "0";
+    canvas.style.bottom = "0";
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
+    canvas.style.maxWidth = "none";
+    canvas.style.maxHeight = "none";
+    canvas.style.margin = "0";
+    canvas.style.objectFit = "fill";
     canvas.style.imageRendering = "pixelated";
-    canvas.style.margin = "0 auto";
     canvas.style.display = "block";
     syncHudOverlay();
   }
@@ -4393,8 +4376,8 @@
   }
 
   function tryLandscapeFullscreen() {
-    // Browsers block this without a user gesture; Digistracts calls it from touch.
-    if (mode !== "explore" || !wantsTouchUI() || !isLandscape()) return;
+    // Called from Full screen button (any device) or Digistracts gesture
+    if (mode !== "explore") return;
     if (isNativeFullscreen()) return;
     askParentFullscreen(false);
     const el = document.documentElement;
@@ -4419,8 +4402,8 @@
 
   function syncFsBtn() {
     if (!ui.fsBtn) return;
-    // Digistracts embed already has a parent Full screen control — avoid double-stack
-    const show = inGameMode() && wantsTouchUI() && isLandscape() && !isEmbed;
+    // Always available while exploring (PC, mobile, embed, fullscreen)
+    const show = mode === "explore";
     const fs = isNativeFullscreen();
     ui.fsBtn.hidden = !show;
     ui.fsBtn.setAttribute("aria-pressed", fs ? "true" : "false");
