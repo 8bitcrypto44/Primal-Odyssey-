@@ -604,5 +604,38 @@ window.PO_BONUS = {
     survive:[
       "Do not shine bright lights into eyes or chase for photos. Stay on marked trails, secure food, and report injured or habituated cats to rangers."
     ]
+  },
+  manatee: {
+    id:"manatee",
+    name:"West Indian Manatee",
+    latin:"Trichechus manatus",
+    danger:"Gentle giant · Slow channels",
+    x:20, y:22, color:"#7a8a8a",
+    behavior:"graze", speed:0.35, waterLove:true, fleeDist:3.5, aggroDist:0, idleBob:0.15, nocturnal:false,
+    facts:[
+      "Manatees are slow, peaceful aquatic mammals that graze seagrass and freshwater plants in warm shallow channels. A wetlands expedition may spot them as rounded backs and nostrils breaking glass-calm water.",
+      "They surface to breathe every few minutes. Boat strikes and cold snaps are major threats; boardwalk viewing and idle engines keep both explorers and manatees safer."
+    ],
+    myths:[
+      "Sailors once mistook manatees for mermaids at distance. Up close they are barrel-bodied gardeners of the marsh, not songstresses."
+    ],
+    fun:[
+      "Manatees can eat about a tenth of their body weight in plants a day — floating lawnmowers with whiskers."
+    ],
+    survive:[
+      "Watch from shore or boardwalk. Never chase, feed, or splash toward a manatee. Report injured animals to wildlife officers."
+    ]
   }
+};
+
+window.PO_DATA.wetlands = {
+  id: "wetlands",
+  name: "RIVER WETLANDS",
+  blurb: "Oxbow lakes, reed blinds, and quiet channels where giants graze.",
+  ground: ["#2a5a40","#1f4a34","#3a6a48","#245038"],
+  path: "#5a6a40",
+  water: "#1a5a6a",
+  sky: ["#8ec8d8","#6aa8b8","#4a8898"],
+  accent: "#2d6a58",
+  animals: []
 };

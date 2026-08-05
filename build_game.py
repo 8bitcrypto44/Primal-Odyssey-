@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "32"
+ASSET_VER = "33"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -102,6 +102,7 @@ pages = (
     f"<script src=\"primal_data.js?v={v}\"></script>\n"
     f"<script src=\"primal_sprites.js?v={v}\"></script>\n"
     f"<script src=\"primal.js?v={v}\"></script>\n"
+    "<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){})}</script>\n"
     "</body>\n</html>\n"
 )
 (root / "index.html").write_bytes(pages.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))
@@ -129,6 +130,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-title{{margin:0;font-family:Papyrus,"Segoe Print","Bradley Hand ITC",fantasy;font-size:clamp(26px,5vw,40px);font-weight:400;letter-spacing:2px;color:#5dce7a;text-shadow:0 0 18px rgba(61,155,95,.55),3px 3px 0 #021208;line-height:1.1}}
 .po-gd-tag{{margin:0;font-size:clamp(11px,2.8vw,13px);color:#9ec9ad;letter-spacing:.5px;max-width:28em;line-height:1.4}}
 .po-gd-tip{{margin:0;font-size:clamp(10px,2.4vw,12px);color:#7fa88c;letter-spacing:.4px;max-width:28em;line-height:1.35}}
+.po-gd-cover{{transition:opacity .55s ease}}
+.po-gd.is-fading .po-gd-cover{{opacity:0}}
 .po-gd-enter{{appearance:none;border:3px solid #5dce7a;border-radius:10px;padding:12px 28px;font:700 15px "Courier New",Courier,monospace;letter-spacing:2px;cursor:pointer;color:#041208;background:linear-gradient(180deg,#5dce7a,#2d6b45);box-shadow:0 0 18px rgba(93,206,122,.35),0 4px 0 #0a1f12;transition:transform .12s,box-shadow .12s}}
 .po-gd-enter:hover{{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(93,206,122,.5),0 6px 0 #0a1f12}}
 .po-gd-enter:active{{transform:scale(.98)}}
@@ -271,11 +274,13 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(src&&!frame.getAttribute("src"))frame.setAttribute("src",src);
     root.classList.add("is-open");
     root.classList.add("is-loading");
+    root.classList.add("is-fading");
     playing=true;
     btn.setAttribute("aria-expanded","true");
     syncLand();
     if(phone()&&land())enterFs();
     try{{frame.focus();}}catch(e){{}}
+    setTimeout(function(){{root.classList.remove("is-fading");}},600);
   }});
   frame.addEventListener("load",function(){{
     root.classList.remove("is-loading");
