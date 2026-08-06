@@ -6,13 +6,20 @@ Only paste the iframe snippet (godaddy_iframe_snippet.html /
 primal_odyssey_godaddy_block.html). Full single-file export is optional archive only.
 """
 from pathlib import Path
+import base64
 import re
 
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "59"
+ASSET_VER = "60"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
+_brand_logo = root / "assets" / "brand" / "8bitcrypto44_logo.png"
+BRAND_LOGO_URI = (
+    "data:image/png;base64," + base64.b64encode(_brand_logo.read_bytes()).decode("ascii")
+    if _brand_logo.exists()
+    else f"{PAGES_URL}assets/brand/8bitcrypto44_logo.png?v={ASSET_VER}"
+)
 
 
 def clean_text(s):
@@ -220,7 +227,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
           <button type="button" class="po-gd-enter" id="po-gd-enter">Enter expedition</button>
           <p class="po-gd-promo">Also: Thank You For Your Service kids coloring books - Free &amp; Faithful Press</p>
           <a class="po-gd-site" href="https://www.8bitcrypto44.xyz" target="_blank" rel="noopener noreferrer" aria-label="8bitcrypto_44 website">
-            <img src="{PAGES_URL}assets/brand/8bitcrypto44_logo.png?v={v}" alt="8bitcrypto_44" width="96" height="13" decoding="async">
+            <img src="{BRAND_LOGO_URI}" alt="" width="96" height="13" decoding="async">
             <span>www.8bitcrypto44.xyz</span>
           </a>
         </div>
