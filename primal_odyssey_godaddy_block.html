@@ -29,8 +29,8 @@
 .po-gd-title{margin:0;font-family:Papyrus,"Segoe Print","Bradley Hand ITC",fantasy;font-size:clamp(26px,5vw,40px);font-weight:400;letter-spacing:2px;color:#5dce7a;text-shadow:0 0 18px rgba(61,155,95,.55),3px 3px 0 #021208;line-height:1.1}
 .po-gd-tag{margin:0;font-size:clamp(13px,2.8vw,15px);color:#cfe8d6;letter-spacing:.2px;max-width:28em;line-height:1.45}
 .po-gd-tip{margin:0;font-size:clamp(12px,2.4vw,14px);color:#a8cbb8;letter-spacing:.2px;max-width:28em;line-height:1.4}
-.po-gd-cover{transition:opacity .55s ease}
-.po-gd.is-fading .po-gd-cover{opacity:0}
+.po-gd-cover{transition:none}
+.po-gd.is-fading .po-gd-cover{opacity:0;transition:none}
 .po-gd-enter{appearance:none;border:3px solid #5dce7a;border-radius:10px;padding:12px 28px;font:700 16px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;letter-spacing:.3px;cursor:pointer;color:#041208;background:linear-gradient(180deg,#5dce7a,#2d6b45);box-shadow:0 0 18px rgba(93,206,122,.35),0 4px 0 #0a1f12;transition:transform .12s,box-shadow .12s}
 .po-gd-enter:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(93,206,122,.5),0 6px 0 #0a1f12}
 .po-gd-enter:active{transform:scale(.98)}
@@ -43,18 +43,68 @@
 }
 .po-gd.is-loading .po-gd-load{display:flex}
 .po-gd.is-open .po-gd-cover{display:none}
-.po-gd.is-open .po-gd-play{display:block}
-.po-gd.is-open.is-land{
-  position:fixed;inset:0;z-index:9999;max-width:none;width:100%;height:100%;height:100dvh;margin:0;
-  background:#030605
+.po-gd.is-open{overflow:visible}
+.po-gd.is-open .po-gd-play{display:block;overflow:hidden}
+.po-gd.is-open .po-gd-top{display:none!important}
+.po-gd.is-open .po-gd-card{padding:0;display:flex;flex-direction:column;overflow:visible}
+.po-gd.is-open:not(.is-fs-mode):not(.is-land) .po-gd-stage{
+  aspect-ratio:auto!important;border:0!important;border-radius:0!important;overflow:hidden!important
 }
-.po-gd.is-open.is-land .po-gd-card{
-  height:100%;border:0;border-radius:0;padding:0;box-shadow:none;
-  display:flex;flex-direction:column;background:#030605
+.po-gd.is-open:not(.is-fs-mode):not(.is-land) .po-gd-play{
+  position:relative;inset:auto;overflow:hidden
 }
-.po-gd.is-open.is-land .po-gd-top{display:none}
-.po-gd.is-open.is-land .po-gd-stage{
-  flex:1;min-height:0;aspect-ratio:auto;height:auto;border:0;border-radius:0
+.po-gd.is-open:not(.is-fs-mode):not(.is-land) .po-gd-play iframe{
+  position:relative;inset:auto;display:block;overflow:hidden;border:0;width:100%
+}
+.po-gd.is-open.is-land,.po-gd.is-fs-mode{
+  position:fixed!important;inset:0!important;width:100vw!important;width:100dvw!important;height:100vh!important;height:100dvh!important;
+  max-width:none!important;margin:0!important;padding:0!important;z-index:2147483646!important;background:#030605!important;overflow:hidden!important
+}
+.po-gd.is-open.is-land .po-gd-card,.po-gd.is-fs-mode .po-gd-card{
+  height:100%!important;width:100%!important;border:0!important;border-radius:0!important;padding:0!important;box-shadow:none!important;
+  display:flex!important;flex-direction:column!important;background:#030605!important;overflow:hidden!important
+}
+.po-gd.is-open.is-land .po-gd-top,.po-gd.is-fs-mode .po-gd-top{display:none!important}
+.po-gd.is-open.is-land .po-gd-stage,.po-gd.is-fs-mode .po-gd-stage{
+  flex:1!important;min-height:0!important;aspect-ratio:auto!important;height:auto!important;border:0!important;border-radius:0!important;overflow:hidden!important
+}
+.po-gd.is-open.is-land .po-gd-play,.po-gd.is-fs-mode .po-gd-play{flex:1!important;min-height:0!important;overflow:hidden!important}
+.po-gd.is-open.is-land .po-gd-play iframe,.po-gd.is-fs-mode .po-gd-play iframe{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;border:0!important
+}
+.po-gd.is-mobile.is-open:not(.is-fs-mode):not(.is-land) .po-gd-stage,
+.po-gd.is-mobile.is-open:not(.is-fs-mode):not(.is-land) .po-gd-play{
+  min-height:0!important;max-height:none!important
+}
+.po-gd.is-mobile.is-open:not(.is-fs-mode):not(.is-land) .po-gd-play iframe{
+  min-height:0!important;max-height:none!important;
+  position:relative!important;inset:auto!important;display:block!important;overflow:visible!important;
+  width:100%!important;border:0!important
+}
+.po-gd.is-mobile.is-open:not(.is-fs-mode):not(.is-land) .po-gd-stage{overflow:visible!important}
+.po-gd.is-mobile.is-open:not(.is-fs-mode):not(.is-land) .po-gd-play{overflow:visible!important}
+.po-gd:not(.is-mobile):not(.is-open) .po-gd-card{overflow:hidden}
+.po-gd:not(.is-mobile):not(.is-open) .po-gd-stage{
+  aspect-ratio:16/9!important;min-height:0!important;height:auto!important;overflow:hidden!important
+}
+.po-gd.is-mobile:not(.is-open) .po-gd-card{overflow:visible}
+.po-gd.is-mobile:not(.is-open) .po-gd-stage{
+  aspect-ratio:auto!important;min-height:0!important;height:auto!important;overflow:visible!important;
+  display:flex!important;flex-direction:column!important
+}
+.po-gd.is-mobile:not(.is-open) .po-gd-cover{
+  position:relative!important;inset:auto!important;display:flex!important;flex-direction:column!important;min-height:0!important
+}
+.po-gd.is-mobile:not(.is-open) .po-gd-hero{
+  position:relative!important;flex:0 0 auto!important;aspect-ratio:16/9!important;
+  max-height:38vh!important;min-height:150px!important;width:100%!important;overflow:hidden!important
+}
+.po-gd.is-mobile:not(.is-open) .po-gd-veil{
+  position:relative!important;inset:auto!important;flex:0 0 auto!important;min-height:0!important;
+  justify-content:flex-start;padding:14px 12px 18px;gap:8px
+}
+.po-gd.is-mobile:not(.is-open) .po-gd-site{
+  position:relative!important;left:auto!important;bottom:auto!important;margin-top:10px;align-self:center
 }
 .po-gd:fullscreen,.po-gd:-webkit-full-screen{
   width:100%;height:100%;max-width:none;background:#030605
@@ -69,6 +119,25 @@
 }
 @media (max-width:700px){
   .po-gd-card{padding:4px;border-width:2px}
+  .po-gd:not(.is-open) .po-gd-card{overflow:visible}
+  .po-gd:not(.is-open) .po-gd-stage{
+    aspect-ratio:auto!important;min-height:0!important;height:auto!important;overflow:visible!important;
+    display:flex!important;flex-direction:column!important
+  }
+  .po-gd:not(.is-open) .po-gd-cover{
+    position:relative!important;inset:auto!important;display:flex!important;flex-direction:column!important;min-height:0!important
+  }
+  .po-gd:not(.is-open) .po-gd-hero{
+    position:relative!important;flex:0 0 auto!important;aspect-ratio:16/9!important;
+    max-height:38vh!important;min-height:150px!important;width:100%!important;overflow:hidden!important
+  }
+  .po-gd:not(.is-open) .po-gd-veil{
+    position:relative!important;inset:auto!important;flex:0 0 auto!important;min-height:0!important;
+    justify-content:flex-start;padding:14px 12px 18px;gap:8px
+  }
+  .po-gd:not(.is-open) .po-gd-site{
+    position:relative!important;left:auto!important;bottom:auto!important;margin-top:8px;align-self:center
+  }
   .po-gd-top{margin-bottom:4px}
   .po-gd-brand{font-size:13px}
   .po-gd-enter{padding:14px 22px;min-height:48px;width:min(100%,280px);font-size:16px}
@@ -76,6 +145,12 @@
   .po-gd-site{left:8px;bottom:6px}
   .po-gd-site img{width:72px}
   .po-gd-site span{font-size:9px}
+}
+@media (min-width:701px){
+  .po-gd:not(.is-open) .po-gd-stage{
+    aspect-ratio:16/9!important;min-height:0!important;height:auto!important;overflow:hidden!important
+  }
+  .po-gd:not(.is-open) .po-gd-card{overflow:hidden}
 }
 </style>
 <div class="po-gd" id="po-gd">
@@ -94,7 +169,7 @@
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Enter → choose biome · FS chrome inset (v60)</p>
+          <p class="po-gd-tip">Enter → choose biome · Phone: scroll menu · landscape FS · FS button in-game (v63)</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">Africa</button>
             <button type="button" data-region="mountains">Mountains</button>
@@ -116,7 +191,7 @@
           title="Primal Odyssey"
           width="100%"
           height="450"
-          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=60"
+          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=63"
           allow="autoplay; fullscreen"
           allowfullscreen
           scrolling="no"
@@ -134,42 +209,125 @@
   if(!root||!btn||!frame)return;
   var playing=false;
   function phone(){
-    return ("ontouchstart" in window)||(navigator.maxTouchPoints>0)||window.innerWidth<=900;
+    try{
+      if(window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(pointer: coarse)").matches)return false;
+    }catch(e){}
+    var touch=("ontouchstart" in window)||(navigator.maxTouchPoints>0);
+    var narrow=false,coarse=false;
+    try{
+      narrow=window.matchMedia("(max-width:700px)").matches;
+      coarse=window.matchMedia("(pointer: coarse)").matches;
+    }catch(e2){}
+    return (touch&&coarse)||narrow;
   }
   function land(){
     if(window.matchMedia&&window.matchMedia("(orientation: landscape)").matches)return true;
     return window.innerWidth>window.innerHeight;
   }
   function isFs(){
-    return !!(document.fullscreenElement||document.webkitFullscreenElement);
+    return root.classList.contains("is-fs-mode")||
+      !!(document.fullscreenElement||document.webkitFullscreenElement);
   }
   function syncFsClass(){
-    root.classList.toggle("is-fs",isFs());
+    root.classList.toggle("is-fs", root.classList.contains("is-fs-mode")||isFs());
   }
   function syncLand(){
     root.classList.toggle("is-land", root.classList.contains("is-open") && playing && phone() && land());
     syncFsClass();
   }
-  function enterFs(){
-    if(isFs())return;
-    var req=root.requestFullscreen||root.webkitRequestFullscreen;
-    if(!req)return;
-    try{
-      var p=req.call(root);
-      if(p&&p.catch)p.catch(function(){});
-    }catch(e){}
+  function mobileMode(){return root.classList.contains("is-mobile")||phone();}
+  function clearCoverHeights(){
+    var st=root.querySelector(".po-gd-stage"),pl=document.getElementById("po-gd-play");
+    if(st){st.style.minHeight="";st.style.height="";st.style.maxHeight="";st.style.aspectRatio="";}
+    if(pl){pl.style.minHeight="";pl.style.height="";pl.style.maxHeight="";}
   }
-  function exitFs(){
-    var exit=document.exitFullscreen||document.webkitExitFullscreen;
-    if(exit&&isFs()){
+  function embedDefaultH(){return 920;}
+  function mobileBootH(){
+    var vh=Math.max(320,Math.round(window.innerHeight||document.documentElement.clientHeight||680));
+    return Math.max(680,Math.round(vh*1.05));
+  }
+  function openBootH(){
+    var st=root.querySelector(".po-gd-stage"),cov=root.querySelector(".po-gd-cover"),h=0;
+    if(st)h=Math.max(h,Math.round(st.scrollHeight||0),Math.round(st.offsetHeight||0),Math.round(st.getBoundingClientRect().height||0));
+    if(cov)h=Math.max(h,Math.round(cov.scrollHeight||0),Math.round(cov.offsetHeight||0));
+    return Math.max(h,mobileBootH());
+  }
+  function requestChildResize(){try{if(frame.contentWindow)frame.contentWindow.postMessage({type:"po-request-resize"},"*");}catch(e){}}
+  function setFrameHeight(h){
+    if(isFs()||root.classList.contains("is-land"))return;
+    if(!root.classList.contains("is-open")){clearCoverHeights();return;}
+    var contentH=Math.max(680,Math.round(Number(h)||920));
+    if(mobileMode()&&!root.classList.contains("is-land")){
+      if(root.classList.contains("is-loading"))contentH=Math.max(contentH,openBootH());
+      frame.setAttribute("scrolling","no");
+      root.classList.add("is-mobile");
+      h=contentH;
+    }else{
+      h=contentH;
+      if(!phone())frame.setAttribute("scrolling","no");
+    }
+    frame.style.height=h+"px";
+    frame.style.minHeight=h+"px";
+    frame.style.maxHeight="none";
+    var st=root.querySelector(".po-gd-stage");
+    var pl=document.getElementById("po-gd-play");
+    if(st){st.style.height="auto";st.style.minHeight="0";st.style.maxHeight="none";st.style.aspectRatio="auto";}
+    if(pl){pl.style.height="auto";pl.style.minHeight="0";pl.style.maxHeight="none";}
+  }
+  function postFsState(active){try{if(frame.contentWindow)frame.contentWindow.postMessage({type:"po-fs-state",active:!!active},"*");}catch(e){}}
+  function mountFs(){
+    if(root.dataset.poMounted==="1")return;
+    var slot=document.createElement("div");
+    slot.setAttribute("data-po-slot","1");
+    slot.style.cssText="display:block;width:100%;max-width:920px;margin:0 auto;height:"+Math.max(1,Math.round(root.getBoundingClientRect().height))+"px";
+    if(root.parentNode)root.parentNode.insertBefore(slot, root);
+    document.body.appendChild(root);
+    root.dataset.poMounted="1";
+  }
+  function unmountFs(){
+    if(root.dataset.poMounted!=="1")return;
+    var slot=document.querySelector("[data-po-slot]");
+    if(slot&&slot.parentNode){
+      slot.parentNode.insertBefore(root, slot);
+      slot.parentNode.removeChild(slot);
+    }
+    delete root.dataset.poMounted;
+  }
+  function finishExit(){
+    unmountFs();
+    root.classList.remove("is-fs-mode");
+    postFsState(false);
+    try{document.documentElement.style.overflow="";document.body.style.overflow="";}catch(e){}
+    syncLand();
+  }
+  function enterFs(){
+    mountFs();
+    root.classList.add("is-fs-mode");
+    postFsState(true);
+    try{document.documentElement.style.overflow="hidden";document.body.style.overflow="hidden";}catch(e){}
+    var req=frame.requestFullscreen||frame.webkitRequestFullscreen;
+    if(req&&!document.fullscreenElement){
       try{
-        var p=exit.call(document);
+        var p=req.call(frame);
         if(p&&p.catch)p.catch(function(){});
       }catch(e){}
     }
   }
+  function exitFs(){
+    root.classList.remove("is-fs-mode");
+    var ex=document.exitFullscreen||document.webkitExitFullscreen;
+    if(ex&&document.fullscreenElement){
+      try{
+        var p=ex.call(document);
+        if(p&&p.then)p.then(finishExit).catch(finishExit);
+        else finishExit();
+      }catch(e){finishExit();}
+    }else{
+      finishExit();
+    }
+  }
   var playing=false;
-  var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=60".replace(/&amp;/g,"&");
+  var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=63".replace(/&amp;/g,"&");
   root.classList.add("is-trailer");
   // Soft full-bleed cover crossfade (no mosaic strobe)
   var heroImgs=root.querySelectorAll("#po-gd-hero img");
@@ -183,19 +341,20 @@
     },3200);
   }
   function openGame(suggest){
-    // Always open title/chooser — never auto-start a world
     var src=baseSrc+(suggest?("&region="+suggest):"");
     frame.setAttribute("src",src);
     root.classList.add("is-open");
     root.classList.add("is-loading");
-    root.classList.add("is-fading");
     root.classList.remove("is-trailer");
     playing=true;
     btn.setAttribute("aria-expanded","true");
+    if(phone()){root.classList.add("is-mobile");frame.setAttribute("scrolling","no");if(land())enterFs();}else{
+      try{document.documentElement.style.overflow="hidden";document.body.style.overflow="hidden";}catch(e){}
+    }
+    setFrameHeight(phone()?openBootH():embedDefaultH());
     syncLand();
-    if(phone()&&land())enterFs();
+    requestChildResize();
     try{frame.focus();}catch(e){}
-    setTimeout(function(){root.classList.remove("is-fading");},600);
   }
   btn.addEventListener("click",function(){
     openGame(null);
@@ -213,27 +372,34 @@
   document.querySelectorAll("#po-gd-regions [data-region]").forEach(wireRegion);
   frame.addEventListener("load",function(){
     root.classList.remove("is-loading");
+    requestChildResize();
   });
   setTimeout(function(){root.classList.remove("is-loading");},8000);
-  root.addEventListener("touchstart",function(){
-    if(!root.classList.contains("is-land")||isFs())return;
-    enterFs();
-  },{passive:true});
   window.addEventListener("message",function(e){
     if(!e.data)return;
     if(e.data.type==="po-chrome"){
-      /* Stay fullscreen until EXIT FS from in-game button — dossiers are still in-game */
       if(typeof e.data.inGame==="boolean")playing=!!e.data.inGame;
-      else playing=!!e.data.explore;
+      else if(typeof e.data.explore==="boolean")playing=!!e.data.explore;
       syncLand();
+      requestChildResize();
+      if((e.data.inGame||e.data.explore)&&mobileMode()){setTimeout(requestChildResize,80);setTimeout(requestChildResize,240);setTimeout(requestChildResize,480);}
     }
     if(e.data.type==="po-fs")enterFs();
     if(e.data.type==="po-fs-exit")exitFs();
+    if(e.data.type==="po-mobile")root.classList.toggle("is-mobile",!!e.data.active);
+    if(e.data.type==="po-resize"&&e.data.height&&!isFs()&&!root.classList.contains("is-land"))setFrameHeight(e.data.height);
   });
-  function onFsChange(){syncFsClass();syncLand();}
+  function onFsChange(){
+    if(!document.fullscreenElement&&!document.webkitFullscreenElement&&root.classList.contains("is-fs-mode")){
+      finishExit();
+      return;
+    }
+    syncFsClass();syncLand();
+  }
   document.addEventListener("fullscreenchange",onFsChange);
   document.addEventListener("webkitfullscreenchange",onFsChange);
-  window.addEventListener("resize",syncLand);
-  window.addEventListener("orientationchange",function(){setTimeout(syncLand,120);});
+  window.addEventListener("resize",function(){syncLand();if(root.classList.contains("is-open")&&!isFs())requestChildResize();});
+  window.addEventListener("orientationchange",function(){setTimeout(function(){syncLand();if(root.classList.contains("is-open")&&!isFs())requestChildResize();else clearCoverHeights();},120);});
+  if(phone())root.classList.add("is-mobile");
 })();
 </script>

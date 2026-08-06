@@ -506,6 +506,24 @@ html.po-embed .po-regions{gap:8px}
   html.po-embed .po-menu .lead{font-size:15px}
 }
 
+html.po-embed.po-mobile,html.po-embed.po-mobile body{
+  overflow-x:hidden;overflow-y:visible;height:auto;min-height:0;max-height:none;touch-action:pan-y
+}
+html.po-embed.po-mobile #po-root{
+  overflow:visible;height:auto;min-height:0;max-height:none;padding:0;touch-action:pan-y
+}
+html.po-embed.po-mobile .po-shell{
+  position:relative;inset:auto;width:100%;height:auto;min-height:min(100dvh,720px);overflow:hidden
+}
+html.po-embed.po-mobile .po-overlay{
+  position:relative;inset:auto;min-height:min(70vh,620px);overflow-y:auto;-webkit-overflow-scrolling:touch;
+  max-height:none;align-items:flex-start;padding-bottom:20px
+}
+html.po-embed.po-mobile .po-dossier,
+html.po-embed.po-mobile .po-paper-dossier{max-height:min(85vh,680px);overflow-y:auto}
+html.po-embed.po-mobile .po-card .go,
+html.po-embed.po-mobile .po-regions button{min-height:48px;touch-action:manipulation}
+
 @media (max-width:800px){
   #po-root{padding:8px 6px 16px}
   .po-shell{border-width:2px;border-radius:10px}
