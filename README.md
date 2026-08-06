@@ -32,3 +32,6 @@ Writes:
 
 ## Controls
 WASD / arrows · Click animals for dossiers · Esc / REGIONS for menu
+
+<!-- pages-redeploy 2026-08-06T10:56:37.4950088-07:00 -->
+
