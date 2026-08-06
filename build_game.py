@@ -11,7 +11,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "58"
+ASSET_VER = "59"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 
 
@@ -133,6 +133,9 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-hero img{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 1.1s ease}}
 .po-gd-hero img.is-on{{opacity:1}}
 .po-gd-promo{{margin:0;font-size:12px;color:#6a8b75;max-width:32em;line-height:1.4}}
+.po-gd-site{{position:absolute;left:10px;bottom:8px;z-index:3;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;text-decoration:none;opacity:.9;max-width:40%}}
+.po-gd-site img{{width:96px;max-width:100%;height:auto;display:block;image-rendering:pixelated;image-rendering:crisp-edges}}
+.po-gd-site span{{font-size:10px;letter-spacing:.4px;color:#5dce7a;text-shadow:0 0 6px rgba(61,155,95,.35)}}
 .po-gd-regions{{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}}
 .po-gd-regions button{{appearance:none;border:2px solid #2d6b45;border-radius:8px;padding:8px 12px;background:rgba(4,20,10,.85);color:#5dce7a;font:700 13px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;cursor:pointer}}
 .po-gd-regions button:hover,.po-gd-regions button.is-sel{{border-color:#5dce7a;background:rgba(20,50,30,.95)}}
@@ -186,6 +189,9 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   .po-gd-brand{{font-size:13px}}
   .po-gd-enter{{padding:14px 22px;min-height:48px;width:min(100%,280px);font-size:16px}}
   .po-gd-title{{font-size:clamp(28px,9vw,44px)}}
+  .po-gd-site{{left:8px;bottom:6px}}
+  .po-gd-site img{{width:72px}}
+  .po-gd-site span{{font-size:9px}}
 }}
 </style>
 <div class="po-gd" id="po-gd">
@@ -204,7 +210,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
           <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Enter → choose biome · FS chrome inset (v58)</p>
+          <p class="po-gd-tip">Enter → choose biome · FS chrome inset (v{v})</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">Africa</button>
             <button type="button" data-region="mountains">Mountains</button>
@@ -213,6 +219,10 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
           </div>
           <button type="button" class="po-gd-enter" id="po-gd-enter">Enter expedition</button>
           <p class="po-gd-promo">Also: Thank You For Your Service kids coloring books - Free &amp; Faithful Press</p>
+          <a class="po-gd-site" href="https://www.8bitcrypto44.xyz" target="_blank" rel="noopener noreferrer" aria-label="8bitcrypto_44 website">
+            <img src="{PAGES_URL}assets/brand/8bitcrypto44_logo.png?v={v}" alt="8bitcrypto_44" width="96" height="13" decoding="async">
+            <span>www.8bitcrypto44.xyz</span>
+          </a>
         </div>
       </div>
       <div class="po-gd-play" id="po-gd-play">
