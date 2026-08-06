@@ -12,7 +12,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "63"
+ASSET_VER = "64"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 _brand_logo = root / "assets" / "brand" / "8bitcrypto44_logo.png"
 BRAND_LOGO_URI = (
@@ -109,7 +109,7 @@ pages = (
     "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n"
     "<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n"
     "<link href=\"https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap\" rel=\"stylesheet\">\n"
-    "<style>html,body{{margin:0;height:100%;min-height:100%;background:#030605;}}</style>\n"
+    "<style>html,body{{margin:0;background:#030605;}}</style>\n"
     "</head>\n<body>\n"
     + body.strip() + "\n"
     f"<script src=\"primal_data.js?v={v}\"></script>\n"

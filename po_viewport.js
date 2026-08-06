@@ -9,6 +9,8 @@
   var EMBED_MIN_H = 680;
   var embedBurstGen = 0;
   var embedMutObs = null;
+  var embedMeasuring = false;
+  var lastReportH = 0;
 
   function isMobileDevice() {
     try {
@@ -34,6 +36,11 @@
     document.documentElement.classList.toggle("po-mobile", isMobileDevice());
   }
 
+  function isMenuOpen() {
+    var title = document.getElementById("po-title");
+    return !!(title && title.classList.contains("show"));
+  }
+
   function isScrollTarget(node) {
     return node && node.closest && node.closest(".po-overlay, .po-dossier, .po-paper-dossier, .po-log, .po-touch, .po-stick, .po-look-btn");
   }
@@ -44,38 +51,70 @@
     e.preventDefault();
   }
 
-  function measureEmbedHeight() {
+  function resetEmbedMeasureStyles() {
     var doc = document.documentElement;
     var bod = document.body;
     var shell = ROOT.querySelector(".po-shell");
     var title = document.getElementById("po-title");
-    [doc, bod, ROOT, shell].forEach(function (el) {
+    [doc, bod, ROOT, shell, title].forEach(function (el) {
       if (!el) return;
       el.style.height = "auto";
       el.style.minHeight = "0";
       el.style.maxHeight = "none";
     });
+  }
+
+  function considerBottom(maxBottom, el) {
+    if (!el || el.hidden) return maxBottom;
+    if (el.offsetParent === null && !(el.classList && el.classList.contains("show"))) return maxBottom;
+    var r = el.getBoundingClientRect();
+    if (r.height <= 0) return maxBottom;
+    return r.bottom > maxBottom ? r.bottom : maxBottom;
+  }
+
+  function measureEmbedHeight() {
+    resetEmbedMeasureStyles();
     var rootTop = ROOT.getBoundingClientRect().top;
-    var maxBottom = ROOT.getBoundingClientRect().bottom;
-    [shell, document.getElementById("po-canvas"), document.getElementById("po-bottom-bar"), document.getElementById("po-touch"), document.getElementById("po-hud-canvas")].forEach(function (el) {
-      if (!el || el.hidden) return;
-      var r = el.getBoundingClientRect();
-      if (r.height > 0 && r.bottom > maxBottom) maxBottom = r.bottom;
-    });
-    document.querySelectorAll(".po-overlay.show").forEach(function (el) {
-      var r = el.getBoundingClientRect();
-      if (r.bottom > maxBottom) maxBottom = r.bottom;
-    });
+    var maxBottom = rootTop;
+    var menuOpen = isMenuOpen();
+
+    ROOT.classList.toggle("po-ui-menu", menuOpen);
+    ROOT.classList.toggle("po-ui-play", !menuOpen);
+
+    if (menuOpen) {
+      var title = document.getElementById("po-title");
+      maxBottom = considerBottom(maxBottom, title);
+      if (title) {
+        var tr = title.getBoundingClientRect();
+        var th = Math.max(title.scrollHeight || 0, title.offsetHeight || 0, tr.height || 0);
+        maxBottom = Math.max(maxBottom, tr.top + th);
+      }
+    } else {
+      var shell = ROOT.querySelector(".po-shell");
+      var w = Math.max(1, ROOT.clientWidth || shell && shell.clientWidth || window.innerWidth || 320);
+      var gameH = Math.round(w * 9 / 16);
+      if (shell) {
+        var sr = shell.getBoundingClientRect();
+        maxBottom = Math.max(maxBottom, sr.top + gameH);
+      }
+      maxBottom = considerBottom(maxBottom, shell);
+      maxBottom = considerBottom(maxBottom, document.getElementById("po-bottom-bar"));
+      maxBottom = considerBottom(maxBottom, document.getElementById("po-touch"));
+      maxBottom = considerBottom(maxBottom, document.getElementById("po-hud-canvas"));
+      document.querySelectorAll(".po-overlay.show").forEach(function (el) {
+        maxBottom = considerBottom(maxBottom, el);
+      });
+    }
+
     var bboxH = Math.ceil(Math.max(0, maxBottom - rootTop)) + 8;
-    var tight = !(title && title.classList.contains("show"));
-    if (tight) {
+    if (isMobileEmbed()) {
       return Math.ceil(Math.max(EMBED_MIN_H, bboxH));
     }
     return Math.ceil(Math.max(
       EMBED_MIN_H,
       bboxH,
-      ROOT.scrollHeight || 0,
-      doc.scrollHeight || 0
+      menuOpen ? (ROOT.scrollHeight || 0) : 0,
+      menuOpen ? (document.documentElement.scrollHeight || 0) : 0
     ));
   }
 
@@ -83,28 +122,33 @@
     h = Math.max(EMBED_MIN_H, Math.round(h || measureEmbedHeight()));
     var mobile = isMobileEmbed();
     syncMobileClass();
-    [document.documentElement, document.body, ROOT].forEach(function (el) {
-      if (mobile) {
-        el.style.height = "auto";
-        el.style.minHeight = "0";
-        el.style.maxHeight = "none";
+    if (mobile) {
+      resetEmbedMeasureStyles();
+      [document.documentElement, document.body, ROOT].forEach(function (el) {
         el.style.overflowX = "hidden";
         el.style.overflowY = "visible";
         el.style.touchAction = "pan-y";
-      } else {
+      });
+    } else {
+      [document.documentElement, document.body, ROOT].forEach(function (el) {
         el.style.height = h + "px";
         el.style.minHeight = h + "px";
         el.style.maxHeight = h + "px";
         el.style.overflow = "hidden";
-      }
-    });
+      });
+    }
     return h;
   }
 
   function flushEmbedResize() {
-    if (!window.parent) return;
+    if (!window.parent || embedMeasuring) return;
+    embedMeasuring = true;
     try {
       var h = applyEmbedFrameHeight(measureEmbedHeight());
+      if (isMobileEmbed() && lastReportH > 0 && h > lastReportH + 16 && !isMenuOpen()) {
+        h = lastReportH;
+      }
+      lastReportH = h;
       window.parent.postMessage({
         type: "po-resize",
         height: h,
@@ -114,7 +158,9 @@
         type: "po-mobile",
         active: isMobileEmbed()
       }, "*");
-    } catch (e) {}
+    } catch (e) {} finally {
+      embedMeasuring = false;
+    }
   }
 
   function scheduleEmbedResizeBurst() {
@@ -134,9 +180,9 @@
     var debounce = null;
     embedMutObs = new MutationObserver(function () {
       clearTimeout(debounce);
-      debounce = setTimeout(flushEmbedResize, 0);
+      debounce = setTimeout(flushEmbedResize, 32);
     });
-    embedMutObs.observe(ROOT, { childList: true, subtree: true, attributes: true, characterData: true });
+    embedMutObs.observe(ROOT, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"] });
   }
 
   function notifyResize() {
@@ -151,6 +197,7 @@
   document.addEventListener("touchmove", blockEmbedScroll, { passive: false });
   window.addEventListener("resize", notifyResize);
   window.addEventListener("orientationchange", function () {
+    lastReportH = 0;
     setTimeout(function () {
       syncMobileClass();
       notifyResize();

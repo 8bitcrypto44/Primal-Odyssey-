@@ -507,16 +507,17 @@ html.po-embed .po-regions{gap:8px}
 }
 
 html.po-embed.po-mobile,html.po-embed.po-mobile body{
-  overflow-x:hidden;overflow-y:visible;height:auto;min-height:0;max-height:none;touch-action:pan-y
+  overflow-x:hidden;overflow-y:visible;height:auto!important;min-height:0!important;max-height:none!important;touch-action:pan-y
 }
 html.po-embed.po-mobile #po-root{
-  overflow:visible;height:auto;min-height:0;max-height:none;padding:0;touch-action:pan-y
+  overflow:visible;height:auto!important;min-height:0!important;max-height:none!important;padding:0;touch-action:pan-y
 }
 html.po-embed.po-mobile .po-shell{
-  position:relative;inset:auto;width:100%;height:auto;min-height:min(100dvh,720px);overflow:hidden
+  position:relative;inset:auto;width:100%;height:auto;min-height:0;max-height:none;
+  aspect-ratio:16/9;overflow:hidden
 }
 html.po-embed.po-mobile .po-overlay{
-  position:relative;inset:auto;min-height:min(70vh,620px);overflow-y:auto;-webkit-overflow-scrolling:touch;
+  position:relative;inset:auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
   max-height:none;align-items:flex-start;padding-bottom:20px
 }
 html.po-embed.po-mobile .po-dossier,
