@@ -12,7 +12,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "70"
+ASSET_VER = "71"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 _brand_logo = root / "assets" / "brand" / "8bitcrypto44_logo.png"
 BRAND_LOGO_URI = (
@@ -103,9 +103,10 @@ pages = (
     "<meta name=\"description\" content=\"Primal Odyssey — explore biomes, meet apex animals, open field dossiers.\">\n"
     "<title>Primal Odyssey</title>\n"
     f"<link rel=\"stylesheet\" href=\"primal.css?v={v}\">\n"
-    "<script>(function(){var t=(\"ontouchstart\"in window)||navigator.maxTouchPoints>0;var n=false,c=false;"
-    "try{n=matchMedia(\"(max-width:700px)\").matches;c=matchMedia(\"(pointer:coarse)\").matches;}catch(e){}"
-    "if((t&&c)||n)document.documentElement.classList.add(\"po-mobile\");})();</script>\n"
+    "<script>(function(){try{if(matchMedia(\"(pointer:fine)\").matches)return;}catch(e){}"
+    "var t=(\"ontouchstart\"in window)||navigator.maxTouchPoints>0;var n=false,c=false;"
+    "try{n=matchMedia(\"(max-width:700px)\").matches;c=matchMedia(\"(pointer:coarse)\").matches;}catch(e2){}"
+    "if(n||(t&&c))document.documentElement.classList.add(\"po-mobile\");})();</script>\n"
     "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n"
     "<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n"
     "<link href=\"https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap\" rel=\"stylesheet\">\n"
@@ -138,7 +139,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-top{{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}}
 .po-gd-brand{{font-size:15px;letter-spacing:.3px;color:#5dce7a;font-weight:700}}
 .po-gd-brand span{{color:#a8cbb8;font-weight:400;font-size:13px}}
-.po-gd-stage{{position:relative;width:100%;aspect-ratio:16/9;background:#041008;border:2px solid #1a3d28;border-radius:8px;overflow:hidden}}
+.po-gd-stage{{position:relative;width:100%;aspect-ratio:16/10;background:#041008;border:2px solid #1a3d28;border-radius:8px;overflow:hidden}}
 .po-gd-cover{{position:absolute;inset:0}}
 .po-gd-hero{{position:absolute;inset:0;background:#041008}}
 .po-gd-hero img{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 1.1s ease}}
@@ -146,8 +147,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-site{{position:absolute;left:10px;bottom:8px;z-index:3;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;text-decoration:none;opacity:.9;max-width:40%}}
 .po-gd-site img{{width:96px;max-width:100%;height:auto;display:block;image-rendering:pixelated;image-rendering:crisp-edges}}
 .po-gd-site span{{font-size:10px;letter-spacing:.4px;color:#5dce7a;text-shadow:0 0 6px rgba(61,155,95,.35)}}
-.po-gd-regions{{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}}
-.po-gd-regions button{{appearance:none;border:2px solid #2d6b45;border-radius:8px;padding:8px 12px;background:rgba(4,20,10,.85);color:#5dce7a;font:700 13px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;cursor:pointer}}
+.po-gd-regions{{position:relative;z-index:4;display:flex;flex-wrap:wrap;gap:6px;justify-content:center}}
+.po-gd-regions button{{appearance:none;border:2px solid #2d6b45;border-radius:8px;padding:8px 12px;background:rgba(4,20,10,.85);color:#5dce7a;font:700 13px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}}
 .po-gd-regions button:hover,.po-gd-regions button.is-sel{{border-color:#5dce7a;background:rgba(20,50,30,.95)}}
 @keyframes poTrail{{0%,100%{{opacity:.92}}50%{{opacity:1}}}}
 .po-gd.is-trailer .po-gd-veil{{animation:poTrail 2.4s ease-in-out infinite}}
@@ -157,7 +158,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-tip{{margin:0;font-size:clamp(12px,2.4vw,14px);color:#a8cbb8;letter-spacing:.2px;max-width:28em;line-height:1.4}}
 .po-gd-cover{{transition:none}}
 .po-gd.is-fading .po-gd-cover{{opacity:0;transition:none}}
-.po-gd-enter{{appearance:none;border:3px solid #5dce7a;border-radius:10px;padding:12px 28px;font:700 16px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;letter-spacing:.3px;cursor:pointer;color:#041208;background:linear-gradient(180deg,#5dce7a,#2d6b45);box-shadow:0 0 18px rgba(93,206,122,.35),0 4px 0 #0a1f12;transition:transform .12s,box-shadow .12s}}
+.po-gd-enter{{appearance:none;position:relative;z-index:4;border:3px solid #5dce7a;border-radius:10px;padding:12px 28px;font:700 16px "Atkinson Hyperlegible","Segoe UI",system-ui,sans-serif;letter-spacing:.3px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;color:#041208;background:linear-gradient(180deg,#5dce7a,#2d6b45);box-shadow:0 0 18px rgba(93,206,122,.35),0 4px 0 #0a1f12;transition:transform .12s,box-shadow .12s}}
 .po-gd-enter:hover{{transform:translateY(-2px) scale(1.03);box-shadow:0 0 26px rgba(93,206,122,.5),0 6px 0 #0a1f12}}
 .po-gd-enter:active{{transform:scale(.98)}}
 .po-gd-play{{display:none;position:absolute;inset:0;background:#030605;line-height:0}}
@@ -211,7 +212,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd.is-mobile.is-open:not(.is-fs-mode):not(.is-land) .po-gd-play{{overflow:visible!important}}
 .po-gd:not(.is-mobile):not(.is-open) .po-gd-card{{overflow:hidden}}
 .po-gd:not(.is-mobile):not(.is-open) .po-gd-stage{{
-  aspect-ratio:16/9!important;min-height:0!important;height:auto!important;overflow:hidden!important
+  aspect-ratio:16/10!important;min-height:0!important;height:auto!important;overflow:hidden!important
 }}
 .po-gd.is-mobile:not(.is-open) .po-gd-card{{overflow:visible}}
 .po-gd.is-mobile:not(.is-open) .po-gd-stage{{
@@ -223,7 +224,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 }}
 .po-gd.is-mobile:not(.is-open) .po-gd-hero{{
   position:relative!important;flex:0 0 auto!important;aspect-ratio:16/9!important;
-  max-height:38vh!important;min-height:150px!important;width:100%!important;overflow:hidden!important
+  max-height:none!important;min-height:160px!important;width:100%!important;overflow:hidden!important
 }}
 .po-gd.is-mobile:not(.is-open) .po-gd-veil{{
   position:relative!important;inset:auto!important;flex:0 0 auto!important;min-height:0!important;
@@ -255,7 +256,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   }}
   .po-gd:not(.is-open) .po-gd-hero{{
     position:relative!important;flex:0 0 auto!important;aspect-ratio:16/9!important;
-    max-height:38vh!important;min-height:150px!important;width:100%!important;overflow:hidden!important
+    max-height:none!important;min-height:160px!important;width:100%!important;overflow:hidden!important
   }}
   .po-gd:not(.is-open) .po-gd-veil{{
     position:relative!important;inset:auto!important;flex:0 0 auto!important;min-height:0!important;
@@ -273,10 +274,32 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   .po-gd-site span{{font-size:9px}}
 }}
 @media (min-width:701px){{
-  .po-gd:not(.is-open) .po-gd-stage{{
-    aspect-ratio:16/9!important;min-height:0!important;height:auto!important;overflow:hidden!important
+  /* Digistracts-style: always full-bleed 16:10 stage on desktop, even if is-mobile was set (hybrid touch laptops). */
+  .po-gd:not(.is-open) .po-gd-card,
+  .po-gd.is-mobile:not(.is-open) .po-gd-card{{overflow:hidden}}
+  .po-gd:not(.is-open) .po-gd-stage,
+  .po-gd.is-mobile:not(.is-open) .po-gd-stage{{
+    aspect-ratio:16/10!important;min-height:0!important;height:auto!important;overflow:hidden!important;
+    display:block!important;flex-direction:unset!important
   }}
-  .po-gd:not(.is-open) .po-gd-card{{overflow:hidden}}
+  .po-gd:not(.is-open) .po-gd-cover,
+  .po-gd.is-mobile:not(.is-open) .po-gd-cover{{
+    position:absolute!important;inset:0!important;display:block!important;flex-direction:unset!important;min-height:0!important
+  }}
+  .po-gd:not(.is-open) .po-gd-hero,
+  .po-gd.is-mobile:not(.is-open) .po-gd-hero{{
+    position:absolute!important;inset:0!important;flex:none!important;aspect-ratio:auto!important;
+    max-height:none!important;min-height:0!important;width:auto!important;height:auto!important;overflow:hidden!important
+  }}
+  .po-gd:not(.is-open) .po-gd-veil,
+  .po-gd.is-mobile:not(.is-open) .po-gd-veil{{
+    position:absolute!important;inset:0!important;flex:none!important;min-height:0!important;
+    justify-content:center;padding:16px;gap:10px
+  }}
+  .po-gd:not(.is-open) .po-gd-site,
+  .po-gd.is-mobile:not(.is-open) .po-gd-site{{
+    position:absolute!important;left:10px!important;bottom:8px!important;margin-top:0!important;align-self:auto
+  }}
 }}
 </style>
 <div class="po-gd" id="po-gd">
@@ -302,7 +325,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
             <button type="button" data-region="jungle">Jungle</button>
             <button type="button" data-region="wetlands">Wetlands</button>
           </div>
-          <button type="button" class="po-gd-enter" id="po-gd-enter">Enter expedition</button>
+          <button type="button" class="po-gd-enter" id="po-gd-enter" aria-expanded="false">Enter expedition</button>
           <a class="po-gd-site" href="https://www.8bitcrypto44.xyz" target="_blank" rel="noopener noreferrer" aria-label="8bitcrypto_44 website">
             <img src="{BRAND_LOGO_URI}" alt="" width="96" height="13" decoding="async">
             <span>www.8bitcrypto44.xyz</span>
@@ -334,8 +357,10 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   if(!root||!btn||!frame)return;
   var playing=false;
   function phone(){{
+    // Digistracts-safe: any fine pointer (mouse/trackpad) = desktop chrome.
+    // Prevents Surface/hybrid laptops from getting postage-stamp cover + accidental landscape FS on Enter.
     try{{
-      if(window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(pointer: coarse)").matches)return false;
+      if(window.matchMedia("(pointer: fine)").matches)return false;
     }}catch(e){{}}
     var touch=("ontouchstart" in window)||(navigator.maxTouchPoints>0);
     var narrow=false,coarse=false;
@@ -343,7 +368,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
       narrow=window.matchMedia("(max-width:700px)").matches;
       coarse=window.matchMedia("(pointer: coarse)").matches;
     }}catch(e2){{}}
-    return (touch&&coarse)||narrow;
+    return narrow||(touch&&coarse);
   }}
   function land(){{
     if(window.matchMedia&&window.matchMedia("(orientation: landscape)").matches)return true;
@@ -488,7 +513,10 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
       finishExit();
     }}
   }}
-  var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v={v}".replace(/&amp;/g,"&");
+  function resolveBaseSrc(){{
+    var raw=frame.getAttribute("data-src")||"https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v={v}";
+    return String(raw).replace(/&amp;/g,"&");
+  }}
   root.classList.add("is-trailer");
   var heroImgs=root.querySelectorAll("#po-gd-hero img");
   var hi=0;
@@ -501,7 +529,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     }},3200);
   }}
   function openGame(suggest){{
-    var src=baseSrc+(suggest?("&region="+suggest):"");
+    var src=resolveBaseSrc()+(suggest?("&region="+encodeURIComponent(suggest)):"");
+    try{{frame.src=src;}}catch(e0){{}}
     frame.setAttribute("src",src);
     root.classList.add("is-open");
     root.classList.add("is-loading");
@@ -515,7 +544,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     requestChildResize();
     try{{frame.focus();}}catch(e){{}}
   }}
-  btn.addEventListener("click",function(){{
+  btn.addEventListener("click",function(e){{
+    if(e){{e.preventDefault();e.stopPropagation();}}
     openGame(null);
   }});
   function wireRegion(el){{
@@ -523,12 +553,14 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     el.addEventListener("click",function(e){{
       e.preventDefault();
       e.stopPropagation();
-      root.querySelectorAll("#po-gd-regions [data-region]").forEach(function(b){{b.classList.remove("is-sel");}});
+      var nodes=root.querySelectorAll("#po-gd-regions [data-region]");
+      for(var i=0;i<nodes.length;i++)nodes[i].classList.remove("is-sel");
       el.classList.add("is-sel");
       openGame(el.getAttribute("data-region"));
     }});
   }}
-  document.querySelectorAll("#po-gd-regions [data-region]").forEach(wireRegion);
+  var regionNodes=root.querySelectorAll("#po-gd-regions [data-region]");
+  for(var ri=0;ri<regionNodes.length;ri++)wireRegion(regionNodes[ri]);
   frame.addEventListener("load",function(){{
     root.classList.remove("is-loading");
     requestChildResize();
@@ -567,6 +599,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 }})();
 </script>
 """
+
 
 (root / "godaddy_iframe_snippet.html").write_text(iframe_snippet, encoding="utf-8", newline="\n")
 (root / "primal_odyssey_godaddy_block.html").write_text(

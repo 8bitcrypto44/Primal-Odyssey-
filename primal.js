@@ -4,7 +4,8 @@
   let parentFs = false;
   function poIsMobileDevice() {
     try {
-      if (window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(pointer: coarse)").matches) {
+      // Any fine pointer (mouse/trackpad) = desktop — even on hybrid touch laptops.
+      if (window.matchMedia("(pointer: fine)").matches) {
         return false;
       }
     } catch (e) {}
@@ -15,7 +16,7 @@
       narrow = window.matchMedia("(max-width: 700px)").matches;
       coarse = window.matchMedia("(pointer: coarse)").matches;
     } catch (e2) {}
-    return (touch && coarse) || narrow;
+    return narrow || (touch && coarse);
   }
   if (isEmbed) {
     document.documentElement.classList.add("po-embed");
