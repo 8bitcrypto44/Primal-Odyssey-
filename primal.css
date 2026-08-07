@@ -119,8 +119,10 @@ html.po-land .po-bottom-bar{
   -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility
 }
 
-/* Mobile touch controls — stick + look (Digistracts-style) */
-.po-touch{display:none;position:absolute;left:0;right:0;bottom:0;z-index:8;padding:10px 12px 12px;align-items:flex-end;justify-content:space-between;gap:12px;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(2,10,6,.55))}
+/* Mobile touch controls — stick + look (Digistracts-style).
+   Stack above bottom-bar chips (Regions/Journal/FS/mute) during play so
+   overlapping chrome cannot steal stick/look taps. Stay below .po-overlay (20). */
+.po-touch{display:none;position:absolute;left:0;right:0;bottom:0;z-index:15;padding:10px 12px 12px;align-items:flex-end;justify-content:space-between;gap:12px;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(2,10,6,.55))}
 .po-touch:not([hidden]){display:flex}
 .po-stick-wrap,.po-look{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:6px}
 .po-stick{position:relative;width:118px;height:118px;border-radius:50%;border:3px solid var(--line-hi);background:rgba(4,20,10,.72);touch-action:none;-webkit-user-select:none;user-select:none;box-shadow:0 0 16px rgba(61,155,95,.25)}
@@ -132,13 +134,14 @@ html.po-land .po-bottom-bar{
 .po-look-btn:active,.po-look-btn.is-held{background:rgba(61,155,95,.35);color:#fff;transform:scale(.96)}
 .po-stick-lab{font-size:12px;font-weight:700;letter-spacing:.4px;color:#cfe8d6;text-shadow:0 1px 3px #000}
 
-/* Touch: stick pads stay at canvas bottom; chrome lift is applied in JS */
+/* Touch: stick pads stay at canvas bottom; chrome lift is applied in JS.
+   Keep bottom-bar under .po-touch (15) — never raise chips above the pad. */
 html.po-touch-on .po-bottom-bar{
   padding:3px 5px;background:linear-gradient(180deg,transparent,rgba(2,10,6,.5));
-  z-index:10
+  z-index:9
 }
 html.po-touch-on .po-hint{font-size:13px}
-html.po-touch-on .po-touch{z-index:8}
+html.po-touch-on .po-touch{z-index:15}
 
 /* Landscape phone — Digistracts-style immersive play (full iframe / fullscreen) */
 html.po-land,html.po-land body{
