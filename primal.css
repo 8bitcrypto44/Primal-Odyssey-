@@ -535,17 +535,42 @@ html.po-embed.po-mobile .po-dossier,
 html.po-embed.po-mobile .po-paper-dossier{max-height:min(85vh,680px);overflow-y:auto}
 html.po-embed.po-mobile .po-card .go,
 html.po-embed.po-mobile .po-regions button{min-height:48px;touch-action:manipulation}
-/* AFTER mobile shell rules — same/higher specificity so menu does not leave a 16:9 blank */
+/*
+ * Menu open: #po-title and all overlays live INSIDE .po-shell.
+ * Never collapse/opacity:0 the shell — that blanks the whole UI (v66/v67 bug).
+ * Digistracts keeps stage visible and makes the overlay position:relative so
+ * the host grows with menu content; we mirror that here.
+ */
 html.po-embed.po-ui-menu .po-shell,
 html.po-embed.po-mobile.po-ui-menu .po-shell{
   position:relative!important;inset:auto!important;width:100%!important;
-  height:0!important;min-height:0!important;max-height:0!important;
-  aspect-ratio:auto!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important
+  height:auto!important;min-height:0!important;max-height:none!important;
+  aspect-ratio:auto!important;overflow:visible!important;
+  opacity:1!important;pointer-events:auto!important;background:#030605!important
 }
+/* Hide game chrome only — leave .po-overlay siblings (title/menus) visible */
+html.po-embed.po-ui-menu .po-shell > canvas,
+html.po-embed.po-ui-menu .po-shell > .po-hud-canvas,
+html.po-embed.po-ui-menu .po-shell > .po-bottom-bar,
+html.po-embed.po-ui-menu .po-shell > .po-touch,
+html.po-embed.po-ui-menu .po-shell > .po-hint,
+html.po-embed.po-ui-menu .po-shell > .po-obj,
+html.po-embed.po-ui-menu .po-shell > .po-paused,
+html.po-embed.po-ui-menu .po-shell > .po-caution,
+html.po-embed.po-ui-menu .po-shell > .po-quest-chip,
+html.po-embed.po-ui-menu .po-shell > .po-photo-flash,
+html.po-embed.po-ui-menu .po-shell > .po-frame{
+  position:absolute!important;inset:auto!important;left:0!important;top:0!important;
+  width:0!important;height:0!important;min-height:0!important;max-height:0!important;
+  overflow:hidden!important;opacity:0!important;visibility:hidden!important;
+  pointer-events:none!important;border:0!important
+}
+html.po-embed.po-ui-menu #po-title.po-overlay,
 html.po-embed.po-mobile.po-ui-menu #po-title.po-overlay{
   position:relative!important;inset:auto!important;width:100%!important;
   min-height:0!important;max-height:none!important;overflow:visible!important;
-  align-items:flex-start;padding-bottom:20px
+  align-items:flex-start;padding-bottom:20px;opacity:1!important;visibility:visible!important;
+  pointer-events:auto!important;display:flex!important
 }
 
 @media (max-width:800px){
