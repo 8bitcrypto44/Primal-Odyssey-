@@ -12,7 +12,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "65"
+ASSET_VER = "66"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 _brand_logo = root / "assets" / "brand" / "8bitcrypto44_logo.png"
 BRAND_LOGO_URI = (
@@ -368,7 +368,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(st){{st.style.minHeight="";st.style.height="";st.style.maxHeight="";st.style.aspectRatio="";}}
     if(pl){{pl.style.minHeight="";pl.style.height="";pl.style.maxHeight="";}}
   }}
-  function embedDefaultH(){{return 920;}}
+  function embedDefaultH(){{return 980;}}
   function mobileBootH(){{
     var vh=Math.max(320,Math.round(window.innerHeight||document.documentElement.clientHeight||680));
     return Math.max(680,Math.round(vh*1.05));

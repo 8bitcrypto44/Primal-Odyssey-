@@ -7,7 +7,8 @@
   if (!ROOT) return;
 
   var EMBED_MIN_H = 680;
-  var EMBED_MENU_MIN_H = 680;
+  // Region cards + brand need more than play floor on desktop.
+  var EMBED_MENU_MIN_H = 980;
   var embedBurstGen = 0;
   var embedMutObs = null;
   var embedMeasuring = false;
@@ -47,6 +48,7 @@
     var menuOpen = isMenuOpen();
     ROOT.classList.toggle("po-ui-menu", menuOpen);
     ROOT.classList.toggle("po-ui-play", !menuOpen);
+    document.documentElement.classList.toggle("po-ui-menu", menuOpen);
   }
 
   function isScrollTarget(node) {
@@ -91,12 +93,15 @@
       var mr = menu.getBoundingClientRect();
       var mh = Math.max(menu.scrollHeight || 0, menu.offsetHeight || 0, mr.height || 0);
       maxBottom = Math.max(maxBottom, mr.top + mh);
+      Array.prototype.forEach.call(menu.querySelectorAll(".po-card, .po-brand, .po-regions, .po-a11y"), function (el) {
+        maxBottom = considerBottom(maxBottom, el);
+      });
     } else if (title) {
       Array.prototype.forEach.call(title.children || [], function (child) {
         maxBottom = considerBottom(maxBottom, child);
       });
     }
-    return Math.ceil(Math.max(0, maxBottom - rootTop)) + 8;
+    return Math.ceil(Math.max(0, maxBottom - rootTop)) + 16;
   }
 
   function measureEmbedHeight() {
@@ -108,7 +113,8 @@
 
     if (menuOpen) {
       var bboxH = measureMenuContentHeight(rootTop);
-      return Math.ceil(Math.max(mobile ? EMBED_MENU_MIN_H : EMBED_MIN_H, bboxH));
+      var floor = mobile ? Math.min(EMBED_MENU_MIN_H, 860) : EMBED_MENU_MIN_H;
+      return Math.ceil(Math.max(floor, bboxH));
     }
 
     var shell = ROOT.querySelector(".po-shell");
@@ -133,15 +139,21 @@
   }
 
   function applyEmbedFrameHeight(h) {
-    h = Math.max(EMBED_MIN_H, Math.round(h || measureEmbedHeight()));
+    var menuOpen = isMenuOpen();
+    var floor = menuOpen ? (isMobileEmbed() ? 640 : EMBED_MENU_MIN_H) : EMBED_MIN_H;
+    h = Math.max(floor, Math.round(h || measureEmbedHeight()));
     var mobile = isMobileEmbed();
     syncMobileClass();
     syncEmbedUiMode();
-    if (mobile) {
+    if (mobile || menuOpen) {
+      // Menu uses document flow (po-ui-menu CSS) — don't lock a clipped viewport.
       resetEmbedMeasureStyles();
       [document.documentElement, document.body, ROOT].forEach(function (el) {
+        el.style.height = "auto";
+        el.style.minHeight = "0";
+        el.style.maxHeight = "none";
         el.style.overflowX = "hidden";
-        el.style.overflowY = "visible";
+        el.style.overflowY = mobile || menuOpen ? "visible" : "hidden";
         el.style.touchAction = "pan-y";
       });
     } else {
@@ -160,9 +172,10 @@
     embedMeasuring = true;
     try {
       syncEmbedUiMode();
+      var menuOpen = isMenuOpen();
       var h = applyEmbedFrameHeight(measureEmbedHeight());
-      // Digistracts-style anti-loop: parent setFrameHeight → child resize must not keep growing.
-      if (!force && lastReportH > 0) {
+      // Anti-loop only while IN GAME. Menu must be allowed to grow after images/layout settle.
+      if (!force && !menuOpen && lastReportH > 0) {
         if (Math.abs(h - lastReportH) < 8) {
           return;
         }
@@ -179,7 +192,8 @@
       window.parent.postMessage({
         type: "po-resize",
         height: h,
-        mobile: isMobileEmbed()
+        mobile: isMobileEmbed(),
+        menu: menuOpen
       }, "*");
       window.parent.postMessage({
         type: "po-mobile",
@@ -191,10 +205,9 @@
   }
 
   function scheduleEmbedResizeBurst() {
-    if (!isMobileEmbed()) return;
     flushEmbedResize(true);
     var gen = ++embedBurstGen;
-    [32, 96].forEach(function (ms) {
+    [40, 120, 280, 600].forEach(function (ms) {
       setTimeout(function () {
         if (gen !== embedBurstGen) return;
         flushEmbedResize(true);
@@ -203,10 +216,9 @@
   }
 
   function bindEmbedResizeObserver() {
-    if (!isMobileEmbed() || embedMutObs || !window.MutationObserver) return;
+    if (embedMutObs || !window.MutationObserver) return;
     var debounce = null;
     embedMutObs = new MutationObserver(function () {
-      // Only remeasure while the title/menu is open; ignore in-game churn.
       if (!isMenuOpen()) return;
       clearTimeout(debounce);
       debounce = setTimeout(function () {
@@ -221,17 +233,28 @@
     });
   }
 
-  function notifyResize() {
-    flushEmbedResize(false);
-    requestAnimationFrame(function () {
-      flushEmbedResize(false);
+  function bindMenuImageLoads() {
+    var title = document.getElementById("po-title");
+    if (!title) return;
+    title.querySelectorAll("img").forEach(function (img) {
+      if (img.complete) return;
+      img.addEventListener("load", function () {
+        if (isMenuOpen()) scheduleEmbedResizeBurst();
+      }, { once: true });
     });
+  }
+
+  function notifyResize() {
+    // Window resize from parent setFrameHeight: don't force-grow while in menu
+    // (force burst handles real menu opens). Soft notify only.
+    flushEmbedResize(isMenuOpen());
   }
 
   syncMobileClass();
   syncEmbedUiMode();
   applyEmbedFrameHeight(measureEmbedHeight());
   bindEmbedResizeObserver();
+  bindMenuImageLoads();
   document.addEventListener("wheel", blockEmbedScroll, { passive: false });
   document.addEventListener("touchmove", blockEmbedScroll, { passive: false });
   window.addEventListener("resize", notifyResize);
@@ -241,17 +264,26 @@
     setTimeout(function () {
       syncMobileClass();
       syncEmbedUiMode();
-      flushEmbedResize(true);
       scheduleEmbedResizeBurst();
     }, 160);
   });
   window.addEventListener("message", function (e) {
     if (!e.data || typeof e.data !== "object") return;
     if (e.data.type === "po-request-resize") {
-      flushEmbedResize(true);
       scheduleEmbedResizeBurst();
     }
   });
-  flushEmbedResize(true);
+
+  // Watch title open/close for remount height.
+  var titleEl = document.getElementById("po-title");
+  if (titleEl && window.MutationObserver) {
+    new MutationObserver(function () {
+      lastReportH = 0;
+      lastPostedH = 0;
+      syncEmbedUiMode();
+      scheduleEmbedResizeBurst();
+    }).observe(titleEl, { attributes: true, attributeFilter: ["class"] });
+  }
+
   scheduleEmbedResizeBurst();
 })();

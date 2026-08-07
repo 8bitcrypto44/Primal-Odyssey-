@@ -491,6 +491,21 @@ html.po-embed .po-credit{display:none}
 html.po-embed .po-overlay{
   padding:10px 12px 14px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y
 }
+/* Menu open: size to content — avoid absolute fill leaving a tall blank under the cards */
+html.po-embed.po-ui-menu #po-root{overflow:visible}
+html.po-embed.po-ui-menu .po-shell{
+  position:relative;inset:auto;width:100%;height:0;min-height:0;max-height:0;
+  aspect-ratio:auto;overflow:hidden;opacity:0;pointer-events:none
+}
+html.po-embed.po-ui-menu #po-title.po-overlay{
+  position:relative;inset:auto;width:100%;min-height:0;max-height:none;
+  overflow:visible;align-items:flex-start;padding-bottom:20px
+}
+html.po-embed.po-ui-menu:not(.po-mobile) #po-root,
+html.po-embed.po-ui-menu:not(.po-mobile) body,
+html.po-embed.po-ui-menu:not(.po-mobile){
+  height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important
+}
 html.po-embed .po-dossier{overscroll-behavior:contain;touch-action:pan-y;max-height:90%;width:min(960px,100%)}
 html.po-embed .po-paper-dossier{max-height:90%;width:min(560px,94%);overscroll-behavior:contain;touch-action:pan-y}
 html.po-embed .po-brand{font-size:clamp(22px,7vw,48px);margin-top:2px;animation:none}
