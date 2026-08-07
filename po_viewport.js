@@ -23,19 +23,24 @@
 
   function isMobileDevice() {
     try {
-      // Any fine pointer (mouse/trackpad) = desktop — even on hybrid touch laptops.
+      // Short edge <= 700 covers portrait phones and landscape phones (e.g. 844x390).
+      var w = window.innerWidth || 0;
+      var h = window.innerHeight || 0;
+      var shortEdge = Math.min(w, h);
+      if (shortEdge > 0 && shortEdge <= 700) return true;
+    } catch (e0) {}
+    try {
+      // Wide hybrid laptops with a mouse stay desktop.
       if (window.matchMedia("(pointer: fine)").matches) {
         return false;
       }
     } catch (e) {}
     var touch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
-    var narrow = false;
     var coarse = false;
     try {
-      narrow = window.matchMedia("(max-width: 700px)").matches;
       coarse = window.matchMedia("(pointer: coarse)").matches;
     } catch (e2) {}
-    return narrow || (touch && coarse);
+    return touch && coarse;
   }
 
   function isMobileEmbed() {
@@ -110,11 +115,16 @@
     if (!isMobileEmbed() || isMenuOpen()) return EMBED_PLAY_MIN_H;
     var rw = Math.max(280, ROOT.clientWidth || window.innerWidth || 360);
     var stageH = Math.ceil(rw * 9 / 16);
+    var vh = window.innerHeight || document.documentElement.clientHeight || 680;
+    // Portrait: grow playfield so canvas fills ~58%+ of the phone (QA fillH), not a 16:9 postage strip.
+    var portraitFill = Math.ceil(vh * 0.58);
+    if (vh >= rw) stageH = Math.max(stageH, portraitFill);
     var safe = 12;
     try {
       safe += Math.ceil(parseInt(getComputedStyle(document.documentElement).getPropertyValue("padding-bottom"), 10) || 0);
     } catch (e) {}
-    return Math.max(EMBED_PLAY_MIN_H, stageH + 120 + safe + EMBED_PLAY_PAD);
+    // Extra room for stacked touch pads + chip bar under the stage
+    return Math.max(EMBED_PLAY_MIN_H, stageH + 160 + safe + EMBED_PLAY_PAD);
   }
 
   function measureEmbedPlayOpen() {
@@ -261,10 +271,23 @@
     h = Math.max(embedFloorH(), Math.round(h || measureEmbedHeight()));
     var mobile = isMobileEmbed();
     var menuOpen = isMenuOpen();
+    var landOrFs =
+      document.documentElement.classList.contains("po-land") ||
+      document.documentElement.classList.contains("po-fs");
     syncMobileClass();
     if (mobile && isEmbedPlayShell() && embedPlayH > 0) return h;
     // Digistracts desktop: keep html/body/root sized to the iframe (never height:auto
     // with absolute overlays — that collapses .po-shell to 0 and blanks the menu).
+    // Landscape / FS immersive: lock to iframe viewport (do not force height:auto).
+    if (mobile && landOrFs) {
+      [document.documentElement, document.body, ROOT].forEach(function (el) {
+        el.style.height = "100%";
+        el.style.minHeight = "100%";
+        el.style.maxHeight = "100%";
+        el.style.overflow = "hidden";
+      });
+      return h;
+    }
     if (mobile) {
       resetEmbedMeasureStyles();
       [document.documentElement, document.body, ROOT].forEach(function (el) {

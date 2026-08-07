@@ -189,8 +189,8 @@
         </div>
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
-          <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Enter → choose biome · Phone: scroll menu · landscape FS · FS button in-game (v71)</p>
+          <p class="po-gd-tag">Africa | Mountains | Jungle | Wetlands - apex animals &amp; field dossiers</p>
+          <p class="po-gd-tip">Enter - choose biome | Phone: scroll menu | landscape FS | FS in-game (v72)</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">Africa</button>
             <button type="button" data-region="mountains">Mountains</button>
@@ -211,7 +211,7 @@
           title="Primal Odyssey"
           width="100%"
           height="450"
-          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=71"
+          data-src="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=72"
           allow="autoplay; fullscreen"
           allowfullscreen
           scrolling="no"
@@ -229,18 +229,21 @@
   if(!root||!btn||!frame)return;
   var playing=false;
   function phone(){
-    // Digistracts-safe: any fine pointer (mouse/trackpad) = desktop chrome.
-    // Prevents Surface/hybrid laptops from getting postage-stamp cover + accidental landscape FS on Enter.
+    // Short edge <= 700: portrait phones + landscape phones (844x390).
+    // Wide hybrid laptops with a mouse stay desktop.
+    try{
+      var w=window.innerWidth||0,h=window.innerHeight||0,shortEdge=Math.min(w,h);
+      if(shortEdge>0&&shortEdge<=700)return true;
+    }catch(e0){}
     try{
       if(window.matchMedia("(pointer: fine)").matches)return false;
     }catch(e){}
     var touch=("ontouchstart" in window)||(navigator.maxTouchPoints>0);
-    var narrow=false,coarse=false;
+    var coarse=false;
     try{
-      narrow=window.matchMedia("(max-width:700px)").matches;
       coarse=window.matchMedia("(pointer: coarse)").matches;
     }catch(e2){}
-    return narrow||(touch&&coarse);
+    return touch&&coarse;
   }
   function land(){
     if(window.matchMedia&&window.matchMedia("(orientation: landscape)").matches)return true;
@@ -386,7 +389,7 @@
     }
   }
   function resolveBaseSrc(){
-    var raw=frame.getAttribute("data-src")||"https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=71";
+    var raw=frame.getAttribute("data-src")||"https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v=72";
     return String(raw).replace(/&amp;/g,"&");
   }
   root.classList.add("is-trailer");
@@ -449,7 +452,12 @@
     }
     if(e.data.type==="po-fs")enterFs();
     if(e.data.type==="po-fs-exit")exitFs();
-    if(e.data.type==="po-mobile")root.classList.toggle("is-mobile",!!e.data.active);
+    // Never clear is-mobile on real/narrow phones when child reports active:false
+    // (fine-pointer CDP / hybrid false negatives used to collapse portrait + menu height).
+    if(e.data.type==="po-mobile"){
+      if(e.data.active||phone())root.classList.add("is-mobile");
+      else root.classList.remove("is-mobile");
+    }
     if(e.data.type==="po-resize"&&e.data.height&&!isFs()&&!root.classList.contains("is-land"))setFrameHeight(e.data.height);
   });
   function onFsChange(){

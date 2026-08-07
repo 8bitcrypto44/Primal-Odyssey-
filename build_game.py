@@ -12,7 +12,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "71"
+ASSET_VER = "72"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 _brand_logo = root / "assets" / "brand" / "8bitcrypto44_logo.png"
 BRAND_LOGO_URI = (
@@ -103,10 +103,11 @@ pages = (
     "<meta name=\"description\" content=\"Primal Odyssey — explore biomes, meet apex animals, open field dossiers.\">\n"
     "<title>Primal Odyssey</title>\n"
     f"<link rel=\"stylesheet\" href=\"primal.css?v={v}\">\n"
-    "<script>(function(){try{if(matchMedia(\"(pointer:fine)\").matches)return;}catch(e){}"
-    "var t=(\"ontouchstart\"in window)||navigator.maxTouchPoints>0;var n=false,c=false;"
-    "try{n=matchMedia(\"(max-width:700px)\").matches;c=matchMedia(\"(pointer:coarse)\").matches;}catch(e2){}"
-    "if(n||(t&&c))document.documentElement.classList.add(\"po-mobile\");})();</script>\n"
+    "<script>(function(){try{var w=innerWidth||0,h=innerHeight||0;if(Math.min(w,h)>0&&Math.min(w,h)<=700){document.documentElement.classList.add(\"po-mobile\");return;}}catch(e0){}"
+    "try{if(matchMedia(\"(pointer:fine)\").matches)return;}catch(e){}"
+    "var t=(\"ontouchstart\"in window)||navigator.maxTouchPoints>0;var c=false;"
+    "try{c=matchMedia(\"(pointer:coarse)\").matches;}catch(e2){}"
+    "if(t&&c)document.documentElement.classList.add(\"po-mobile\");})();</script>\n"
     "<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n"
     "<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n"
     "<link href=\"https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap\" rel=\"stylesheet\">\n"
@@ -317,8 +318,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
         </div>
         <div class="po-gd-veil">
           <h2 class="po-gd-title">PRIMAL ODYSSEY</h2>
-          <p class="po-gd-tag">Africa · Mountains · Jungle · Wetlands — apex animals &amp; field dossiers</p>
-          <p class="po-gd-tip">Enter → choose biome · Phone: scroll menu · landscape FS · FS button in-game (v{v})</p>
+          <p class="po-gd-tag">Africa | Mountains | Jungle | Wetlands - apex animals &amp; field dossiers</p>
+          <p class="po-gd-tip">Enter - choose biome | Phone: scroll menu | landscape FS | FS in-game (v{v})</p>
           <div class="po-gd-regions" id="po-gd-regions">
             <button type="button" data-region="africa">Africa</button>
             <button type="button" data-region="mountains">Mountains</button>
@@ -357,18 +358,21 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   if(!root||!btn||!frame)return;
   var playing=false;
   function phone(){{
-    // Digistracts-safe: any fine pointer (mouse/trackpad) = desktop chrome.
-    // Prevents Surface/hybrid laptops from getting postage-stamp cover + accidental landscape FS on Enter.
+    // Short edge <= 700: portrait phones + landscape phones (844x390).
+    // Wide hybrid laptops with a mouse stay desktop.
+    try{{
+      var w=window.innerWidth||0,h=window.innerHeight||0,shortEdge=Math.min(w,h);
+      if(shortEdge>0&&shortEdge<=700)return true;
+    }}catch(e0){{}}
     try{{
       if(window.matchMedia("(pointer: fine)").matches)return false;
     }}catch(e){{}}
     var touch=("ontouchstart" in window)||(navigator.maxTouchPoints>0);
-    var narrow=false,coarse=false;
+    var coarse=false;
     try{{
-      narrow=window.matchMedia("(max-width:700px)").matches;
       coarse=window.matchMedia("(pointer: coarse)").matches;
     }}catch(e2){{}}
-    return narrow||(touch&&coarse);
+    return touch&&coarse;
   }}
   function land(){{
     if(window.matchMedia&&window.matchMedia("(orientation: landscape)").matches)return true;
@@ -577,7 +581,12 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     }}
     if(e.data.type==="po-fs")enterFs();
     if(e.data.type==="po-fs-exit")exitFs();
-    if(e.data.type==="po-mobile")root.classList.toggle("is-mobile",!!e.data.active);
+    // Never clear is-mobile on real/narrow phones when child reports active:false
+    // (fine-pointer CDP / hybrid false negatives used to collapse portrait + menu height).
+    if(e.data.type==="po-mobile"){{
+      if(e.data.active||phone())root.classList.add("is-mobile");
+      else root.classList.remove("is-mobile");
+    }}
     if(e.data.type==="po-resize"&&e.data.height&&!isFs()&&!root.classList.contains("is-land"))setFrameHeight(e.data.height);
   }});
   function onFsChange(){{

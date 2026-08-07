@@ -120,8 +120,7 @@ html.po-land .po-bottom-bar{
 }
 
 /* Mobile touch controls — stick + look (Digistracts-style).
-   Stack above bottom-bar chips (Regions/Journal/FS/mute) during play so
-   overlapping chrome cannot steal stick/look taps. Stay below .po-overlay (20). */
+   Pads sit ABOVE the chip bar (JS sets bottom offsets). Bar stays tappable. */
 .po-touch{display:none;position:absolute;left:0;right:0;bottom:0;z-index:15;padding:10px 12px 12px;align-items:flex-end;justify-content:space-between;gap:12px;pointer-events:none;background:linear-gradient(180deg,transparent,rgba(2,10,6,.55))}
 .po-touch:not([hidden]){display:flex}
 .po-stick-wrap,.po-look{pointer-events:auto;display:flex;flex-direction:column;align-items:center;gap:6px}
@@ -134,11 +133,10 @@ html.po-land .po-bottom-bar{
 .po-look-btn:active,.po-look-btn.is-held{background:rgba(61,155,95,.35);color:#fff;transform:scale(.96)}
 .po-stick-lab{font-size:12px;font-weight:700;letter-spacing:.4px;color:#cfe8d6;text-shadow:0 1px 3px #000}
 
-/* Touch: stick pads stay at canvas bottom; chrome lift is applied in JS.
-   Keep bottom-bar under .po-touch (15) — never raise chips above the pad. */
+/* Touch: chip bar under pads (JS). Keep bar hit-targets clear of stick z-stack. */
 html.po-touch-on .po-bottom-bar{
   padding:3px 5px;background:linear-gradient(180deg,transparent,rgba(2,10,6,.5));
-  z-index:9
+  z-index:16
 }
 html.po-touch-on .po-hint{font-size:13px}
 html.po-touch-on .po-touch{z-index:15}
@@ -159,7 +157,7 @@ html.po-land #po-canvas{
 }
 html.po-land .po-credit,html.po-land .po-frame{display:none}
 html.po-land.po-touch-on .po-touch{
-  padding:8px 12px 10px;background:linear-gradient(180deg,transparent 0%,rgba(2,10,6,.35) 45%,rgba(2,10,6,.78) 100%)
+  padding:6px 12px 4px;background:linear-gradient(180deg,transparent 0%,rgba(2,10,6,.35) 45%,rgba(2,10,6,.78) 100%)
 }
 html.po-land.po-touch-on .po-stick{width:92px;height:92px}
 html.po-land.po-touch-on .po-knob{width:38px;height:38px}
@@ -167,7 +165,7 @@ html.po-land.po-touch-on .po-look-btn{width:44px;height:40px;font-size:15px}
 html.po-land.po-touch-on .po-look-u,
 html.po-land.po-touch-on .po-look-d{width:96px;height:34px}
 html.po-land.po-touch-on .po-bottom-bar{
-  padding:3px 5px 4px;gap:3px
+  padding:3px 5px max(6px, env(safe-area-inset-bottom, 6px));gap:3px;z-index:16
 }
 html.po-land.po-touch-on .po-bottom-bar .chip,
 html.po-land.po-touch-on .po-audio-bar .chip{padding:2px 6px;font-size:10px;min-height:24px;height:24px}
@@ -539,12 +537,37 @@ html.po-embed .po-regions{gap:8px}
 html.po-embed.po-mobile,html.po-embed.po-mobile body{
   overflow-x:hidden;overflow-y:visible;height:auto!important;min-height:0!important;max-height:none!important;touch-action:pan-y
 }
+/* Landscape / FS: Digistracts immersive — lock to viewport (override mobile height:auto) */
+html.po-embed.po-mobile.po-land,
+html.po-embed.po-mobile.po-land body,
+html.po-embed.po-mobile.po-fs,
+html.po-embed.po-mobile.po-fs body{
+  height:100%!important;min-height:100%!important;max-height:100%!important;
+  overflow:hidden!important;touch-action:none
+}
+html.po-embed.po-mobile.po-land #po-root,
+html.po-embed.po-mobile.po-fs #po-root{
+  position:fixed!important;inset:0!important;width:100%!important;height:100%!important;
+  max-width:none!important;margin:0!important;padding:0!important;
+  overflow:hidden!important;touch-action:none
+}
+html.po-embed.po-mobile.po-land .po-shell,
+html.po-embed.po-mobile.po-fs .po-shell{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  min-height:0!important;max-height:none!important;aspect-ratio:auto!important
+}
 html.po-embed.po-mobile #po-root{
   overflow:visible;height:auto!important;min-height:0!important;max-height:none!important;padding:0;touch-action:pan-y
 }
 html.po-embed.po-mobile .po-shell{
   position:relative;inset:auto;width:100%;height:auto;min-height:0;max-height:none;
   aspect-ratio:16/9;overflow:hidden
+}
+/* Portrait play: fill phone height (not a ~25% 16:9 strip with black letterbox) */
+html.po-embed.po-mobile.po-ui-play:not(.po-land):not(.po-fs) .po-shell{
+  aspect-ratio:auto;
+  min-height:max(calc(100vw * 9 / 16), 58vh);
+  height:max(calc(100vw * 9 / 16), 58vh)
 }
 html.po-embed.po-mobile .po-overlay{
   position:relative;inset:auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
@@ -554,10 +577,10 @@ html.po-embed.po-mobile .po-dossier,
 html.po-embed.po-mobile .po-paper-dossier{max-height:min(85vh,680px);overflow-y:auto}
 html.po-embed.po-mobile .po-card .go,
 html.po-embed.po-mobile .po-regions button{min-height:48px;touch-action:manipulation}
-/* Mobile menu: grow host with title content — never opacity:0 / height:0 the shell */
+/* Mobile menu: Digistracts-style tall overlay so biome cards are usable */
 html.po-embed.po-mobile.po-ui-menu .po-shell{
   position:relative!important;inset:auto!important;width:100%!important;
-  height:auto!important;min-height:0!important;max-height:none!important;
+  height:auto!important;min-height:min(72vh,720px)!important;max-height:none!important;
   aspect-ratio:auto!important;overflow:visible!important;
   opacity:1!important;pointer-events:auto!important;background:#030605!important
 }
@@ -579,8 +602,8 @@ html.po-embed.po-mobile.po-ui-menu .po-shell > .po-frame{
 }
 html.po-embed.po-mobile.po-ui-menu #po-title.po-overlay{
   position:relative!important;inset:auto!important;width:100%!important;
-  min-height:0!important;max-height:none!important;overflow:visible!important;
-  align-items:flex-start;padding-bottom:20px;opacity:1!important;visibility:visible!important;
+  min-height:min(72vh,720px)!important;max-height:none!important;overflow:visible!important;
+  align-items:flex-start;padding-bottom:24px;opacity:1!important;visibility:visible!important;
   pointer-events:auto!important;display:flex!important
 }
 

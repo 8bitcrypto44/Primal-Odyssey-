@@ -4,19 +4,24 @@
   let parentFs = false;
   function poIsMobileDevice() {
     try {
-      // Any fine pointer (mouse/trackpad) = desktop — even on hybrid touch laptops.
+      // Short edge <= 700 covers portrait phones and landscape phones (e.g. 844x390).
+      const w = window.innerWidth || 0;
+      const h = window.innerHeight || 0;
+      const shortEdge = Math.min(w, h);
+      if (shortEdge > 0 && shortEdge <= 700) return true;
+    } catch (e0) {}
+    try {
+      // Wide hybrid laptops with a mouse stay desktop.
       if (window.matchMedia("(pointer: fine)").matches) {
         return false;
       }
     } catch (e) {}
     const touch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
-    let narrow = false;
     let coarse = false;
     try {
-      narrow = window.matchMedia("(max-width: 700px)").matches;
       coarse = window.matchMedia("(pointer: coarse)").matches;
     } catch (e2) {}
-    return narrow || (touch && coarse);
+    return touch && coarse;
   }
   if (isEmbed) {
     document.documentElement.classList.add("po-embed");
@@ -130,31 +135,41 @@
       touchEl && !touchEl.hidden;
     const land = document.documentElement.classList.contains("po-land");
     const fs = document.documentElement.classList.contains("po-fs") || isNativeFullscreen() || parentFs || likelyParentFullscreen();
-    // Only lift above sticks when touch pads are actually showing
-    const stickLift = touchOn ? (land ? Math.min(100, box.height * 0.22) : Math.min(132, box.height * 0.3)) : 0;
-    // Fullscreen / land: pull chrome up so it isn't clipped under the screen edge
+    // Safe edge inset (FS / landscape) so chrome is not clipped by OS bezels
     const edgePad = (fs || land)
-      ? Math.max(14, Math.round(box.height * 0.035))
+      ? Math.max(8, Math.round(box.height * 0.02))
       : 4;
-    const bottom = box.bottomGap + stickLift + edgePad;
     const bar = document.getElementById("po-bottom-bar");
+    // Digistracts-style stack: sticks/look ABOVE the chip bar so Regions/Journal/FS stay tappable.
+    let barH = 0;
+    if (touchOn && bar) {
+      barH = Math.round(bar.getBoundingClientRect().height || 0);
+      if (barH < 24) barH = land ? 28 : 34;
+    }
+    const barBottom = box.bottomGap + edgePad;
+    const touchBottom = touchOn
+      ? box.bottomGap + edgePad + barH + (land ? 4 : 6)
+      : box.bottomGap + (fs || land ? 8 : 0);
+    const hintBottom = touchOn
+      ? touchBottom + (land ? 96 : 120)
+      : barBottom + 36;
     if (bar) {
       bar.style.left = Math.round(box.left) + "px";
       bar.style.width = Math.round(box.width) + "px";
       bar.style.right = "auto";
-      bar.style.bottom = Math.round(bottom) + "px";
+      bar.style.bottom = Math.round(barBottom) + "px";
     }
     if (touchEl) {
       touchEl.style.left = Math.round(box.left) + "px";
       touchEl.style.width = Math.round(box.width) + "px";
       touchEl.style.right = "auto";
-      touchEl.style.bottom = Math.round(box.bottomGap + (fs || land ? 8 : 0)) + "px";
+      touchEl.style.bottom = Math.round(touchBottom) + "px";
     }
     const hintEl = document.getElementById("po-hint");
     if (hintEl) {
       hintEl.style.left = Math.round(box.left + box.width / 2) + "px";
       hintEl.style.right = "auto";
-      hintEl.style.bottom = Math.round(bottom + (touchOn ? 40 : 36)) + "px";
+      hintEl.style.bottom = Math.round(hintBottom) + "px";
     }
     const objEl = document.getElementById("po-obj");
     if (objEl) {
@@ -4352,6 +4367,13 @@
   }
 
   function wantsTouchUI() {
+    // Phone short-edge: always show touch pads (portrait or landscape).
+    try {
+      const w = window.innerWidth || 0;
+      const h = window.innerHeight || 0;
+      const shortEdge = Math.min(w, h);
+      if (shortEdge > 0 && shortEdge <= 700) return true;
+    } catch (e0) {}
     // PC with mouse: keep desktop chrome even if a touchscreen is present
     try {
       if (window.matchMedia("(pointer: fine)").matches &&

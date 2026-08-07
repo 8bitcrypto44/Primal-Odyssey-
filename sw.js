@@ -1,5 +1,5 @@
 /* Primal Odyssey — network-first so Pages updates are not stuck on stale CSS/HTML */
-const CACHE = "po-v70";
+const CACHE = "po-v72";
 self.addEventListener("install", function (e) {
   self.skipWaiting();
 });
