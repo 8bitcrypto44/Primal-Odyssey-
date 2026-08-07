@@ -7,10 +7,12 @@
   if (!ROOT) return;
 
   var EMBED_MIN_H = 680;
+  var EMBED_MENU_MIN_H = 680;
   var embedBurstGen = 0;
   var embedMutObs = null;
   var embedMeasuring = false;
   var lastReportH = 0;
+  var lastPostedH = 0;
 
   function isMobileDevice() {
     try {
@@ -39,6 +41,12 @@
   function isMenuOpen() {
     var title = document.getElementById("po-title");
     return !!(title && title.classList.contains("show"));
+  }
+
+  function syncEmbedUiMode() {
+    var menuOpen = isMenuOpen();
+    ROOT.classList.toggle("po-ui-menu", menuOpen);
+    ROOT.classList.toggle("po-ui-play", !menuOpen);
   }
 
   function isScrollTarget(node) {
@@ -72,56 +80,63 @@
     return r.bottom > maxBottom ? r.bottom : maxBottom;
   }
 
+  function measureMenuContentHeight(rootTop) {
+    // Never use #po-title itself: on desktop embed it is position:absolute;inset:0
+    // and tracks the iframe viewport — measuring it feeds a grow loop.
+    var title = document.getElementById("po-title");
+    var menu = title && title.querySelector(".po-menu");
+    var maxBottom = rootTop;
+    if (menu) {
+      maxBottom = considerBottom(maxBottom, menu);
+      var mr = menu.getBoundingClientRect();
+      var mh = Math.max(menu.scrollHeight || 0, menu.offsetHeight || 0, mr.height || 0);
+      maxBottom = Math.max(maxBottom, mr.top + mh);
+    } else if (title) {
+      Array.prototype.forEach.call(title.children || [], function (child) {
+        maxBottom = considerBottom(maxBottom, child);
+      });
+    }
+    return Math.ceil(Math.max(0, maxBottom - rootTop)) + 8;
+  }
+
   function measureEmbedHeight() {
     resetEmbedMeasureStyles();
     var rootTop = ROOT.getBoundingClientRect().top;
     var maxBottom = rootTop;
     var menuOpen = isMenuOpen();
-
-    ROOT.classList.toggle("po-ui-menu", menuOpen);
-    ROOT.classList.toggle("po-ui-play", !menuOpen);
+    var mobile = isMobileEmbed();
 
     if (menuOpen) {
-      var title = document.getElementById("po-title");
-      maxBottom = considerBottom(maxBottom, title);
-      if (title) {
-        var tr = title.getBoundingClientRect();
-        var th = Math.max(title.scrollHeight || 0, title.offsetHeight || 0, tr.height || 0);
-        maxBottom = Math.max(maxBottom, tr.top + th);
-      }
-    } else {
-      var shell = ROOT.querySelector(".po-shell");
-      var w = Math.max(1, ROOT.clientWidth || shell && shell.clientWidth || window.innerWidth || 320);
-      var gameH = Math.round(w * 9 / 16);
-      if (shell) {
-        var sr = shell.getBoundingClientRect();
-        maxBottom = Math.max(maxBottom, sr.top + gameH);
-      }
-      maxBottom = considerBottom(maxBottom, shell);
-      maxBottom = considerBottom(maxBottom, document.getElementById("po-bottom-bar"));
-      maxBottom = considerBottom(maxBottom, document.getElementById("po-touch"));
-      maxBottom = considerBottom(maxBottom, document.getElementById("po-hud-canvas"));
-      document.querySelectorAll(".po-overlay.show").forEach(function (el) {
-        maxBottom = considerBottom(maxBottom, el);
-      });
+      var bboxH = measureMenuContentHeight(rootTop);
+      return Math.ceil(Math.max(mobile ? EMBED_MENU_MIN_H : EMBED_MIN_H, bboxH));
     }
 
-    var bboxH = Math.ceil(Math.max(0, maxBottom - rootTop)) + 8;
-    if (isMobileEmbed()) {
-      return Math.ceil(Math.max(EMBED_MIN_H, bboxH));
+    var shell = ROOT.querySelector(".po-shell");
+    var w = Math.max(1, ROOT.clientWidth || shell && shell.clientWidth || window.innerWidth || 320);
+    var gameH = Math.round(w * 9 / 16);
+    if (shell) {
+      var sr = shell.getBoundingClientRect();
+      maxBottom = Math.max(maxBottom, sr.top + gameH);
     }
-    return Math.ceil(Math.max(
-      EMBED_MIN_H,
-      bboxH,
-      menuOpen ? (ROOT.scrollHeight || 0) : 0,
-      menuOpen ? (document.documentElement.scrollHeight || 0) : 0
-    ));
+    maxBottom = considerBottom(maxBottom, shell);
+    maxBottom = considerBottom(maxBottom, document.getElementById("po-bottom-bar"));
+    maxBottom = considerBottom(maxBottom, document.getElementById("po-touch"));
+    maxBottom = considerBottom(maxBottom, document.getElementById("po-hud-canvas"));
+    document.querySelectorAll(".po-overlay.show").forEach(function (el) {
+      if (el.id === "po-title") return;
+      var inner = el.querySelector(".po-menu, .panel, .po-dossier, .po-paper-dossier, .po-log-inner");
+      maxBottom = considerBottom(maxBottom, inner || el);
+    });
+
+    var bboxPlay = Math.ceil(Math.max(0, maxBottom - rootTop)) + 8;
+    return Math.ceil(Math.max(EMBED_MIN_H, bboxPlay));
   }
 
   function applyEmbedFrameHeight(h) {
     h = Math.max(EMBED_MIN_H, Math.round(h || measureEmbedHeight()));
     var mobile = isMobileEmbed();
     syncMobileClass();
+    syncEmbedUiMode();
     if (mobile) {
       resetEmbedMeasureStyles();
       [document.documentElement, document.body, ROOT].forEach(function (el) {
@@ -140,15 +155,27 @@
     return h;
   }
 
-  function flushEmbedResize() {
+  function flushEmbedResize(force) {
     if (!window.parent || embedMeasuring) return;
     embedMeasuring = true;
     try {
+      syncEmbedUiMode();
       var h = applyEmbedFrameHeight(measureEmbedHeight());
-      if (isMobileEmbed() && lastReportH > 0 && h > lastReportH + 16 && !isMenuOpen()) {
-        h = lastReportH;
+      // Digistracts-style anti-loop: parent setFrameHeight → child resize must not keep growing.
+      if (!force && lastReportH > 0) {
+        if (Math.abs(h - lastReportH) < 8) {
+          return;
+        }
+        if (h > lastReportH + 16) {
+          h = lastReportH;
+        }
+      }
+      if (!force && lastPostedH > 0 && Math.abs(h - lastPostedH) < 8) {
+        lastReportH = h;
+        return;
       }
       lastReportH = h;
+      lastPostedH = h;
       window.parent.postMessage({
         type: "po-resize",
         height: h,
@@ -165,12 +192,12 @@
 
   function scheduleEmbedResizeBurst() {
     if (!isMobileEmbed()) return;
-    flushEmbedResize();
+    flushEmbedResize(true);
     var gen = ++embedBurstGen;
     [32, 96].forEach(function (ms) {
       setTimeout(function () {
         if (gen !== embedBurstGen) return;
-        flushEmbedResize();
+        flushEmbedResize(true);
       }, ms);
     });
   }
@@ -179,18 +206,30 @@
     if (!isMobileEmbed() || embedMutObs || !window.MutationObserver) return;
     var debounce = null;
     embedMutObs = new MutationObserver(function () {
+      // Only remeasure while the title/menu is open; ignore in-game churn.
+      if (!isMenuOpen()) return;
       clearTimeout(debounce);
-      debounce = setTimeout(flushEmbedResize, 32);
+      debounce = setTimeout(function () {
+        flushEmbedResize(true);
+      }, 48);
     });
-    embedMutObs.observe(ROOT, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "hidden"] });
+    embedMutObs.observe(ROOT, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "hidden"]
+    });
   }
 
   function notifyResize() {
-    flushEmbedResize();
-    requestAnimationFrame(flushEmbedResize);
+    flushEmbedResize(false);
+    requestAnimationFrame(function () {
+      flushEmbedResize(false);
+    });
   }
 
   syncMobileClass();
+  syncEmbedUiMode();
   applyEmbedFrameHeight(measureEmbedHeight());
   bindEmbedResizeObserver();
   document.addEventListener("wheel", blockEmbedScroll, { passive: false });
@@ -198,19 +237,21 @@
   window.addEventListener("resize", notifyResize);
   window.addEventListener("orientationchange", function () {
     lastReportH = 0;
+    lastPostedH = 0;
     setTimeout(function () {
       syncMobileClass();
-      notifyResize();
+      syncEmbedUiMode();
+      flushEmbedResize(true);
       scheduleEmbedResizeBurst();
     }, 160);
   });
   window.addEventListener("message", function (e) {
     if (!e.data || typeof e.data !== "object") return;
     if (e.data.type === "po-request-resize") {
-      flushEmbedResize();
+      flushEmbedResize(true);
       scheduleEmbedResizeBurst();
     }
   });
-  notifyResize();
+  flushEmbedResize(true);
   scheduleEmbedResizeBurst();
 })();

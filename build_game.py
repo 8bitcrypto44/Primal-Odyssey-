@@ -12,7 +12,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "64"
+ASSET_VER = "65"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 _brand_logo = root / "assets" / "brand" / "8bitcrypto44_logo.png"
 BRAND_LOGO_URI = (
@@ -379,20 +379,34 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(cov)h=Math.max(h,Math.round(cov.scrollHeight||0),Math.round(cov.offsetHeight||0));
     return Math.max(h,mobileBootH());
   }}
-  function requestChildResize(){{try{{if(frame.contentWindow)frame.contentWindow.postMessage({{type:"po-request-resize"}},"*");}}catch(e){{}}}}
+  var lastAppliedH=0;
+  function requestChildResize(){{
+    // Digistracts pattern: while open on mobile, child drives height — parent pings cause grow loops.
+    if(playing&&mobileMode()&&!isFs()&&!root.classList.contains("is-land"))return;
+    if(root._poResizeT)clearTimeout(root._poResizeT);
+    root._poResizeT=setTimeout(function(){{
+      try{{if(frame.contentWindow)frame.contentWindow.postMessage({{type:"po-request-resize"}},"*");}}catch(e){{}}
+    }},64);
+  }}
   function setFrameHeight(h){{
     if(isFs()||root.classList.contains("is-land"))return;
-    if(!root.classList.contains("is-open")){{clearCoverHeights();return;}}
-    var contentH=Math.max(680,Math.round(Number(h)||920));
+    if(!root.classList.contains("is-open")){{clearCoverHeights();lastAppliedH=0;return;}}
+    var contentH;
     if(mobileMode()&&!root.classList.contains("is-land")){{
+      var reported=Math.round(Number(h)||0);
+      contentH=reported>0?Math.max(320,reported):mobileBootH();
       if(root.classList.contains("is-loading"))contentH=Math.max(contentH,openBootH());
       frame.setAttribute("scrolling","no");
       root.classList.add("is-mobile");
       h=contentH;
     }}else{{
+      contentH=Math.max(680,Math.round(Number(h)||920));
       h=contentH;
       if(!phone())frame.setAttribute("scrolling","no");
     }}
+    // Ignore sub-pixel / jitter re-applies (child resize ↔ parent setFrameHeight feedback).
+    if(lastAppliedH>0&&Math.abs(h-lastAppliedH)<8)return;
+    lastAppliedH=h;
     frame.style.height=h+"px";
     frame.style.minHeight=h+"px";
     frame.style.maxHeight="none";
@@ -508,8 +522,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
       if(typeof e.data.inGame==="boolean")playing=!!e.data.inGame;
       else if(typeof e.data.explore==="boolean")playing=!!e.data.explore;
       syncLand();
-      requestChildResize();
-      if((e.data.inGame||e.data.explore)&&mobileMode()){{setTimeout(requestChildResize,80);setTimeout(requestChildResize,240);setTimeout(requestChildResize,480);}}
+      if((!e.data.inGame&&!e.data.explore)||!mobileMode()||isFs()||root.classList.contains("is-land"))requestChildResize();
+      else setTimeout(requestChildResize,120);
     }}
     if(e.data.type==="po-fs")enterFs();
     if(e.data.type==="po-fs-exit")exitFs();
@@ -525,8 +539,19 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   }}
   document.addEventListener("fullscreenchange",onFsChange);
   document.addEventListener("webkitfullscreenchange",onFsChange);
-  window.addEventListener("resize",function(){{syncLand();if(root.classList.contains("is-open")&&!isFs())requestChildResize();}});
-  window.addEventListener("orientationchange",function(){{setTimeout(function(){{syncLand();if(root.classList.contains("is-open")&&!isFs())requestChildResize();else clearCoverHeights();}},120);}});
+  window.addEventListener("resize",function(){{
+    syncLand();
+    if(root.classList.contains("is-open")&&!isFs()){{
+      lastAppliedH=0;
+      requestChildResize();
+    }}
+  }});
+  window.addEventListener("orientationchange",function(){{setTimeout(function(){{
+    syncLand();
+    lastAppliedH=0;
+    if(root.classList.contains("is-open")&&!isFs())requestChildResize();
+    else clearCoverHeights();
+  }},120);}});
   if(phone())root.classList.add("is-mobile");
 }})();
 </script>

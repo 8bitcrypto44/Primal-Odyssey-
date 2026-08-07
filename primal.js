@@ -1,10 +1,28 @@
 (function () {
   const isEmbed =
     window !== window.top || /(?:\?|&)embed=1(?:&|$)/.test(location.search || "");
+  let parentFs = false;
+  function poIsMobileDevice() {
+    try {
+      if (window.matchMedia("(pointer: fine)").matches && !window.matchMedia("(pointer: coarse)").matches) {
+        return false;
+      }
+    } catch (e) {}
+    const touch = ("ontouchstart" in window) || navigator.maxTouchPoints > 0;
+    let narrow = false;
+    let coarse = false;
+    try {
+      narrow = window.matchMedia("(max-width: 700px)").matches;
+      coarse = window.matchMedia("(pointer: coarse)").matches;
+    } catch (e2) {}
+    return (touch && coarse) || narrow;
+  }
   if (isEmbed) {
     document.documentElement.classList.add("po-embed");
     document.documentElement.classList.add("po-loading");
+    if (poIsMobileDevice()) document.documentElement.classList.add("po-mobile");
     function lockEmbedScroll() {
+      if (poIsMobileDevice()) return;
       if (window.scrollY || document.documentElement.scrollTop || document.body.scrollTop) {
         window.scrollTo(0, 0);
         document.documentElement.scrollTop = 0;
@@ -17,10 +35,10 @@
       window.visualViewport.addEventListener("scroll", lockEmbedScroll);
       window.visualViewport.addEventListener("resize", lockEmbedScroll);
     }
-    // Stop Digistracts/GoDaddy parent page from scrolling the iframe out of view
     document.addEventListener(
       "touchmove",
       function (e) {
+        if (poIsMobileDevice()) return;
         let el = e.target;
         while (el && el !== document.documentElement) {
           if (el.classList && (
@@ -110,7 +128,7 @@
     const touchOn = document.documentElement.classList.contains("po-touch-on") &&
       touchEl && !touchEl.hidden;
     const land = document.documentElement.classList.contains("po-land");
-    const fs = document.documentElement.classList.contains("po-fs") || isNativeFullscreen() || likelyParentFullscreen();
+    const fs = document.documentElement.classList.contains("po-fs") || isNativeFullscreen() || parentFs || likelyParentFullscreen();
     // Only lift above sticks when touch pads are actually showing
     const stickLift = touchOn ? (land ? Math.min(100, box.height * 0.22) : Math.min(132, box.height * 0.3)) : 0;
     // Fullscreen / land: pull chrome up so it isn't clipped under the screen edge
@@ -4424,7 +4442,7 @@
     if (!ui.fsBtn) return;
     // Always available while exploring (PC, mobile, embed, fullscreen)
     const show = mode === "explore";
-    const fs = isNativeFullscreen() || likelyParentFullscreen();
+    const fs = isNativeFullscreen() || parentFs || likelyParentFullscreen();
     ui.fsBtn.hidden = !show;
     ui.fsBtn.setAttribute("aria-pressed", fs ? "true" : "false");
     ui.fsBtn.textContent = fs ? "Exit FS" : "FS";
@@ -4785,6 +4803,11 @@
     if (!d || typeof d !== "object") return;
     if (d.type === "po-pause") setPaused(true);
     if (d.type === "po-resume") setPaused(false);
+    if (d.type === "po-fs-state") {
+      parentFs = !!d.active;
+      syncFsBtn();
+      syncTouchUI();
+    }
   });
 
   canvas.addEventListener("mousedown", function (e) {
