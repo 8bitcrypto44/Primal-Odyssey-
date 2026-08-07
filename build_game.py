@@ -12,7 +12,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "68"
+ASSET_VER = "69"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 _brand_logo = root / "assets" / "brand" / "8bitcrypto44_logo.png"
 BRAND_LOGO_URI = (
@@ -118,7 +118,7 @@ pages = (
     f"<script src=\"primal_snes.js?v={v}\"></script>\n"
     f"<script src=\"primal.js?v={v}\"></script>\n"
     f"<script src=\"po_viewport.js?v={v}\"></script>\n"
-    "<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(){})}</script>\n"
+    "<script>if('serviceWorker' in navigator){(function(){var embed=window!==window.top||/(?:\\?|&)embed=1(?:&|$)/.test(location.search||'');if(embed){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister()});});if(window.caches){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});});}return;}navigator.serviceWorker.register('./sw.js').catch(function(){})})()}</script>\n"
     "</body>\n</html>\n"
 )
 (root / "index.html").write_bytes(pages.replace("\r\n", "\n").replace("\r", "\n").encode("utf-8"))
@@ -143,7 +143,6 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
 .po-gd-hero{{position:absolute;inset:0;background:#041008}}
 .po-gd-hero img{{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity 1.1s ease}}
 .po-gd-hero img.is-on{{opacity:1}}
-.po-gd-promo{{margin:0;font-size:12px;color:#6a8b75;max-width:32em;line-height:1.4}}
 .po-gd-site{{position:absolute;left:10px;bottom:8px;z-index:3;display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;text-decoration:none;opacity:.9;max-width:40%}}
 .po-gd-site img{{width:96px;max-width:100%;height:auto;display:block;image-rendering:pixelated;image-rendering:crisp-edges}}
 .po-gd-site span{{font-size:10px;letter-spacing:.4px;color:#5dce7a;text-shadow:0 0 6px rgba(61,155,95,.35)}}
@@ -304,7 +303,6 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
             <button type="button" data-region="wetlands">Wetlands</button>
           </div>
           <button type="button" class="po-gd-enter" id="po-gd-enter">Enter expedition</button>
-          <p class="po-gd-promo">Also: Thank You For Your Service kids coloring books - Free &amp; Faithful Press</p>
           <a class="po-gd-site" href="https://www.8bitcrypto44.xyz" target="_blank" rel="noopener noreferrer" aria-label="8bitcrypto_44 website">
             <img src="{BRAND_LOGO_URI}" alt="" width="96" height="13" decoding="async">
             <span>www.8bitcrypto44.xyz</span>
@@ -368,7 +366,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(st){{st.style.minHeight="";st.style.height="";st.style.maxHeight="";st.style.aspectRatio="";}}
     if(pl){{pl.style.minHeight="";pl.style.height="";pl.style.maxHeight="";}}
   }}
-  function embedDefaultH(){{return 920;}}
+  function embedDefaultH(){{return 1100;}}
   function mobileBootH(){{
     var vh=Math.max(320,Math.round(window.innerHeight||document.documentElement.clientHeight||680));
     return Math.max(680,Math.round(vh*1.05));
@@ -399,7 +397,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
       root.classList.add("is-mobile");
       h=contentH;
     }}else{{
-      contentH=Math.max(680,Math.round(Number(h)||920));
+      contentH=Math.max(680,Math.round(Number(h)||1100));
       h=contentH;
       if(!phone())frame.setAttribute("scrolling","no");
     }}

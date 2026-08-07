@@ -8,7 +8,7 @@
 
   // Digistracts-style floors: content drives height; avoid forced tall blank.
   var EMBED_MIN_H = 680;
-  var EMBED_MENU_MIN_H = 420;
+  var EMBED_MENU_MIN_H = 900;
   var EMBED_PLAY_MIN_H = 360;
   var EMBED_PLAY_PAD = 24;
   var embedFsActive = false;
@@ -187,24 +187,24 @@
   }
 
   function measureMenuContentHeight(rootTop) {
-    // Never use #po-title itself: desktop embed absolute fill tracks iframe height.
+    // Prefer intrinsic .po-menu size: desktop absolute #po-title fill can clip rects.
     var title = document.getElementById("po-title");
     var menu = title && title.querySelector(".po-menu");
-    var maxBottom = rootTop;
     if (menu) {
-      maxBottom = considerBottom(maxBottom, menu);
-      var mr = menu.getBoundingClientRect();
-      var mh = Math.max(menu.scrollHeight || 0, menu.offsetHeight || 0, mr.height || 0);
-      maxBottom = Math.max(maxBottom, mr.top + mh);
-      Array.prototype.forEach.call(menu.querySelectorAll(".po-card, .po-brand, .po-regions, .po-a11y, .po-wip, .po-lead"), function (el) {
-        maxBottom = considerBottom(maxBottom, el);
+      var mh = Math.max(
+        menu.scrollHeight || 0,
+        menu.offsetHeight || 0,
+        Math.ceil(menu.getBoundingClientRect().height || 0)
+      );
+      Array.prototype.forEach.call(menu.querySelectorAll(".po-card, .po-brand, .po-regions, .po-a11y, .po-wip, .po-lead, h2, .po-tag, .po-continue"), function (el) {
+        mh = Math.max(mh, (el.offsetTop || 0) + (el.offsetHeight || 0));
       });
-    } else if (title) {
-      Array.prototype.forEach.call(title.children || [], function (child) {
-        maxBottom = considerBottom(maxBottom, child);
-      });
+      return Math.ceil(mh) + 36;
     }
-    return Math.ceil(Math.max(0, maxBottom - rootTop)) + 16;
+    if (title) {
+      return Math.ceil(Math.max(title.scrollHeight || 0, title.offsetHeight || 0)) + 16;
+    }
+    return EMBED_MENU_MIN_H;
   }
 
   function embedFloorH() {
@@ -217,7 +217,9 @@
   }
 
   function measureEmbedHeight() {
-    resetEmbedMeasureStyles();
+    // Desktop: do not force height:auto before measure — absolute menu overlay
+    // needs a real iframe-sized containing block.
+    if (isMobileEmbed()) resetEmbedMeasureStyles();
     var rootTop = ROOT.getBoundingClientRect().top;
     var menuOpen = isMenuOpen();
     var mobile = isMobileEmbed();
@@ -226,7 +228,8 @@
 
     if (menuOpen) {
       var bboxH = measureMenuContentHeight(rootTop);
-      return Math.ceil(Math.max(EMBED_MENU_MIN_H, bboxH));
+      // Desktop absolute overlay: still ask parent for content height so cards fit.
+      return Math.ceil(Math.max(mobile ? EMBED_MENU_MIN_H : EMBED_MENU_MIN_H, bboxH));
     }
 
     if (mobile) {
@@ -259,7 +262,9 @@
     var menuOpen = isMenuOpen();
     syncMobileClass();
     if (mobile && isEmbedPlayShell() && embedPlayH > 0) return h;
-    if (mobile || menuOpen) {
+    // Digistracts desktop: keep html/body/root sized to the iframe (never height:auto
+    // with absolute overlays — that collapses .po-shell to 0 and blanks the menu).
+    if (mobile) {
       resetEmbedMeasureStyles();
       [document.documentElement, document.body, ROOT].forEach(function (el) {
         el.style.height = "auto";

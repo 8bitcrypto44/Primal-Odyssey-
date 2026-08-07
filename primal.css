@@ -394,7 +394,6 @@ html.po-land.po-touch-on:has(#po-help.show) .po-obj{visibility:hidden;pointer-ev
   color:#e8c86a;font:700 14px/1.35 var(--font-ui);background:rgba(40,30,8,.5)
 }
 .po-postcard[hidden]{display:none!important}
-.po-promo{text-align:center;font-size:13px;color:#6a8b75;margin:8px 12px 0;line-height:1.45}
 .po-recap-img{display:block;width:100%;max-width:360px;margin:8px auto;border:2px solid #8a6a38;border-radius:6px}
 .po-recap-img[hidden]{display:none!important}
 .po-recap-dl{display:block;text-align:center;text-decoration:none;margin-top:8px}
@@ -491,16 +490,34 @@ html.po-embed .po-credit{display:none}
 html.po-embed .po-overlay{
   padding:10px 12px 14px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y
 }
-/* Menu open: size to content — avoid absolute fill leaving a tall blank under the cards */
-html.po-embed.po-ui-menu #po-root{overflow:visible}
-html.po-embed.po-ui-menu #po-title.po-overlay{
-  position:relative;inset:auto;width:100%;min-height:0;max-height:none;
-  overflow:visible;align-items:flex-start;padding-bottom:20px
+/*
+ * Digistracts-style desktop embed menu:
+ * Keep .po-shell filling the iframe. Never height:0 / opacity:0 the shell
+ * (v66–v68 blank bug). Title overlay stays absolute + scrollable on top.
+ * Mobile still grows with content so biome cards are not trapped.
+ */
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  min-height:0!important;max-height:none!important;aspect-ratio:auto!important;
+  overflow:hidden!important;opacity:1!important;pointer-events:auto!important;background:#000!important
 }
-html.po-embed.po-ui-menu:not(.po-mobile) #po-root,
-html.po-embed.po-ui-menu:not(.po-mobile) body,
-html.po-embed.po-ui-menu:not(.po-mobile){
-  height:auto!important;min-height:0!important;max-height:none!important;overflow:visible!important
+html.po-embed.po-ui-menu:not(.po-mobile) #po-title.po-overlay{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  min-height:0!important;max-height:none!important;overflow:auto!important;
+  align-items:flex-start;padding-bottom:20px;opacity:1!important;visibility:visible!important;
+  pointer-events:auto!important;display:flex!important;z-index:30
+}
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > canvas,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-hud-canvas,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-bottom-bar,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-touch,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-hint,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-obj,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-paused,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-caution,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-quest-chip,
+html.po-embed.po-ui-menu:not(.po-mobile) .po-shell > .po-photo-flash{
+  pointer-events:none!important
 }
 html.po-embed .po-dossier{overscroll-behavior:contain;touch-action:pan-y;max-height:90%;width:min(960px,100%)}
 html.po-embed .po-paper-dossier{max-height:90%;width:min(560px,94%);overscroll-behavior:contain;touch-action:pan-y}
@@ -509,7 +526,6 @@ html.po-embed .po-wip{margin-bottom:8px}
 html.po-embed .po-card .go{animation:none}
 html.po-embed .po-card .preview{height:110px}
 html.po-embed .po-regions{gap:8px}
-/* Tall Digistracts mobile host (like Binary Matrix ~560px): menus use full height; canvas stays 16:9 contain */
 @media (max-width:700px){
   html.po-embed .po-overlay{padding:12px 10px 16px;align-items:flex-start}
   html.po-embed .po-card .preview{height:130px}
@@ -535,37 +551,29 @@ html.po-embed.po-mobile .po-dossier,
 html.po-embed.po-mobile .po-paper-dossier{max-height:min(85vh,680px);overflow-y:auto}
 html.po-embed.po-mobile .po-card .go,
 html.po-embed.po-mobile .po-regions button{min-height:48px;touch-action:manipulation}
-/*
- * Menu open: #po-title and all overlays live INSIDE .po-shell.
- * Never collapse/opacity:0 the shell — that blanks the whole UI (v66/v67 bug).
- * Digistracts keeps stage visible and makes the overlay position:relative so
- * the host grows with menu content; we mirror that here.
- */
-html.po-embed.po-ui-menu .po-shell,
+/* Mobile menu: grow host with title content — never opacity:0 / height:0 the shell */
 html.po-embed.po-mobile.po-ui-menu .po-shell{
   position:relative!important;inset:auto!important;width:100%!important;
   height:auto!important;min-height:0!important;max-height:none!important;
   aspect-ratio:auto!important;overflow:visible!important;
   opacity:1!important;pointer-events:auto!important;background:#030605!important
 }
-/* Hide game chrome only — leave .po-overlay siblings (title/menus) visible */
-html.po-embed.po-ui-menu .po-shell > canvas,
-html.po-embed.po-ui-menu .po-shell > .po-hud-canvas,
-html.po-embed.po-ui-menu .po-shell > .po-bottom-bar,
-html.po-embed.po-ui-menu .po-shell > .po-touch,
-html.po-embed.po-ui-menu .po-shell > .po-hint,
-html.po-embed.po-ui-menu .po-shell > .po-obj,
-html.po-embed.po-ui-menu .po-shell > .po-paused,
-html.po-embed.po-ui-menu .po-shell > .po-caution,
-html.po-embed.po-ui-menu .po-shell > .po-quest-chip,
-html.po-embed.po-ui-menu .po-shell > .po-photo-flash,
-html.po-embed.po-ui-menu .po-shell > .po-frame{
+html.po-embed.po-mobile.po-ui-menu .po-shell > canvas,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-hud-canvas,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-bottom-bar,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-touch,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-hint,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-obj,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-paused,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-caution,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-quest-chip,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-photo-flash,
+html.po-embed.po-mobile.po-ui-menu .po-shell > .po-frame{
   position:absolute!important;inset:auto!important;left:0!important;top:0!important;
   width:0!important;height:0!important;min-height:0!important;max-height:0!important;
   overflow:hidden!important;opacity:0!important;visibility:hidden!important;
   pointer-events:none!important;border:0!important
 }
-html.po-embed.po-ui-menu #po-title.po-overlay,
 html.po-embed.po-mobile.po-ui-menu #po-title.po-overlay{
   position:relative!important;inset:auto!important;width:100%!important;
   min-height:0!important;max-height:none!important;overflow:visible!important;
