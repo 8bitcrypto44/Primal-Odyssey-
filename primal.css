@@ -493,10 +493,6 @@ html.po-embed .po-overlay{
 }
 /* Menu open: size to content — avoid absolute fill leaving a tall blank under the cards */
 html.po-embed.po-ui-menu #po-root{overflow:visible}
-html.po-embed.po-ui-menu .po-shell{
-  position:relative;inset:auto;width:100%;height:0;min-height:0;max-height:0;
-  aspect-ratio:auto;overflow:hidden;opacity:0;pointer-events:none
-}
 html.po-embed.po-ui-menu #po-title.po-overlay{
   position:relative;inset:auto;width:100%;min-height:0;max-height:none;
   overflow:visible;align-items:flex-start;padding-bottom:20px
@@ -539,6 +535,18 @@ html.po-embed.po-mobile .po-dossier,
 html.po-embed.po-mobile .po-paper-dossier{max-height:min(85vh,680px);overflow-y:auto}
 html.po-embed.po-mobile .po-card .go,
 html.po-embed.po-mobile .po-regions button{min-height:48px;touch-action:manipulation}
+/* AFTER mobile shell rules — same/higher specificity so menu does not leave a 16:9 blank */
+html.po-embed.po-ui-menu .po-shell,
+html.po-embed.po-mobile.po-ui-menu .po-shell{
+  position:relative!important;inset:auto!important;width:100%!important;
+  height:0!important;min-height:0!important;max-height:0!important;
+  aspect-ratio:auto!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important
+}
+html.po-embed.po-mobile.po-ui-menu #po-title.po-overlay{
+  position:relative!important;inset:auto!important;width:100%!important;
+  min-height:0!important;max-height:none!important;overflow:visible!important;
+  align-items:flex-start;padding-bottom:20px
+}
 
 @media (max-width:800px){
   #po-root{padding:8px 6px 16px}
@@ -554,7 +562,8 @@ html.po-embed.po-mobile .po-regions button{min-height:48px;touch-action:manipula
   .po-dossier .panel-body{font-size:15px;line-height:1.6}
   .po-paper-dossier{max-height:min(85vh,680px)}
   html.po-embed #po-root{padding:0}
-  html.po-embed .po-shell{inset:0;border:0;border-radius:0;box-shadow:none}
+  html.po-embed:not(.po-ui-menu) .po-shell{inset:0;border:0;border-radius:0;box-shadow:none}
+  html.po-embed.po-ui-menu .po-shell{border:0;border-radius:0;box-shadow:none}
   html.po-embed .po-frame{border-radius:0}
   html.po-embed .po-card .preview{height:120px}
   html.po-embed .po-card .body{padding:12px 14px 14px}

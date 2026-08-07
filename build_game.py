@@ -12,7 +12,7 @@ import re
 root = Path(__file__).resolve().parent
 
 # Bump on every publish so Pages/CDN do not serve stale JS/CSS
-ASSET_VER = "66"
+ASSET_VER = "67"
 PAGES_URL = "https://8bitcrypto44.github.io/Primal-Odyssey-/"
 _brand_logo = root / "assets" / "brand" / "8bitcrypto44_logo.png"
 BRAND_LOGO_URI = (
@@ -368,7 +368,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(st){{st.style.minHeight="";st.style.height="";st.style.maxHeight="";st.style.aspectRatio="";}}
     if(pl){{pl.style.minHeight="";pl.style.height="";pl.style.maxHeight="";}}
   }}
-  function embedDefaultH(){{return 980;}}
+  function embedDefaultH(){{return 920;}}
   function mobileBootH(){{
     var vh=Math.max(320,Math.round(window.innerHeight||document.documentElement.clientHeight||680));
     return Math.max(680,Math.round(vh*1.05));
@@ -379,9 +379,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(cov)h=Math.max(h,Math.round(cov.scrollHeight||0),Math.round(cov.offsetHeight||0));
     return Math.max(h,mobileBootH());
   }}
-  var lastAppliedH=0;
   function requestChildResize(){{
-    // Digistracts pattern: while open on mobile, child drives height — parent pings cause grow loops.
+    // Digistracts: while in-game on mobile, child drives height — parent pings cause grow loops.
     if(playing&&mobileMode()&&!isFs()&&!root.classList.contains("is-land"))return;
     if(root._poResizeT)clearTimeout(root._poResizeT);
     root._poResizeT=setTimeout(function(){{
@@ -390,7 +389,7 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   }}
   function setFrameHeight(h){{
     if(isFs()||root.classList.contains("is-land"))return;
-    if(!root.classList.contains("is-open")){{clearCoverHeights();lastAppliedH=0;return;}}
+    if(!root.classList.contains("is-open")){{clearCoverHeights();return;}}
     var contentH;
     if(mobileMode()&&!root.classList.contains("is-land")){{
       var reported=Math.round(Number(h)||0);
@@ -404,9 +403,6 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
       h=contentH;
       if(!phone())frame.setAttribute("scrolling","no");
     }}
-    // Ignore sub-pixel / jitter re-applies (child resize ↔ parent setFrameHeight feedback).
-    if(lastAppliedH>0&&Math.abs(h-lastAppliedH)<8)return;
-    lastAppliedH=h;
     frame.style.height=h+"px";
     frame.style.minHeight=h+"px";
     frame.style.maxHeight="none";
@@ -415,7 +411,25 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(st){{st.style.height="auto";st.style.minHeight="0";st.style.maxHeight="none";st.style.aspectRatio="auto";}}
     if(pl){{pl.style.height="auto";pl.style.minHeight="0";pl.style.maxHeight="none";}}
   }}
-  function postFsState(active){{try{{if(frame.contentWindow)frame.contentWindow.postMessage({{type:"po-fs-state",active:!!active}},"*");}}catch(e){{}}}}
+  function notifyFrame(){{
+    try{{if(frame.contentWindow)frame.contentWindow.postMessage({{type:"po-fs-state",active:isFs()}},"*");}}catch(e){{}}
+  }}
+  function restoreLayout(){{
+    root.classList.remove("is-fs-mode","is-fs");
+    root.style.cssText="";
+    var card=root.querySelector(".po-gd-card");
+    var stage=root.querySelector(".po-gd-stage");
+    var top=root.querySelector(".po-gd-top");
+    if(card)card.style.cssText="";
+    if(stage)stage.style.cssText="";
+    if(top)top.style.cssText="";
+    frame.removeAttribute("style");
+    frame.style.width="100%";
+    frame.style.border="0";
+    frame.style.display="block";
+    frame.style.background="#030605";
+    try{{document.documentElement.style.overflow="";document.body.style.overflow="";}}catch(e){{}}
+  }}
   function mountFs(){{
     if(root.dataset.poMounted==="1")return;
     var slot=document.createElement("div");
@@ -436,30 +450,39 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   }}
   function finishExit(){{
     unmountFs();
-    root.classList.remove("is-fs-mode");
-    postFsState(false);
-    try{{document.documentElement.style.overflow="";document.body.style.overflow="";}}catch(e){{}}
+    restoreLayout();
     syncLand();
+    syncFsClass();
+    notifyFrame();
+    setTimeout(function(){{restoreLayout();syncLand();notifyFrame();requestChildResize();}},50);
+    setTimeout(function(){{restoreLayout();notifyFrame();requestChildResize();}},200);
   }}
   function enterFs(){{
+    if(root.classList.contains("is-fs-mode")){{notifyFrame();return;}}
     mountFs();
     root.classList.add("is-fs-mode");
-    postFsState(true);
     try{{document.documentElement.style.overflow="hidden";document.body.style.overflow="hidden";}}catch(e){{}}
-    var req=frame.requestFullscreen||frame.webkitRequestFullscreen;
-    if(req&&!document.fullscreenElement){{
-      try{{
-        var p=req.call(frame);
-        if(p&&p.catch)p.catch(function(){{}});
-      }}catch(e){{}}
+    syncFsClass();
+    notifyFrame();
+    var native=document.fullscreenElement||document.webkitFullscreenElement;
+    if(!native){{
+      var req=frame.requestFullscreen||frame.webkitRequestFullscreen;
+      if(req){{
+        try{{
+          var p=req.call(frame);
+          if(p&&p.catch)p.catch(function(){{}});
+        }}catch(e){{}}
+      }}
     }}
+    setTimeout(notifyFrame,120);
   }}
   function exitFs(){{
     root.classList.remove("is-fs-mode");
-    var ex=document.exitFullscreen||document.webkitExitFullscreen;
-    if(ex&&document.fullscreenElement){{
+    try{{document.documentElement.style.overflow="";document.body.style.overflow="";}}catch(e){{}}
+    var exit=document.exitFullscreen||document.webkitExitFullscreen;
+    if(exit&&(document.fullscreenElement||document.webkitFullscreenElement)){{
       try{{
-        var p=ex.call(document);
+        var p=exit.call(document);
         if(p&&p.then)p.then(finishExit).catch(finishExit);
         else finishExit();
       }}catch(e){{finishExit();}}
@@ -467,10 +490,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
       finishExit();
     }}
   }}
-  var playing=false;
   var baseSrc="https://8bitcrypto44.github.io/Primal-Odyssey-/?embed=1&amp;v={v}".replace(/&amp;/g,"&");
   root.classList.add("is-trailer");
-  // Soft full-bleed cover crossfade (no mosaic strobe)
   var heroImgs=root.querySelectorAll("#po-gd-hero img");
   var hi=0;
   if(heroImgs.length>1){{
@@ -489,9 +510,8 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     root.classList.remove("is-trailer");
     playing=true;
     btn.setAttribute("aria-expanded","true");
-    if(phone()){{root.classList.add("is-mobile");frame.setAttribute("scrolling","no");if(land())enterFs();}}else{{
-      try{{document.documentElement.style.overflow="hidden";document.body.style.overflow="hidden";}}catch(e){{}}
-    }}
+    if(phone()){{root.classList.add("is-mobile");frame.setAttribute("scrolling","no");if(land())enterFs();}}
+    // Digistracts locks host overflow on desktop; PO menu is taller — keep host scrollable.
     setFrameHeight(phone()?openBootH():embedDefaultH());
     syncLand();
     requestChildResize();
@@ -517,12 +537,12 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
   }});
   setTimeout(function(){{root.classList.remove("is-loading");}},8000);
   window.addEventListener("message",function(e){{
-    if(!e.data)return;
+    if(!e.data||typeof e.data!=="object")return;
     if(e.data.type==="po-chrome"){{
       if(typeof e.data.inGame==="boolean")playing=!!e.data.inGame;
       else if(typeof e.data.explore==="boolean")playing=!!e.data.explore;
       syncLand();
-      if((!e.data.inGame&&!e.data.explore)||!mobileMode()||isFs()||root.classList.contains("is-land"))requestChildResize();
+      if(!e.data.inGame||!mobileMode()||isFs()||root.classList.contains("is-land"))requestChildResize();
       else setTimeout(requestChildResize,120);
     }}
     if(e.data.type==="po-fs")enterFs();
@@ -531,27 +551,20 @@ iframe_snippet = f"""<!-- Digistracts / GoDaddy: Primal Odyssey cover → expand
     if(e.data.type==="po-resize"&&e.data.height&&!isFs()&&!root.classList.contains("is-land"))setFrameHeight(e.data.height);
   }});
   function onFsChange(){{
-    if(!document.fullscreenElement&&!document.webkitFullscreenElement&&root.classList.contains("is-fs-mode")){{
+    var native=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    if(!native&&(root.classList.contains("is-fs-mode")||root.dataset.poMounted==="1")){{
+      root.classList.remove("is-fs-mode");
       finishExit();
       return;
     }}
-    syncFsClass();syncLand();
+    syncFsClass();
+    syncLand();
+    if(isFs()||root.classList.contains("is-fs-mode"))notifyFrame();
   }}
   document.addEventListener("fullscreenchange",onFsChange);
   document.addEventListener("webkitfullscreenchange",onFsChange);
-  window.addEventListener("resize",function(){{
-    syncLand();
-    if(root.classList.contains("is-open")&&!isFs()){{
-      lastAppliedH=0;
-      requestChildResize();
-    }}
-  }});
-  window.addEventListener("orientationchange",function(){{setTimeout(function(){{
-    syncLand();
-    lastAppliedH=0;
-    if(root.classList.contains("is-open")&&!isFs())requestChildResize();
-    else clearCoverHeights();
-  }},120);}});
+  window.addEventListener("resize",function(){{syncLand();if(root.classList.contains("is-open")&&!isFs())requestChildResize();}});
+  window.addEventListener("orientationchange",function(){{setTimeout(function(){{syncLand();if(root.classList.contains("is-open")&&!isFs())requestChildResize();else clearCoverHeights();}},120);}});
   if(phone())root.classList.add("is-mobile");
 }})();
 </script>
